@@ -1,0 +1,48 @@
+from functools import lru_cache
+from pydantic import PostgresDsn, computed_field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    """Application configuration loaded from environment variables (.env)."""
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    # General
+    APP_ENV: str = "development"
+    LOG_LEVEL: str = "INFO"
+
+    # PostgreSQL connection settings
+    POSTGRES_DB: str
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
+    POSTGRES_HOST: str = "postgres"
+    POSTGRES_PORT: int = 5432
+
+    @computed_field
+    @property
+    def async_database_url(self) -> str:
+        """Asynchronous database connection URL for SQLAlchemy + asyncpg."""
+        return (
+            f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+            f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        )
+
+    @computed_field
+    @property
+    def sync_database_url(self) -> str:
+        """Synchronous database connection URL for Alembic migrations + psycopg2."""
+        return (
+            f"postgresql+psycopg2://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+            f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        )
+
+
+@lru_cache
+def get_settings() -> Settings:
+    """Singleton helper to return cached settings instance."""
+    return Settings()
