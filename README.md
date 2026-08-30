@@ -1,5 +1,6 @@
-# AI-news
+# Personal AI News Aggregator
 
+Self-hosted personal AI news aggregation and summarization system.
 
 Useful system configuration guides:
 * [Wireless Device Management Guide (rfkill)](docs/rfkill-guide.md)
