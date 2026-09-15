@@ -5,10 +5,11 @@ from sqlalchemy import func, select
 
 from app.collectors.rss import RSSCollector
 from app.config import get_settings
-from app.database.models import Article, ArticleStatus, Source
+from app.database.models import Article, ArticleStatus, Source, Summary
 from app.database.session import async_session_maker, check_db_connection
 from app.services.ingestion import IngestionService
 from app.services.processing import ProcessingService
+from app.services.summarizer import SummarizerService
 
 settings = get_settings()
 
@@ -37,7 +38,7 @@ FEEDS = [
 async def main() -> None:
     logger.info("==========================================")
     logger.info("  Personal AI News Aggregator v0.1.0      ")
-    logger.info("  Pipeline: Ingestion + Processing        ")
+    logger.info("  Pipeline: Ingest -> Process -> AI       ")
     logger.info("==========================================")
 
     try:
@@ -57,21 +58,20 @@ async def main() -> None:
             await ingestion_service.run_collector(collector)
 
         processing_service = ProcessingService(session=session)
-        unique_cnt, dup_cnt = await processing_service.process_collected_articles()
+        await processing_service.process_collected_articles()
+        
+        summarizer_service = SummarizerService(session=session)
+        summarized_count = await summarizer_service.summarize_pending_articles(limit=3)
 
         total_articles = await session.scalar(select(func.count(Article.id)))
-        processed_articles = await session.scalar(
-            select(func.count(Article.id)).where(Article.status == ArticleStatus.PROCESSED)
-        )
-        duplicate_articles = await session.scalar(
-            select(func.count(Article.id)).where(Article.status == ArticleStatus.DUPLICATE)
+        summarized_articles = await session.scalar(
+            select(func.count(Article.id)).where(Article.status == ArticleStatus.SUMMARIZED)
         )
 
         logger.info("==========================================")
         logger.info("  PIPELINE EXECUTION SUMMARY")
-        logger.info("  Total articles in DB:  %d", total_articles)
-        logger.info("  Ready for AI (PROCESSED): %d", processed_articles)
-        logger.info("  Duplicates filtered:    %d", duplicate_articles)
+        logger.info("  Total articles in DB:      %d", total_articles)
+        logger.info("  Total summarized by AI:    %d", summarized_articles)
         logger.info("==========================================")
 
 
