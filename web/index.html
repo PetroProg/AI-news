@@ -1,0 +1,2080 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>HomeGuard - Contrôle Réseau Domestique, IA & VPN</title>
+  
+  <!-- Tailwind CSS via CDN with Fallback Styles -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    if (window.tailwind) {
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              brand: { 400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7' }
+            }
+          }
+        }
+      };
+    }
+  </script>
+
+  <!-- Embedded Standalone Styles (Works 100% offline, on Android content:// and file://) -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap');
+
+    :root {
+      --bg-main: #090d18;
+      --card-bg: rgba(18, 26, 45, 0.90);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent-cyan: #06b6d4;
+      --accent-blue: #3b82f6;
+      --accent-green: #10b981;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-main);
+      background-image: 
+        radial-gradient(circle at 10% 10%, rgba(14, 165, 233, 0.12) 0%, transparent 45%),
+        radial-gradient(circle at 90% 20%, rgba(99, 102, 241, 0.10) 0%, transparent 45%),
+        radial-gradient(circle at 50% 90%, rgba(16, 185, 129, 0.08) 0%, transparent 50%);
+      background-attachment: fixed;
+      color: #e2e8f0;
+      min-height: 100vh;
+      /* Padding for mobile bottom navigation bar */
+      padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+      touch-action: manipulation;
+    }
+
+    h1, h2, h3, h4, .font-heading {
+      font-family: 'Outfit', 'Inter', sans-serif;
+    }
+
+    /* Reliable Tab Display System */
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block !important;
+    }
+
+    /* Reliable Desktop & Mobile Nav visibility */
+    .desktop-nav {
+      display: flex;
+    }
+    .mobile-nav {
+      display: none;
+    }
+
+    @media (max-width: 767px) {
+      .desktop-nav {
+        display: none !important;
+      }
+      .mobile-nav {
+        display: flex !important;
+      }
+    }
+    @media (min-width: 768px) {
+      .desktop-nav {
+        display: flex !important;
+      }
+      .mobile-nav {
+        display: none !important;
+      }
+      body {
+        padding-bottom: 2.5rem;
+      }
+    }
+
+    /* Glass card */
+    .glass-panel {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+    }
+
+    .glass-panel-hover {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .glass-panel-hover:hover {
+      border-color: rgba(56, 189, 248, 0.35);
+      box-shadow: 0 10px 30px 0 rgba(14, 165, 233, 0.18);
+    }
+
+    button {
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    button:active {
+      transform: scale(0.97);
+    }
+
+    .glow-cyan {
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.35);
+    }
+
+    /* Badge wrapping fix */
+    .badge-status {
+      white-space: nowrap !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      line-height: 1.2 !important;
+      flex-shrink: 0 !important;
+    }
+
+    /* Mobile Bottom Navigation Bar */
+    .mobile-bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 40;
+      background: rgba(10, 15, 29, 0.96);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: env(safe-area-inset-bottom, 0.5rem);
+    }
+
+    /* Radar sweep */
+    @keyframes radar-sweep {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .radar-sweep {
+      animation: radar-sweep 2.4s linear infinite;
+      transform-origin: center center;
+    }
+
+    @keyframes pulse-ring {
+      0% { transform: scale(0.6); opacity: 0.8; }
+      80% { transform: scale(1.6); opacity: 0; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+
+    .pulse-ring {
+      animation: pulse-ring 2.2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    }
+
+    /* Toast notifications */
+    #toast-container {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      left: 1rem;
+      max-width: 24rem;
+      margin-left: auto;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      pointer-events: none;
+    }
+
+    .toast {
+      pointer-events: auto;
+      transform: translateY(-1rem);
+      opacity: 0;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(100, 116, 139, 0.4);
+      border-radius: 9999px;
+    }
+    .scrollbar-none::-webkit-scrollbar {
+      display: none;
+    }
+    .scrollbar-none {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="antialiased selection:bg-sky-500 selection:text-white">
+
+  <!-- ========================================== -->
+  <!-- TOP APP BAR / HEADER (EXPANDED & SPACIOUS) -->
+  <!-- ========================================== -->
+  <header class="sticky top-0 z-30 glass-panel border-b border-slate-800/80 bg-slate-950/92 backdrop-blur-xl">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-3.5 space-y-2.5 sm:space-y-0">
+      
+      <!-- Main Row: Logo, Desktop Navigation, Language List & Demo Controls -->
+      <div class="flex items-center justify-between">
+        
+        <!-- Brand / Logo -->
+        <div class="flex items-center gap-3">
+          <div class="relative flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-sky-500 via-indigo-500 to-teal-400 p-[1px] shadow-lg shadow-sky-500/20 shrink-0">
+            <div class="w-full h-full bg-slate-950 rounded-2xl flex items-center justify-center">
+              <svg class="w-6 h-6 text-sky-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/>
+              </svg>
+            </div>
+            <span class="absolute -top-1 -right-1 flex h-3 w-3">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+            </span>
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-xl sm:text-2xl font-extrabold text-white tracking-tight font-heading">Home<span class="text-sky-400">Guard</span></span>
+              <span class="hidden sm:inline px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-sky-500/10 text-sky-400 border border-sky-500/20">Pro</span>
+            </div>
+            <!-- Desktop Status Tag -->
+            <p class="hidden sm:flex text-xs text-slate-400 items-center gap-1.5 mt-0.5">
+              <span class="text-emerald-400 font-semibold flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span data-i18n="gatewayStatus">En ligne</span>
+              </span>
+              <span>•</span>
+              <span>Keenetic Titan</span>
+              <span>•</span>
+              <span class="text-slate-500 font-mono">94.25.180.12</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Desktop Navigation Tabs (Visible on Computer >= 768px) -->
+        <nav class="desktop-nav items-center p-1.5 rounded-2xl bg-slate-900/90 border border-slate-800">
+          <button type="button" class="nav-tab desktop-tab px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all bg-sky-500/20 text-sky-400 border border-sky-500/40 shadow-sm" data-tab="news">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z"/></svg>
+            <span data-i18n="tabNews">Actualités</span>
+          </button>
+          <button type="button" class="nav-tab desktop-tab px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all text-slate-400 border border-transparent hover:text-white" data-tab="devices">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"/></svg>
+            <span data-i18n="tabDevices">Mes Appareils</span>
+          </button>
+          <button type="button" class="nav-tab desktop-tab px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all text-slate-400 border border-transparent hover:text-white" data-tab="vpn">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
+            <span data-i18n="tabVpn">VPN & Sécurité</span>
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          </button>
+        </nav>
+
+        <!-- Right Side: Language Dropdown List & Demo Presentation Buttons -->
+        <div class="flex items-center gap-2">
+          
+          <!-- Language Select List (Dropdown) -->
+          <div class="relative flex items-center">
+            <select id="lang-select" class="appearance-none bg-slate-900/90 border border-slate-700/90 text-white text-xs font-bold py-2 pl-3 pr-8 rounded-xl focus:outline-none focus:border-sky-500 transition-all cursor-pointer shadow-sm">
+              <option value="fr">🇫🇷 Français</option>
+              <option value="en">🇬🇧 English</option>
+              <option value="de">🇩🇪 Deutsch</option>
+            </select>
+            <svg class="w-3.5 h-3.5 text-slate-400 absolute right-2.5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+          </div>
+
+          <!-- Demo Attack Trigger Button -->
+          <button type="button" id="demo-simulate-attack" class="p-2 sm:px-3 sm:py-2 rounded-xl text-xs font-semibold bg-rose-500/15 text-rose-300 hover:bg-rose-500/25 border border-rose-500/30 flex items-center gap-1.5 transition-all shadow-sm" title="Simuler une attaque pour la démo">
+            <svg class="w-4 h-4 text-rose-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
+            <span class="hidden lg:inline" data-i18n="testAttackBtn">Test d'attaque</span>
+          </button>
+
+          <!-- Reset Button -->
+          <button type="button" id="demo-reset-state" class="p-2 sm:py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-400 hover:text-white border border-slate-700 transition-all shadow-sm" title="Réinitialiser">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+          </button>
+
+        </div>
+
+      </div>
+
+      <!-- Mobile Expanded Sub-row: Network & Gateway Status Indicator -->
+      <div class="flex sm:hidden items-center justify-between px-3 py-1.5 rounded-xl bg-slate-900/70 border border-slate-800/80 text-[11px] text-slate-300">
+        <div class="flex items-center gap-1.5 text-emerald-400 font-medium">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span data-i18n="gatewayStatus">En ligne</span>
+        </div>
+        <div class="text-slate-400">Keenetic Titan</div>
+        <div class="text-slate-500 font-mono text-[10px]">94.25.180.12</div>
+        <div class="text-sky-400 font-semibold">8 ms</div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- MAIN CONTAINER                             -->
+  <!-- ========================================== -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-5 sm:pt-8 space-y-6">
+
+    <!-- ========================================== -->
+    <!-- TAB 1: NEWS & AI DIGEST                    -->
+    <!-- ========================================== -->
+    <section id="tab-news" class="tab-content active space-y-5">
+      
+      <!-- AI Server Headline Banner -->
+      <div class="glass-panel rounded-3xl p-5 sm:p-7 border border-sky-500/30 bg-gradient-to-r from-sky-950/30 via-slate-900/60 to-indigo-950/30 shadow-xl relative overflow-hidden">
+        <div class="absolute -right-8 -bottom-8 w-48 h-48 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="relative z-10 space-y-2">
+          <div class="flex items-center gap-2">
+            <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-sky-500/20 text-sky-300 border border-sky-500/40 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z"/></svg>
+              <span data-i18n="aiServerBadge">Serveur IA HomeGuard • Flux en temps réel</span>
+            </span>
+          </div>
+          <h2 class="text-xl sm:text-3xl font-extrabold text-white font-heading" data-i18n="aiServerTitle">Actualités & Tendances du Web</h2>
+          <p class="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed" data-i18n="aiServerDesc">
+            Articles résumés automatiquement par l'IA dans vos domaines préférés.
+          </p>
+        </div>
+      </div>
+
+      <!-- Categories Filter Pills -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <button type="button" class="news-cat-pill px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 bg-sky-500 text-white" data-category="all" data-i18n="catAll">Toutes</button>
+        <button type="button" class="news-cat-pill px-4 py-2 rounded-2xl text-xs font-semibold transition-all shrink-0 bg-slate-800/80 text-slate-300 hover:text-white" data-category="ai" data-i18n="catAi">IA & Tech</button>
+        <button type="button" class="news-cat-pill px-4 py-2 rounded-2xl text-xs font-semibold transition-all shrink-0 bg-slate-800/80 text-slate-300 hover:text-white" data-category="gaming" data-i18n="catGaming">Jeux Vidéo</button>
+        <button type="button" class="news-cat-pill px-4 py-2 rounded-2xl text-xs font-semibold transition-all shrink-0 bg-slate-800/80 text-slate-300 hover:text-white" data-category="science" data-i18n="catScience">Sciences</button>
+        <button type="button" class="news-cat-pill px-4 py-2 rounded-2xl text-xs font-semibold transition-all shrink-0 bg-slate-800/80 text-slate-300 hover:text-white" data-category="lifestyle" data-i18n="catLifestyle">Tendances</button>
+        <button type="button" class="news-cat-pill px-4 py-2 rounded-2xl text-xs font-semibold transition-all shrink-0 bg-slate-800/80 text-slate-300 hover:text-white" data-category="security" data-i18n="catSecurity">Sécurité</button>
+      </div>
+
+      <!-- News Cards Container -->
+      <div id="news-container" class="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+        <!-- Injected dynamically by JavaScript -->
+      </div>
+
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 2: DEVICES & NETWORK ANALYTICS         -->
+    <!-- ========================================== -->
+    <section id="tab-devices" class="tab-content space-y-6">
+
+      <!-- NETWORK ANALYTICS (Relocated from News) -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        
+        <!-- Card 1: Network Protection -->
+        <div class="glass-panel p-4 sm:p-5 rounded-3xl border border-slate-800">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate" data-i18n="netProtection">Protection Réseau</span>
+            <div class="w-7 h-7 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
+            </div>
+          </div>
+          <div id="metric-protection" class="text-xl sm:text-2xl font-extrabold text-white font-heading">99.8%</div>
+          <div class="text-[11px] text-emerald-400 mt-1 flex items-center gap-1 font-medium truncate" data-i18n="netProtectionSub">
+            Tous les boucliers actifs
+          </div>
+        </div>
+
+        <!-- Card 2: Threats Blocked -->
+        <div class="glass-panel p-4 sm:p-5 rounded-3xl border border-slate-800">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate" data-i18n="attacksBlocked">Menaces Bloquées</span>
+            <div class="w-7 h-7 rounded-xl bg-rose-500/15 text-rose-400 flex items-center justify-center shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0-10.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285zM12 15.75h.007v.008H12v-.008z"/></svg>
+            </div>
+          </div>
+          <div id="metric-attacks" class="text-xl sm:text-2xl font-extrabold text-white font-heading">27 menaces</div>
+          <div class="text-[11px] text-rose-400 mt-1 flex items-center gap-1 font-medium truncate" data-i18n="attacksBlockedSub">
+            0 intrusion
+          </div>
+        </div>
+
+        <!-- Card 3: Internet Speed -->
+        <div class="glass-panel p-4 sm:p-5 rounded-3xl border border-slate-800">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate" data-i18n="internetSpeed">Débit Internet</span>
+            <div class="w-7 h-7 rounded-xl bg-sky-500/15 text-sky-400 flex items-center justify-center shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
+            </div>
+          </div>
+          <div id="metric-speed" class="text-xl sm:text-2xl font-extrabold text-white font-heading">500 Mb/s</div>
+          <div class="text-[11px] text-sky-400 mt-1 flex items-center gap-1 font-medium truncate" data-i18n="internetSpeedSub">
+            Fibre optique (8 ms)
+          </div>
+        </div>
+
+        <!-- Card 4: Remote Access -->
+        <div class="glass-panel p-4 sm:p-5 rounded-3xl border border-slate-800">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate" data-i18n="remoteAccess">Accès à distance</span>
+            <div class="w-7 h-7 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-.778.099-1.533.284-2.253"/></svg>
+            </div>
+          </div>
+          <div id="metric-remote" class="text-xl sm:text-2xl font-extrabold text-white font-heading">WireGuard</div>
+          <div class="text-[11px] text-indigo-300 mt-1 flex items-center gap-1 font-medium truncate" data-i18n="remoteAccessSub">
+            WireGuard prêt
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Devices Header & Overview -->
+      <div class="glass-panel rounded-3xl p-5 sm:p-6 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-xl font-bold text-white font-heading" data-i18n="devicesOverviewTitle">Appareils connectés</h2>
+          <div class="flex items-center gap-4 mt-1 text-xs text-slate-400">
+            <div><span data-i18n="statTotal">Total :</span> <strong id="stat-total-devices" class="text-white font-bold ml-1">9</strong></div>
+            <span>•</span>
+            <div><span data-i18n="statActive">Actifs :</span> <strong id="stat-active-devices" class="text-emerald-400 font-bold ml-1">9</strong></div>
+            <span>•</span>
+            <div><span data-i18n="statPaused">En pause :</span> <strong id="stat-paused-devices" class="text-rose-400 font-bold ml-1">0</strong></div>
+          </div>
+        </div>
+
+        <button type="button" id="scan-network-btn" class="w-full sm:w-auto px-5 py-3 rounded-2xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-lg shadow-sky-600/30 transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><line x1="12" y1="3" x2="12" y2="12"/><line x1="12" y1="12" x2="18" y2="6"/></svg>
+          <span data-i18n="scanNetworkBtn">Scanner le réseau</span>
+        </button>
+      </div>
+
+      <!-- Search & Category Filters -->
+      <div class="space-y-3">
+        <div class="relative">
+          <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+          <input type="text" id="device-search" data-i18n-ph="searchPlaceholder" placeholder="Rechercher par nom, IP..." class="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-800 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-all">
+        </div>
+
+        <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <button type="button" class="device-cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 bg-sky-500 text-white" data-category="all" data-i18n="catDevAll">Tous</button>
+          <button type="button" class="device-cat-pill px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 bg-slate-800/80 text-slate-300" data-category="computers" data-i18n="catDevComp">Ordinateurs</button>
+          <button type="button" class="device-cat-pill px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 bg-slate-800/80 text-slate-300" data-category="mobile" data-i18n="catDevMob">Smartphones</button>
+          <button type="button" class="device-cat-pill px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 bg-slate-800/80 text-slate-300" data-category="media" data-i18n="catDevMedia">TV & Consoles</button>
+          <button type="button" class="device-cat-pill px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 bg-slate-800/80 text-slate-300" data-category="iot" data-i18n="catDevIot">Maison connectée</button>
+          <button type="button" class="device-cat-pill px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 bg-slate-800/80 text-slate-300" data-category="guest" data-i18n="catDevGuest">Invités</button>
+        </div>
+      </div>
+
+      <!-- Devices Cards Grid -->
+      <div id="devices-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Injected dynamically by JavaScript -->
+      </div>
+
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 3: VPN & DNS SECURITY                  -->
+    <!-- ========================================== -->
+    <section id="tab-vpn" class="tab-content space-y-6">
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- COLUMN 1: REMOTE HOME VPN (7 cols) -->
+        <div class="lg:col-span-7 space-y-5">
+          
+          <div class="glass-panel rounded-3xl p-5 sm:p-7 border border-slate-800 space-y-5">
+            
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-sky-400" data-i18n="vpnSectionBadge">Accès à distance</span>
+                <h3 class="text-xl sm:text-2xl font-bold text-white font-heading" data-i18n="vpnSectionTitle">Connexion sécurisée à la maison</h3>
+              </div>
+              <div id="vpn-status-pill" class="badge-status px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Connecté
+              </div>
+            </div>
+
+            <p id="vpn-status-text" class="text-xs sm:text-sm text-slate-300 leading-relaxed" data-i18n="vpnDesc">
+              Connectez-vous à votre réseau domestique depuis n'importe où (café, 5G, vacances).
+            </p>
+
+            <!-- Main Connect Switch Button -->
+            <button type="button" id="vpn-main-toggle" class="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold flex items-center justify-center gap-3 shadow-lg shadow-emerald-900/30 border border-emerald-400/40 transition-all">
+              <span class="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span>
+              <span class="font-bold text-white" data-i18n="vpnBtnDisconnect">DÉCONNECTER LE VPN</span>
+            </button>
+
+            <!-- Telemetry Badges Grid -->
+            <div class="grid grid-cols-3 gap-2 p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 text-center">
+              <div>
+                <span class="text-[10px] text-slate-500 block uppercase" data-i18n="virtualIpLabel">IP Virtuelle :</span>
+                <span id="vpn-virtual-ip" class="text-xs sm:text-sm font-mono font-bold text-sky-400">10.8.0.2 / 24</span>
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-500 block uppercase" data-i18n="pingLabel">Ping maison :</span>
+                <span id="vpn-ping" class="text-xs sm:text-sm font-bold text-emerald-400">12 ms</span>
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-500 block uppercase" data-i18n="encryptionLabel">Chiffrement :</span>
+                <span class="text-xs sm:text-sm font-bold text-indigo-300">ChaCha20</span>
+              </div>
+            </div>
+
+            <!-- QR Code Button -->
+            <button type="button" id="show-qr-btn" class="w-full py-2.5 px-4 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 font-semibold text-xs flex items-center justify-center gap-2 border border-slate-700 transition-all">
+              <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z"/></svg>
+              <span data-i18n="qrCodeBtn">Afficher le QR code pour mon téléphone</span>
+            </button>
+
+          </div>
+
+          <!-- Real-Time Traffic Speed Graph (Canvas Standalone) -->
+          <div class="glass-panel rounded-3xl p-5 border border-slate-800 space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="text-sm sm:text-base font-bold text-white font-heading" data-i18n="chartTitle">Vitesse du trafic en direct (Mb/s)</h4>
+              </div>
+              <span class="text-[11px] font-mono text-emerald-400 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span data-i18n="chartLive">FLUX EN DIRECT</span>
+              </span>
+            </div>
+            <div class="h-44 sm:h-52 w-full relative">
+              <canvas id="vpn-traffic-chart" class="w-full h-full block"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- COLUMN 2: SMART DNS & THREAT SHIELDS (5 cols) -->
+        <div class="lg:col-span-5 space-y-5">
+          
+          <div class="glass-panel rounded-3xl p-5 sm:p-7 border border-slate-800 space-y-5">
+            <div>
+              <span class="text-xs font-bold uppercase tracking-wider text-purple-400" data-i18n="dnsSectionBadge">Filtre DNS & Protection</span>
+              <h3 class="text-xl sm:text-2xl font-bold text-white font-heading mt-0.5" data-i18n="dnsSectionTitle">Bouclier intelligent de la maison</h3>
+              <p class="text-xs text-slate-400 mt-1" data-i18n="dnsDesc">Bloque les pubs et les sites suspects pour TOUS vos appareils sans rien installer.</p>
+            </div>
+
+            <!-- DNS Provider Choice -->
+            <div class="space-y-1.5">
+              <label class="text-xs font-semibold text-slate-300 block" data-i18n="dnsProviderLabel">Fournisseur DNS actif :</label>
+              <div class="grid grid-cols-2 gap-2">
+                <div class="dns-provider-card cursor-pointer p-3 rounded-2xl border border-sky-500 bg-sky-500/10 glow-cyan transition-all" data-dns="pihole">
+                  <h4 class="text-xs font-bold text-white">Pi-hole</h4>
+                  <p class="text-[10px] text-slate-400 mt-0.5">Local 0 ms</p>
+                </div>
+
+                <div class="dns-provider-card cursor-pointer p-3 rounded-2xl border border-slate-800 bg-slate-900/60 hover:border-slate-700 transition-all" data-dns="adguard">
+                  <h4 class="text-xs font-bold text-white">AdGuard</h4>
+                  <p class="text-[10px] text-slate-400 mt-0.5">Anti-pub</p>
+                </div>
+
+                <div class="dns-provider-card cursor-pointer p-3 rounded-2xl border border-slate-800 bg-slate-900/60 hover:border-slate-700 transition-all" data-dns="cloudflare">
+                  <h4 class="text-xs font-bold text-white">Cloudflare</h4>
+                  <p class="text-[10px] text-slate-400 mt-0.5">1.1.1.1</p>
+                </div>
+
+                <div class="dns-provider-card cursor-pointer p-3 rounded-2xl border border-slate-800 bg-slate-900/60 hover:border-slate-700 transition-all" data-dns="quad9">
+                  <h4 class="text-xs font-bold text-white">Quad9</h4>
+                  <p class="text-[10px] text-slate-400 mt-0.5">Privé</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- DNS Protection Toggles -->
+            <div class="space-y-2.5 pt-2 border-t border-slate-800/80">
+              
+              <!-- Toggle 1: AdBlock -->
+              <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-900/60 border border-slate-800/60">
+                <div>
+                  <h5 class="text-xs font-bold text-white" data-i18n="shieldAdblockTitle">Bloqueur de publicités</h5>
+                  <p class="text-[10px] text-slate-400" data-i18n="shieldAdblockDesc">Supprime les bannières, pop-ups et vidéos de pub</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input type="checkbox" id="dns-toggle-adblock" class="sr-only peer" checked>
+                  <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                </label>
+              </div>
+
+              <!-- Toggle 2: Malware -->
+              <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-900/60 border border-slate-800/60">
+                <div>
+                  <h5 class="text-xs font-bold text-white" data-i18n="shieldMalwareTitle">Protection contre les virus & arnaques</h5>
+                  <p class="text-[10px] text-slate-400" data-i18n="shieldMalwareDesc">Bloque les faux sites bancaires et liens piégés</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input type="checkbox" id="dns-toggle-malware" class="sr-only peer" checked>
+                  <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                </label>
+              </div>
+
+              <!-- Toggle 3: DoH -->
+              <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-900/60 border border-slate-800/60">
+                <div>
+                  <h5 class="text-xs font-bold text-white" data-i18n="shieldDohTitle">Chiffrement DNS (DoH)</h5>
+                  <p class="text-[10px] text-slate-400" data-i18n="shieldDohDesc">Empêche votre opérateur de voir vos sites visités</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input type="checkbox" id="dns-toggle-doh" class="sr-only peer" checked>
+                  <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                </label>
+              </div>
+
+              <!-- Toggle 4: Parental -->
+              <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-900/60 border border-slate-800/60">
+                <div>
+                  <h5 class="text-xs font-bold text-white" data-i18n="shieldParentalTitle">Mode Famille / Contrôle parental</h5>
+                  <p class="text-[10px] text-slate-400" data-i18n="shieldParentalDesc">Filtre les contenus inappropriés pour les jeunes</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input type="checkbox" id="dns-toggle-parental" class="sr-only peer">
+                  <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                </label>
+              </div>
+
+            </div>
+
+            <!-- DNS Stats Counters -->
+            <div class="grid grid-cols-3 gap-2 p-3 rounded-2xl bg-slate-900/90 border border-slate-800 text-center">
+              <div>
+                <span class="text-[10px] text-slate-500 block uppercase" data-i18n="statQueries">Requêtes :</span>
+                <span id="stat-total-queries" class="text-xs sm:text-sm font-bold text-white">14,890</span>
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-500 block uppercase" data-i18n="statBlocked">Pubs bloquées :</span>
+                <span id="stat-blocked-count" class="text-xs sm:text-sm font-bold text-rose-400">3,412</span>
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-500 block uppercase" data-i18n="statThreats">Arnaques :</span>
+                <span id="stat-threats-count" class="text-xs sm:text-sm font-bold text-emerald-400">27</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- DNS Log Feed -->
+          <div class="glass-panel rounded-3xl p-5 border border-slate-800 space-y-3">
+            <div class="flex items-center justify-between">
+              <h4 class="text-sm font-bold text-white font-heading" data-i18n="dnsLogTitle">Journal des requêtes en direct</h4>
+              <select id="dns-log-filter" class="px-2 py-1 rounded-xl bg-slate-900 border border-slate-700 text-[11px] text-slate-300 focus:outline-none">
+                <option value="all" data-i18n="dnsLogFilterAll">Toutes les requêtes</option>
+                <option value="blocked" data-i18n="dnsLogFilterBlocked">Bloquées uniquement</option>
+                <option value="allowed" data-i18n="dnsLogFilterAllowed">Autorisées uniquement</option>
+              </select>
+            </div>
+
+            <div id="dns-query-log-body" class="space-y-2 max-h-72 overflow-y-auto">
+              <!-- Rendered by JavaScript -->
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- MOBILE BOTTOM NAVIGATION (THUMB FRIENDLY)  -->
+  <!-- ========================================== -->
+  <nav class="mobile-bottom-bar mobile-nav items-center justify-around px-2 py-2">
+    <button type="button" class="nav-tab mobile-tab flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-xl text-sky-400 bg-sky-500/15 font-bold" data-tab="news">
+      <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z"/></svg>
+      <span class="text-[11px]" data-i18n="tabNews">Actualités</span>
+    </button>
+    <button type="button" class="nav-tab mobile-tab flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-xl text-slate-400 font-medium" data-tab="devices">
+      <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"/></svg>
+      <span class="text-[11px]" data-i18n="tabDevices">Appareils</span>
+    </button>
+    <button type="button" class="nav-tab mobile-tab flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-xl text-slate-400 font-medium" data-tab="vpn">
+      <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
+      <span class="text-[11px]" data-i18n="tabVpn">VPN & DNS</span>
+    </button>
+  </nav>
+
+  <!-- ========================================== -->
+  <!-- MODALS                                     -->
+  <!-- ========================================== -->
+
+  <!-- Device Inspector Modal -->
+  <div id="device-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md items-center justify-center p-4" style="display: none;">
+    <div class="glass-panel rounded-3xl max-w-md w-full p-6 border border-slate-700 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <button type="button" id="close-device-modal" class="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-white transition-all">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+
+      <h3 class="text-xl font-bold text-white font-heading mb-1" data-i18n="modalDeviceTitle">Gérer cet appareil</h3>
+      <p class="text-xs text-slate-400 mb-5" data-i18n="modalDeviceDesc">Paramètres d'accès et de priorité pour ce membre de la famille.</p>
+
+      <div class="space-y-3.5 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1" data-i18n="deviceNameLabel">Nom de l'appareil :</label>
+          <input type="text" id="modal-device-name" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-sky-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px]">
+          <div>
+            <span class="text-slate-500 block">IP :</span>
+            <span id="modal-device-ip" class="font-mono text-slate-200">192.168.1.102</span>
+          </div>
+          <div>
+            <span class="text-slate-500 block">MAC :</span>
+            <span id="modal-device-mac" class="font-mono text-slate-200">F4:D4:88:51:7A:1C</span>
+          </div>
+          <div>
+            <span class="text-slate-500 block">Marque :</span>
+            <span id="modal-device-vendor" class="text-slate-200">Apple</span>
+          </div>
+          <div>
+            <span class="text-slate-500 block">Réseau :</span>
+            <span id="modal-device-connection" class="text-slate-200">Wi-Fi 6</span>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1" data-i18n="deviceRoomLabel">Pièce / Emplacement :</label>
+          <input type="text" id="modal-device-location" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-sky-500">
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1" data-i18n="qosLabel">Priorité de la connexion (QoS) :</label>
+          <select id="modal-device-qos" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-sky-500">
+            <option value="high" data-i18n="qosHigh">Haute (Jeux en ligne, streaming 4K sans lag)</option>
+            <option value="normal" data-i18n="qosNormal">Normale (Navigation web, réseaux sociaux)</option>
+            <option value="low" data-i18n="qosLow">Basse (Téléchargements en arrière-plan)</option>
+          </select>
+        </div>
+
+        <div class="flex items-center justify-between p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+          <div>
+            <h5 class="font-semibold text-white" data-i18n="parentalLabel">Contrôle parental (bloquer contenu sensible)</h5>
+          </div>
+          <input type="checkbox" id="modal-device-parental" class="w-4 h-4 rounded text-sky-500 bg-slate-800 border-slate-700">
+        </div>
+
+        <div class="flex items-center justify-between p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+          <div>
+            <h5 class="font-semibold text-rose-300" data-i18n="pauseToggleLabel">Couper temporairement Internet pour cet appareil</h5>
+          </div>
+          <input type="checkbox" id="modal-device-pause-toggle" class="w-4 h-4 rounded text-rose-500 bg-slate-800 border-slate-700">
+        </div>
+      </div>
+
+      <div class="mt-5 flex justify-end">
+        <button type="button" id="save-device-settings" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow-lg shadow-sky-600/30 transition-all" data-i18n="saveBtn">
+          Enregistrer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Radar Scan Modal -->
+  <div id="radar-scan-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md items-center justify-center p-4" style="display: none;">
+    <div class="glass-panel rounded-3xl max-w-sm w-full p-6 text-center border border-sky-500/40 shadow-2xl relative">
+      <button type="button" id="close-radar-modal" class="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-white transition-all">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+
+      <!-- Radar Animation -->
+      <div class="relative w-36 h-36 mx-auto my-4 flex items-center justify-center">
+        <div class="absolute inset-0 rounded-full border border-sky-500/20"></div>
+        <div class="absolute inset-4 rounded-full border border-sky-500/30"></div>
+        <div class="absolute inset-8 rounded-full border border-sky-500/50"></div>
+        <div class="absolute inset-0 rounded-full border-2 border-sky-400 pulse-ring"></div>
+        <div class="radar-sweep absolute inset-0 rounded-full bg-gradient-to-tr from-sky-500/40 via-transparent to-transparent pointer-events-none"></div>
+        <div class="w-3 h-3 rounded-full bg-sky-400 shadow-lg shadow-sky-400"></div>
+      </div>
+
+      <h4 class="text-base font-bold text-white font-heading" data-i18n="radarTitle">Radar du routeur</h4>
+      <p id="radar-status-text" class="text-xs text-sky-300 mt-1 font-mono" data-i18n="radarScanning">Recherche des nouveaux appareils Wi-Fi...</p>
+
+      <div id="radar-found-box" class="mt-4 p-3.5 rounded-2xl bg-emerald-950/30 border border-emerald-500/40 text-left" style="display: none;">
+        <div class="flex items-center gap-2.5 mb-1.5">
+          <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 010 8.49m-8.48-.01a6 6 0 010-8.49m11.31-2.82a10 10 0 010 14.14m-14.14 0a10 10 0 010-14.14"/></svg>
+          </div>
+          <div>
+            <h5 class="text-xs font-bold text-white">Capteur Aqara Zigbee</h5>
+            <span class="text-[10px] text-emerald-400" data-i18n="radarFoundTitle">Nouvel appareil détecté !</span>
+          </div>
+        </div>
+        <button type="button" id="add-discovered-device-btn" class="w-full mt-2 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition-all" data-i18n="radarAddBtn">
+          Autoriser et ajouter à la maison
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR Code Modal -->
+  <div id="qr-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md items-center justify-center p-4" style="display: none;">
+    <div class="glass-panel rounded-3xl max-w-xs w-full p-6 text-center border border-slate-700 shadow-2xl relative">
+      <button type="button" id="close-qr-modal" class="absolute top-4 right-4 p-2 rounded-xl text-slate-400 hover:text-white transition-all">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+
+      <div class="w-10 h-10 rounded-2xl bg-sky-500/20 text-sky-400 flex items-center justify-center mx-auto mb-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z"/></svg>
+      </div>
+      <h4 class="text-base font-bold text-white font-heading">WireGuard Mobile</h4>
+      <p class="text-[11px] text-slate-400 mt-1 mb-4">Scannez avec l'appareil photo de votre smartphone pour vous connecter à la maison.</p>
+
+      <div class="bg-white p-3 rounded-2xl inline-block shadow-xl mb-3">
+        <svg class="w-40 h-40" viewBox="0 0 100 100" fill="none">
+          <rect width="100" height="100" fill="white"/>
+          <path fill="#0f172a" d="M10 10h26v26H10zm6 6v14h14V16zm4 4h6v6h-6zM64 10h26v26H64zm6 6v14h14V16zm4 4h6v6h-6zM10 64h26v26H10zm6 6v14h14V70zm4 4h6v6h-6zM42 10h6v6h-6zm10 0h6v6h-6zm0 10h6v10h-6zm-10 6h6v6h-6zm22 26h6v6h-6zm-12 0h6v6h-6zm6 6h6v6h-6zm12 0h6v6h-6zm-6 6h6v10h-6zm-18 0h6v6h-6zm6 6h6v6h-6zm18 0h6v12h-6zm-24 6h6v6h-6zm12 6h6v6h-6zm-6 6h6v6h-6zm18-6h6v6h-6zM42 42h8v8h-8zm16 0h8v8h-8zm-8 16h8v8h-8zm16 0h8v8h-8z"/>
+        </svg>
+      </div>
+
+      <div class="text-[10px] font-mono text-slate-400 bg-slate-900/80 p-2 rounded-xl border border-slate-800 break-all">
+        wg://peer?pubkey=8jZ19pTq4L...&endpoint=94.25.180.12:51820
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- ========================================== -->
+  <!-- STANDALONE JAVASCRIPT (ZERO DEPENDENCIES) -->
+  <!-- ========================================== -->
+  <script>
+  (function() {
+    // Application State
+    const state = {
+      lang: 'fr',
+      currentTab: 'news',
+      searchDeviceQuery: '',
+      deviceCategoryFilter: 'all',
+      newsCategoryFilter: 'all',
+      vpnConnected: true,
+      selectedDns: 'pihole',
+      dnsFilters: {
+        adblock: true,
+        malware: true,
+        doh: true,
+        parental: false
+      },
+      dnsStats: {
+        totalQueries: 14890,
+        blockedQueries: 3412,
+        threatsBlocked: 27
+      }
+    };
+
+    // Dictionary for Multilingual Support
+    const i18n = {
+      fr: {
+        appName: "HomeGuard",
+        gatewayStatus: "En ligne",
+        tabNews: "Actualités",
+        tabDevices: "Mes Appareils",
+        tabVpn: "VPN & Sécurité",
+        testAttackBtn: "Test d'attaque",
+        aiServerBadge: "Serveur IA HomeGuard • Flux en temps réel",
+        aiServerTitle: "Actualités & Tendances du Web",
+        aiServerDesc: "Articles résumés automatiquement par l'IA dans vos domaines préférés.",
+        catAll: "Toutes",
+        catAi: "IA & Tech",
+        catGaming: "Jeux Vidéo",
+        catScience: "Sciences",
+        catLifestyle: "Tendances",
+        catSecurity: "Sécurité",
+        readOfficialSource: "Lire la source officielle",
+        aiSummaryLabel: "Résumé par IA :",
+        netProtection: "Protection Réseau",
+        netProtectionSub: "Tous les boucliers actifs",
+        attacksBlocked: "Menaces Bloquées",
+        attacksBlockedSub: "0 intrusion",
+        internetSpeed: "Débit Internet",
+        internetSpeedSub: "Fibre optique (8 ms)",
+        remoteAccess: "Accès à distance",
+        remoteAccessSub: "WireGuard prêt",
+        devicesOverviewTitle: "Appareils connectés",
+        statTotal: "Total :",
+        statActive: "Actifs :",
+        statPaused: "En pause :",
+        scanNetworkBtn: "Scanner le réseau",
+        searchPlaceholder: "Rechercher par nom, IP...",
+        catDevAll: "Tous",
+        catDevComp: "Ordinateurs",
+        catDevMob: "Smartphones",
+        catDevMedia: "TV & Consoles",
+        catDevIot: "Maison connectée",
+        catDevGuest: "Invités",
+        btnPauseInternet: "Couper Internet",
+        btnResumeInternet: "Réactiver",
+        statusOnline: "En ligne",
+        statusPaused: "Internet coupé",
+        btnConfigure: "Gérer",
+        trafficToday: "Trafic aujourd'hui :",
+        modalDeviceTitle: "Gérer cet appareil",
+        modalDeviceDesc: "Paramètres d'accès et de priorité pour ce membre de la famille.",
+        deviceNameLabel: "Nom de l'appareil :",
+        deviceRoomLabel: "Pièce / Emplacement :",
+        qosLabel: "Priorité de la connexion (QoS) :",
+        qosHigh: "Haute (Jeux en ligne, streaming 4K sans lag)",
+        qosNormal: "Normale (Navigation web, réseaux sociaux)",
+        qosLow: "Basse (Téléchargements en arrière-plan)",
+        parentalLabel: "Contrôle parental (bloquer contenu sensible)",
+        pauseToggleLabel: "Couper temporairement Internet pour cet appareil",
+        saveBtn: "Enregistrer",
+        radarTitle: "Radar du routeur",
+        radarScanning: "Recherche des nouveaux appareils Wi-Fi...",
+        radarFoundTitle: "Nouvel appareil détecté !",
+        radarAddBtn: "Autoriser et ajouter à la maison",
+        vpnSectionBadge: "Accès à distance",
+        vpnSectionTitle: "Connexion sécurisée à la maison",
+        vpnDesc: "Connectez-vous à votre réseau domestique depuis n'importe où (café, 5G, vacances).",
+        vpnStatusConnected: "Connecté à la maison",
+        vpnStatusDisconnected: "Déconnecté",
+        vpnBtnDisconnect: "DÉCONNECTER LE VPN",
+        vpnBtnConnect: "SE CONNECTER À LA MAISON",
+        virtualIpLabel: "IP Virtuelle :",
+        pingLabel: "Ping maison :",
+        encryptionLabel: "Chiffrement :",
+        qrCodeBtn: "Afficher le QR code pour mon téléphone",
+        chartTitle: "Vitesse du trafic en direct (Mb/s)",
+        chartLive: "FLUX EN DIRECT",
+        dnsSectionBadge: "Filtre DNS & Protection",
+        dnsSectionTitle: "Bouclier intelligent de la maison",
+        dnsDesc: "Bloque les pubs et les sites suspects pour TOUS vos appareils sans rien installer.",
+        dnsProviderLabel: "Fournisseur DNS actif :",
+        shieldAdblockTitle: "Bloqueur de publicités",
+        shieldAdblockDesc: "Supprime les bannières, pop-ups et vidéos de pub",
+        shieldMalwareTitle: "Protection contre les virus & arnaques",
+        shieldMalwareDesc: "Bloque les faux sites bancaires et liens piégés",
+        shieldDohTitle: "Chiffrement DNS (DoH)",
+        shieldDohDesc: "Empêche votre opérateur de voir vos sites visités",
+        shieldParentalTitle: "Mode Famille / Contrôle parental",
+        shieldParentalDesc: "Filtre les contenus inappropriés pour les jeunes",
+        statQueries: "Requêtes :",
+        statBlocked: "Pubs bloquées :",
+        statThreats: "Arnaques :",
+        dnsLogTitle: "Journal des requêtes en direct",
+        dnsLogFilterAll: "Toutes les requêtes",
+        dnsLogFilterBlocked: "Bloquées uniquement",
+        dnsLogFilterAllowed: "Autorisées uniquement",
+        toastAttackTitle: "⚠️ Arnaque bloquée !",
+        toastAttackDesc: "HomeGuard a neutralisé une tentative de connexion suspecte.",
+        toastResetTitle: "Paramètres réinitialisés",
+        toastResetDesc: "Les valeurs ont été remises à zéro.",
+        toastPauseOn: "Internet mis en pause",
+        toastPauseOff: "Internet réactivé",
+        toastVpnOn: "VPN connecté à la maison",
+        toastVpnOff: "VPN déconnecté",
+        toastSaved: "Modifications enregistrées"
+      },
+      en: {
+        appName: "HomeGuard",
+        gatewayStatus: "Online",
+        tabNews: "News & Feed",
+        tabDevices: "My Devices",
+        tabVpn: "VPN & Security",
+        testAttackBtn: "Attack Test",
+        aiServerBadge: "HomeGuard AI Server • Real-time Stream",
+        aiServerTitle: "Curated News & Web Trends",
+        aiServerDesc: "Articles automatically summarized by AI across your favorite categories.",
+        catAll: "All",
+        catAi: "AI & Tech",
+        catGaming: "Gaming",
+        catScience: "Science",
+        catLifestyle: "Trends",
+        catSecurity: "Security",
+        readOfficialSource: "Read official source",
+        aiSummaryLabel: "AI Summary:",
+        netProtection: "Network Protection",
+        netProtectionSub: "All shields active",
+        attacksBlocked: "Threats Blocked",
+        attacksBlockedSub: "0 intrusion",
+        internetSpeed: "Internet Speed",
+        internetSpeedSub: "Fiber optical (8 ms)",
+        remoteAccess: "Remote Access",
+        remoteAccessSub: "WireGuard ready",
+        devicesOverviewTitle: "Connected Devices",
+        statTotal: "Total:",
+        statActive: "Active:",
+        statPaused: "Paused:",
+        scanNetworkBtn: "Scan network",
+        searchPlaceholder: "Search by name, IP...",
+        catDevAll: "All",
+        catDevComp: "Computers",
+        catDevMob: "Smartphones",
+        catDevMedia: "TV & Consoles",
+        catDevIot: "Smart Home",
+        catDevGuest: "Guests",
+        btnPauseInternet: "Pause Internet",
+        btnResumeInternet: "Resume",
+        statusOnline: "Online",
+        statusPaused: "Internet paused",
+        btnConfigure: "Manage",
+        trafficToday: "Today's traffic:",
+        modalDeviceTitle: "Manage Device",
+        modalDeviceDesc: "Configure Internet priority and safety rules for this device.",
+        deviceNameLabel: "Device Name:",
+        deviceRoomLabel: "Room / Location:",
+        qosLabel: "Speed Priority (QoS):",
+        qosHigh: "High (Lag-free gaming, 4K streaming)",
+        qosNormal: "Normal (Web browsing, social media)",
+        qosLow: "Low (Background downloads)",
+        parentalLabel: "Parental filter (block mature content)",
+        pauseToggleLabel: "Temporarily pause Internet for this device",
+        saveBtn: "Save Changes",
+        radarTitle: "Router Radar",
+        radarScanning: "Searching for new Wi-Fi devices...",
+        radarFoundTitle: "New device detected!",
+        radarAddBtn: "Authorize & connect to home",
+        vpnSectionBadge: "Remote Access",
+        vpnSectionTitle: "Secure Tunnel to Home",
+        vpnDesc: "Connect directly to your home network securely from anywhere (café, 5G roaming, hotel).",
+        vpnStatusConnected: "Connected to home",
+        vpnStatusDisconnected: "Disconnected",
+        vpnBtnDisconnect: "DISCONNECT REMOTE VPN",
+        vpnBtnConnect: "CONNECT TO HOME (VPN)",
+        virtualIpLabel: "Virtual IP:",
+        pingLabel: "Home Ping:",
+        encryptionLabel: "Encryption:",
+        qrCodeBtn: "Show QR Code for phone",
+        chartTitle: "Real-time Traffic Speed (Mb/s)",
+        chartLive: "LIVE STREAM",
+        dnsSectionBadge: "DNS Filter & Threat Shield",
+        dnsSectionTitle: "Smart Home Shield",
+        dnsDesc: "Block ads, trackers and phishing scams on all home devices without installing apps.",
+        dnsProviderLabel: "Active DNS Provider:",
+        shieldAdblockTitle: "Ad & Tracker Blocker",
+        shieldAdblockDesc: "Removes annoying banners, pop-ups and video ads",
+        shieldMalwareTitle: "Scam & Malware Protection",
+        shieldMalwareDesc: "Blocks fake banking phishing links and infected domains",
+        shieldDohTitle: "Encrypted DNS (DoH)",
+        shieldDohDesc: "Prevents internet providers from logging your web activity",
+        shieldParentalTitle: "Family & Parental Control",
+        shieldParentalDesc: "Filters adult domains and forces SafeSearch",
+        statQueries: "Queries:",
+        statBlocked: "Ads blocked:",
+        statThreats: "Threats stopped:",
+        dnsLogTitle: "Live DNS Query Activity",
+        dnsLogFilterAll: "All queries",
+        dnsLogFilterBlocked: "Blocked only",
+        dnsLogFilterAllowed: "Allowed only",
+        toastAttackTitle: "⚠️ Threat Neutralized!",
+        toastAttackDesc: "HomeGuard blocked an unauthorized suspicious connection.",
+        toastResetTitle: "Parameters Reset",
+        toastResetDesc: "Demo settings have been restored.",
+        toastPauseOn: "Internet access paused",
+        toastPauseOff: "Internet access restored",
+        toastVpnOn: "VPN connected to home",
+        toastVpnOff: "VPN disconnected",
+        toastSaved: "Settings saved successfully"
+      },
+      de: {
+        appName: "HomeGuard",
+        gatewayStatus: "Online",
+        tabNews: "Nachrichten",
+        tabDevices: "Meine Geräte",
+        tabVpn: "VPN & Sicherheit",
+        testAttackBtn: "Angriffstest",
+        aiServerBadge: "HomeGuard KI-Server • Echtzeit-Feed",
+        aiServerTitle: "Kuratiertes Web & Trends",
+        aiServerDesc: "Von der KI zusammengefasste Top-Artikel aus Ihren Lieblingskategorien.",
+        catAll: "Alle",
+        catAi: "KI & Tech",
+        catGaming: "Gaming",
+        catScience: "Wissenschaft",
+        catLifestyle: "Trends",
+        catSecurity: "Sicherheit",
+        readOfficialSource: "Offizielle Quelle lesen",
+        aiSummaryLabel: "KI-Zusammenfassung:",
+        netProtection: "Netzwerkschutz",
+        netProtectionSub: "Alle Schutzschilde aktiv",
+        attacksBlocked: "Bedrohungen geblockt",
+        attacksBlockedSub: "0 Einbrüche",
+        internetSpeed: "Internet-Speed",
+        internetSpeedSub: "Glasfaser (8 ms)",
+        remoteAccess: "Fernzugriff",
+        remoteAccessSub: "WireGuard aktiv",
+        devicesOverviewTitle: "Verbundene Geräte",
+        statTotal: "Gesamt:",
+        statActive: "Aktiv:",
+        statPaused: "Pausiert:",
+        scanNetworkBtn: "Netzwerk scannen",
+        searchPlaceholder: "Nach Name, IP suchen...",
+        catDevAll: "Alle",
+        catDevComp: "Computer",
+        catDevMob: "Smartphones",
+        catDevMedia: "TV & Konsolen",
+        catDevIot: "Smart Home",
+        catDevGuest: "Gäste",
+        btnPauseInternet: "Internet sperren",
+        btnResumeInternet: "Aktivieren",
+        statusOnline: "Online",
+        statusPaused: "Internet pausiert",
+        btnConfigure: "Verwalten",
+        trafficToday: "Daten heute:",
+        modalDeviceTitle: "Gerät verwalten",
+        modalDeviceDesc: "Internetzugriff und Priorität für dieses Familienmitglied steuern.",
+        deviceNameLabel: "Gerätename:",
+        deviceRoomLabel: "Raum / Ort:",
+        qosLabel: "Geschwindigkeitspriorität (QoS):",
+        qosHigh: "Hoch (Gaming ohne Lags, 4K Streaming)",
+        qosNormal: "Normal (Surfen, Social Media)",
+        qosLow: "Niedrig (Hintergrund-Downloads)",
+        parentalLabel: "Kindersicherung (jugendgefährdende Inhalte sperren)",
+        pauseToggleLabel: "Internet für dieses Gerät vorübergehend sperren",
+        saveBtn: "Speichern",
+        radarTitle: "Router-Radar",
+        radarScanning: "Suche nach neuen WLAN-Geräten...",
+        radarFoundTitle: "Neues Gerät entdeckt!",
+        radarAddBtn: "Zulassen und verbinden",
+        vpnSectionBadge: "Fernzugriff",
+        vpnSectionTitle: "Sicherer Heimtunnel",
+        vpnDesc: "Verbinden Sie sich von unterwegs (Café, 5G, Urlaub) sicher mit Ihrem Heimnetzwerk.",
+        vpnStatusConnected: "Mit Zuhause verbunden",
+        vpnStatusDisconnected: "Getrennt",
+        vpnBtnDisconnect: "REMOTE-VPN TRENNEN",
+        vpnBtnConnect: "MIT ZUHAUSE VERBINDEN",
+        virtualIpLabel: "Virtuelle IP:",
+        pingLabel: "Heim-Ping:",
+        encryptionLabel: "Verschlüsselung:",
+        qrCodeBtn: "QR-Code fürs Smartphone",
+        chartTitle: "Echtzeit-Verbindungsrate (Mb/s)",
+        chartLive: "LIVE-STREAM",
+        dnsSectionBadge: "DNS-Filter & Schutzschild",
+        dnsSectionTitle: "Smart-Home-Schutzschild",
+        dnsDesc: "Blockiert Werbung, Tracker und Phishing auf ALLEN Geräten ohne App-Installation.",
+        dnsProviderLabel: "Aktiver DNS-Dienst:",
+        shieldAdblockTitle: "Werbe- und Tracker-Blocker",
+        shieldAdblockDesc: "Entfernt lästige Banner, Popups und Videoanzeigen",
+        shieldMalwareTitle: "Schutz vor Betrug und Viren",
+        shieldMalwareDesc: "Blockiert Fake-Bankenseiten und schädliche Webseiten",
+        shieldDohTitle: "DNS-Verschlüsselung (DoH)",
+        shieldDohDesc: "Verhindert, dass Provider Ihre besuchten Seiten sehen",
+        shieldParentalTitle: "Familien- und Jugendschutz",
+        shieldParentalDesc: "Filtert ungeeignete Inhalte und aktiviert SafeSearch",
+        statQueries: "Anfragen:",
+        statBlocked: "Werbung geblockt:",
+        statThreats: "Bedrohungen gestoppt:",
+        dnsLogTitle: "Live-DNS-Anfragenprotokoll",
+        dnsLogFilterAll: "Alle Anfragen",
+        dnsLogFilterBlocked: "Nur blockierte",
+        dnsLogFilterAllowed: "Nur erlaubte",
+        toastAttackTitle: "⚠️ Bedrohung abgewehrt!",
+        toastAttackDesc: "HomeGuard hat einen verdächtigen Zugriffsversuch blockiert.",
+        toastResetTitle: "Einstellungen zurückgesetzt",
+        toastResetDesc: "Demo-Werte wurden wiederhergestellt.",
+        toastPauseOn: "Internet pausiert",
+        toastPauseOff: "Internet wieder aktiv",
+        toastVpnOn: "VPN mit Zuhause verbunden",
+        toastVpnOff: "VPN getrennt",
+        toastSaved: "Erfolgreich gespeichert"
+      }
+    };
+
+    function t(key) {
+      const dict = i18n[state.lang] || i18n.fr;
+      return dict[key] || key;
+    }
+
+    // AI News Database
+    const newsArticles = [
+      {
+        id: 1,
+        category: "ai",
+        sourceName: "The Verge",
+        sourceUrl: "https://www.theverge.com",
+        imageUrl: "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=800&q=80",
+        time: "10 min",
+        titles: {
+          fr: "Nouvelle génération d'IA vocale : les assistants deviennent ultra-réalistes",
+          en: "Next-gen voice AI: assistants are becoming astonishingly human",
+          de: "Neue Sprach-KI-Generation: Assistenten klingen verblüffend menschlich"
+        },
+        summaries: {
+          fr: "Les derniers modèles multimodaux permettent désormais de converser avec une fluidité bluffante, sans aucun délai et avec la gestion des émotions.",
+          en: "The latest multimodal models allow seamless real-time conversations without perceptible latency, expressing nuanced emotion.",
+          de: "Neueste multimodale Modelle ermöglichen flüssige Echtzeitgespräche ohne Verzögerung – inklusive Erkennung von Emotionen."
+        }
+      },
+      {
+        id: 2,
+        category: "gaming",
+        sourceName: "IGN France",
+        sourceUrl: "https://fr.ign.com",
+        imageUrl: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80",
+        time: "45 min",
+        titles: {
+          fr: "GTA VI et le futur des mondes ouverts : les détails techniques dévoilés",
+          en: "GTA VI & the future of open worlds: new technical breakthroughs revealed",
+          de: "GTA VI & die Zukunft offener Welten: neue technische Details enthüllt"
+        },
+        summaries: {
+          fr: "Une physique de foule révolutionnaire et une densité graphique jamais vue sur console de salon. Analyse de l'impact sur les réseaux.",
+          en: "Revolutionary crowd physics and unprecedented visual fidelity on home consoles. Exploring next-gen multiplayer bandwidth.",
+          de: "Revolutionäre Physik und enorme Grafikdichte auf Heimkonsolen. Was das für moderne Heimnetzwerke bedeutet."
+        }
+      },
+      {
+        id: 3,
+        category: "science",
+        sourceName: "Futura Sciences",
+        sourceUrl: "https://www.futura-sciences.com",
+        imageUrl: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80",
+        time: "2h",
+        titles: {
+          fr: "James Webb découvre une exoplanète potentiellement couverte d'océans",
+          en: "James Webb Telescope spots an exoplanet that could be covered in oceans",
+          de: "James-Webb-Teleskop entdeckt Exoplanet mit möglichem Ozean"
+        },
+        summaries: {
+          fr: "L'analyse spectrale révèle des traces de vapeur d'eau et de molécules carbonées dans l'atmosphère d'une planète à 120 années-lumière.",
+          en: "Atmospheric spectroscopy shows evidence of water vapor and carbon molecules on an exoplanet 120 light-years away.",
+          de: "Spektralanalysen deuten auf Wasserdampf und Kohlenstoffmoleküle in der Atmosphäre eines 120 Lichtjahre entfernten Planeten hin."
+        }
+      },
+      {
+        id: 4,
+        category: "lifestyle",
+        sourceName: "Frandroid",
+        sourceUrl: "https://www.frandroid.com",
+        imageUrl: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=800&q=80",
+        time: "3h",
+        titles: {
+          fr: "Smartphones pliables 2026 : la fin des écrans rigides ?",
+          en: "Foldable smartphones 2026: are rigid displays becoming obsolete?",
+          de: "Faltbare Smartphones 2026: Werden klassische Displays überflüssig?"
+        },
+        summaries: {
+          fr: "Pliure invisible, batterie 2 jours et étanchéité totale : les nouveaux modèles attirent massivement les 18-35 ans.",
+          en: "Invisible creases, 2-day battery life, and true water resistance: foldables are rapidly winning over young users.",
+          de: "Unsichtbare Falz, 2 Tage Akkulaufzeit und Wasserdichtigkeit: Klapphandys boomen bei der jüngeren Generation."
+        }
+      },
+      {
+        id: 5,
+        category: "security",
+        sourceName: "Le Monde Informatique",
+        sourceUrl: "https://www.lemondeinformatique.fr",
+        imageUrl: "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=800&q=80",
+        time: "5h",
+        titles: {
+          fr: "Piratage de comptes Instagram et TikTok : comment blinder vos accès",
+          en: "Instagram & TikTok account hijacking: how to lock down your logins",
+          de: "Instagram- & TikTok-Hackwellen: So sichern Sie Ihre Accounts ab"
+        },
+        summaries: {
+          fr: "Les attaques par hameçonnage ciblent les stories et les messages directs. L'activation du bouclier DNS bloque les faux liens en amont.",
+          en: "Phishing campaigns targeting DMs are on the rise. Combined DNS protection stops these attacks automatically before you click.",
+          de: "Gezielte Phishing-Angriffe über Direktnachrichten nehmen zu. Wie DNS-Filter Betrugsversuche proaktiv stoppen."
+        }
+      }
+    ];
+
+    // Devices Database
+    const devicesList = [
+      { id: 1, name: "MacBook de Lucas", category: "computers", icon: "laptop", ip: "192.168.1.102", mac: "F4:D4:88:51:7A:1C", connection: "Wi-Fi 6", dataToday: "14.2 GB", paused: false, qos: "high", parental: false, vendor: "Apple", location: "Bureau" },
+      { id: 2, name: "iPhone 15 de Léa", category: "mobile", icon: "smartphone", ip: "192.168.1.105", mac: "BC:D1:1F:90:3E:44", connection: "Wi-Fi 6", dataToday: "3.8 GB", paused: false, qos: "normal", parental: false, vendor: "Apple", location: "Chambre" },
+      { id: 3, name: "PlayStation 5", category: "media", icon: "gamepad", ip: "192.168.1.115", mac: "00:D9:D1:3F:89:12", connection: "Ethernet 1 Gb/s", dataToday: "42.1 GB", paused: false, qos: "high", parental: false, vendor: "Sony", location: "Salon" },
+      { id: 4, name: "Smart TV Salon (4K)", category: "media", icon: "tv", ip: "192.168.1.110", mac: "48:44:F7:62:D8:AA", connection: "Wi-Fi 5 GHz", dataToday: "18.4 GB", paused: false, qos: "normal", parental: true, vendor: "Samsung", location: "Salon" },
+      { id: 5, name: "Nintendo Switch OLED", category: "media", icon: "gamepad", ip: "192.168.1.120", mac: "74:DE:2B:99:14:02", connection: "Wi-Fi 5 GHz", dataToday: "5.2 GB", paused: false, qos: "high", parental: false, vendor: "Nintendo", location: "Salon" },
+      { id: 6, name: "Aspirateur Roborock", category: "iot", icon: "bot", ip: "192.168.1.140", mac: "50:EC:50:88:99:A1", connection: "Wi-Fi 2.4 GHz", dataToday: "120 MB", paused: false, qos: "low", parental: false, vendor: "Roborock", location: "Couloir" },
+      { id: 7, name: "Lumières Philips Hue", category: "iot", icon: "hub", ip: "192.168.1.142", mac: "00:17:88:6A:B4:90", connection: "Hub LAN", dataToday: "45 MB", paused: false, qos: "low", parental: false, vendor: "Philips", location: "Entrée" },
+      { id: 8, name: "Caméra Extérieure", category: "iot", icon: "camera", ip: "192.168.1.148", mac: "8C:85:80:41:23:EE", connection: "Wi-Fi 2.4 GHz", dataToday: "7.6 GB", paused: false, qos: "normal", parental: false, vendor: "Eufy", location: "Jardin" },
+      { id: 9, name: "Smartphone Invité", category: "guest", icon: "smartphone", ip: "192.168.2.55", mac: "70:BB:E9:71:02:5A", connection: "Wi-Fi Invité", dataToday: "890 MB", paused: false, qos: "low", parental: true, vendor: "OnePlus", location: "Salon" }
+    ];
+
+    // DNS Log Database
+    const dnsLogList = [
+      { id: 1, domain: "gateway.icloud.com", client: "iPhone 15 de Léa", time: "12:30", status: "allowed", reason: "Service Cloud Apple" },
+      { id: 2, domain: "telemetry.samsung.com", client: "Smart TV Salon", time: "12:28", status: "blocked", reason: "Traceur publicitaire" },
+      { id: 3, domain: "api.roborock.com", client: "Aspirateur Roborock", time: "12:25", status: "allowed", reason: "Mise à jour statut" },
+      { id: 4, domain: "ads.tiktokcdn.com", client: "iPhone 15 de Léa", time: "12:22", status: "blocked", reason: "Publicité mobile" },
+      { id: 5, domain: "secure-banque-verify.top", client: "Smartphone Invité", time: "12:18", status: "threat", reason: "Faux site / Phishing" },
+      { id: 6, domain: "prod.telemetry.playstation.net", client: "PlayStation 5", time: "12:10", status: "allowed", reason: "PlayStation Network" }
+    ];
+
+    state.articles = [...newsArticles];
+    state.devices = [...devicesList];
+    state.dnsQueries = [...dnsLogList];
+
+    // Standalone SVG Icons helper
+    function getDeviceIcon(type) {
+      if (type === 'laptop') {
+        return '<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0H3"/></svg>';
+      }
+      if (type === 'smartphone') {
+        return '<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"/></svg>';
+      }
+      if (type === 'tv') {
+        return '<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 20.25h12m-7.5-3v3m3-3v3m-10.125-3h17.25c.621 0 1.125-.504 1.125-1.125V4.875c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125z"/></svg>';
+      }
+      if (type === 'gamepad') {
+        return '<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a5 5 0 01-5.84 0M6.5 10.5h.01M9 10.5h.01M15 10.5h.01M17.5 10.5h.01M6.75 6.75h10.5a3.75 3.75 0 013.75 3.75v3.75a3.75 3.75 0 01-3.75 3.75H6.75A3.75 3.75 0 013 14.25v-3.75a3.75 3.75 0 013.75-3.75z"/></svg>';
+      }
+      if (type === 'camera') {
+        return '<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z"/></svg>';
+      }
+      return '<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>';
+    }
+
+    // Toast Notification
+    function showToast(title, message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+
+      const toast = document.createElement('div');
+      toast.className = 'toast glass-panel p-3.5 rounded-2xl flex items-start gap-3 shadow-2xl border';
+
+      let borderColor = 'border-sky-500/40';
+      let iconColor = 'text-sky-400';
+      if (type === 'success') { borderColor = 'border-emerald-500/40'; iconColor = 'text-emerald-400'; }
+      if (type === 'warning') { borderColor = 'border-amber-500/40'; iconColor = 'text-amber-400'; }
+      if (type === 'danger') { borderColor = 'border-rose-500/40'; iconColor = 'text-rose-400'; }
+
+      toast.classList.add(borderColor);
+      toast.innerHTML = `
+        <div class="mt-0.5 ${iconColor} shrink-0">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4m0 4h.01"/></svg>
+        </div>
+        <div class="flex-1 min-w-0">
+          <h5 class="text-sm font-bold text-white leading-snug">${title}</h5>
+          <p class="text-xs text-slate-300 mt-0.5 leading-relaxed">${message}</p>
+        </div>
+      `;
+
+      container.appendChild(toast);
+      setTimeout(() => toast.classList.add('show'), 10);
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 250);
+      }, 3500);
+    }
+
+    // Set Language via Dropdown List
+    function setLanguage(lang) {
+      if (!i18n[lang]) return;
+      state.lang = lang;
+
+      const langSelect = document.getElementById('lang-select');
+      if (langSelect) {
+        langSelect.value = lang;
+      }
+
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.dataset.i18n;
+        if (key && t(key)) el.textContent = t(key);
+      });
+
+      document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+        const key = el.dataset.i18nPh;
+        if (key && t(key)) el.placeholder = t(key);
+      });
+
+      renderNews();
+      renderDevices();
+      updateVpnUI();
+      renderDnsLog();
+      updateNetworkAnalytics();
+    }
+
+    // Tab Switching
+    function switchTab(tabId) {
+      state.currentTab = tabId;
+
+      // Update Desktop & Mobile tab styles
+      document.querySelectorAll('.nav-tab').forEach(tab => {
+        const active = tab.dataset.tab === tabId;
+        const isMobile = tab.classList.contains('mobile-tab');
+
+        if (isMobile) {
+          if (active) {
+            tab.className = 'nav-tab mobile-tab flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-xl text-sky-400 bg-sky-500/15 font-bold';
+          } else {
+            tab.className = 'nav-tab mobile-tab flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-xl text-slate-400 font-medium';
+          }
+        } else {
+          // Desktop Nav Tab
+          if (active) {
+            tab.className = 'nav-tab desktop-tab px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all bg-sky-500/20 text-sky-400 border border-sky-500/40 shadow-sm';
+          } else {
+            tab.className = 'nav-tab desktop-tab px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all text-slate-400 border border-transparent hover:text-white hover:bg-slate-800/40';
+          }
+        }
+      });
+
+      // Update Tab Content Sections
+      document.querySelectorAll('.tab-content').forEach(content => {
+        if (content.id === `tab-${tabId}`) {
+          content.classList.add('active');
+          content.style.display = 'block';
+        } else {
+          content.classList.remove('active');
+          content.style.display = 'none';
+        }
+      });
+
+      if (tabId === 'vpn') {
+        setTimeout(renderCanvasChart, 50);
+      }
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+        // Загрузка реальных новостей из нашей базы данных через FastAPI
+    async function loadLiveNews() {
+      try {
+        const response = await fetch('/api/news?limit=25');
+        if (response.ok) {
+          const liveArticles = await response.json();
+          if (liveArticles && liveArticles.length > 0) {
+            state.articles = liveArticles;
+            renderNews();
+          }
+        }
+      } catch (err) {
+        console.warn('API /api/news недоступен, используются демо-данные:', err);
+      }
+    }
+
+    // Отрисовка новостей (поддерживает и живой API, и демо-режим)
+    function renderNews() {
+      const container = document.getElementById('news-container');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const filtered = state.articles.filter(item => {
+        if (state.newsCategoryFilter === 'all') return true;
+        const itemCat = (item.category || '').toLowerCase();
+        return itemCat.includes(state.newsCategoryFilter.toLowerCase());
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full py-10 text-center text-slate-400 glass-panel rounded-3xl p-6">
+            <p class="text-sm font-semibold text-slate-300">Новостей в этой категории пока нет</p>
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach(article => {
+        const title = (article.titles && article.titles[state.lang]) || article.title || 'Новость';
+        const summary = (article.summaries && article.summaries[state.lang]) || article.summary || '';
+        const catName = article.category || 'Технологии';
+        const sourceName = article.sourceName || article.source || 'Инфо-поток';
+        const sourceUrl = article.sourceUrl || article.url || '#';
+        const timeStr = article.time || (article.published_at ? new Date(article.published_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Сегодня');
+        const scoreBadge = article.importance_score ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">🔥 ${article.importance_score}/10</span>` : '';
+        const whyMattersBlock = article.why_it_matters ? `
+          <div class="mt-2 pt-2 border-t border-sky-500/20 text-[11px] text-sky-200/90">
+            <strong class="text-sky-300">💡 Почему это важно:</strong> ${article.why_it_matters}
+          </div>
+        ` : '';
+
+        const imageUrl = article.imageUrl || 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&auto=format&fit=crop&q=60';
+
+        const card = document.createElement('div');
+        card.className = 'glass-panel glass-panel-hover rounded-3xl overflow-hidden border border-slate-800 flex flex-col group';
+
+        card.innerHTML = `
+          <div class="relative w-full aspect-video overflow-hidden bg-slate-900">
+            <img src="${imageUrl}" alt="${title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80"></div>
+            
+            <div class="absolute top-3 left-3 flex items-center gap-2">
+              <span class="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-slate-950/80 backdrop-blur-md text-sky-300 border border-sky-500/30">
+                ${catName}
+              </span>
+              ${scoreBadge}
+            </div>
+
+            <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs text-slate-300">
+              <span class="font-semibold text-white flex items-center gap-1.5 bg-slate-900/80 backdrop-blur-md px-2.5 py-0.5 rounded-lg border border-slate-700/50">
+                ${sourceName}
+              </span>
+              <span class="text-slate-400 text-[11px]">${timeStr}</span>
+            </div>
+          </div>
+
+          <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+            <div>
+              <h3 class="text-base sm:text-lg font-bold text-white font-heading group-hover:text-sky-300 transition-colors leading-snug">
+                ${title}
+              </h3>
+              
+              <div class="mt-3 p-3 rounded-2xl bg-sky-950/20 border border-sky-500/20 text-xs text-slate-300 leading-relaxed">
+                <span class="text-[11px] font-bold text-sky-400 uppercase tracking-wider block mb-1">
+                  🤖 Резюме нейросети (AI):
+                </span>
+                ${summary}
+                ${whyMattersBlock}
+              </div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between">
+              <span class="text-[11px] text-slate-400">News AI Server</span>
+              <a href="${sourceUrl}" target="_blank" rel="noopener noreferrer" class="px-3.5 py-1.5 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all">
+                <span>Читать в источнике</span>
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
+              </a>
+            </div>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    // Render Devices
+    function updateNetworkAnalytics() {
+      const p = document.getElementById('metric-protection');
+      const a = document.getElementById('metric-attacks');
+      const s = document.getElementById('metric-speed');
+      const r = document.getElementById('metric-remote');
+
+      if (p) p.textContent = "99.8%";
+      if (a) a.textContent = state.dnsStats.threatsBlocked + " " + (state.lang === 'fr' ? 'menaces' : state.lang === 'de' ? 'Bedrohungen' : 'threats');
+      if (s) s.textContent = "500 Mb/s";
+      if (r) r.textContent = state.vpnConnected ? "WireGuard" : "Off";
+    }
+
+    function renderDevices() {
+      const container = document.getElementById('devices-container');
+      if (!container) return;
+
+      const total = state.devices.length;
+      const paused = state.devices.filter(d => d.paused).length;
+      const active = total - paused;
+
+      const stTotal = document.getElementById('stat-total-devices');
+      const stAct = document.getElementById('stat-active-devices');
+      const stPau = document.getElementById('stat-paused-devices');
+
+      if (stTotal) stTotal.textContent = total;
+      if (stAct) stAct.textContent = active;
+      if (stPau) stPau.textContent = paused;
+
+      updateNetworkAnalytics();
+
+      const filtered = state.devices.filter(d => {
+        const matchQuery = d.name.toLowerCase().includes(state.searchDeviceQuery.toLowerCase()) ||
+                           d.ip.includes(state.searchDeviceQuery) ||
+                           d.location.toLowerCase().includes(state.searchDeviceQuery.toLowerCase());
+        const matchCat = state.deviceCategoryFilter === 'all' || d.category === state.deviceCategoryFilter;
+        return matchQuery && matchCat;
+      });
+
+      container.innerHTML = '';
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full py-10 text-center text-slate-400 glass-panel rounded-3xl p-6">
+            <p class="text-sm font-semibold text-slate-300">Aucun appareil trouvé</p>
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach(device => {
+        const card = document.createElement('div');
+        card.className = `glass-panel rounded-3xl p-5 border transition-all ${device.paused ? 'border-rose-500/40 bg-rose-950/15' : 'border-slate-800'}`;
+
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-3 mb-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${device.paused ? 'bg-rose-500/20 text-rose-400' : 'bg-sky-500/20 text-sky-400'}">
+                ${getDeviceIcon(device.icon)}
+              </div>
+              <div class="min-w-0">
+                <h4 class="font-bold text-white text-sm sm:text-base leading-snug truncate">${device.name}</h4>
+                <p class="text-[11px] text-slate-400 truncate">${device.vendor} • ${device.location}</p>
+              </div>
+            </div>
+
+            <!-- Quick Internet Cut/Resume Button -->
+            <button type="button" class="toggle-pause-btn px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0 ${device.paused ? 'bg-rose-500/20 border border-rose-500/40 text-rose-300' : 'bg-slate-800/90 border border-slate-700 text-slate-200 hover:text-white'}" data-id="${device.id}">
+              ${device.paused 
+                ? '<svg class="w-3.5 h-3.5 text-rose-300" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>' 
+                : '<svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'}
+              <span>${device.paused ? t('btnResumeInternet') : t('btnPauseInternet')}</span>
+            </button>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2 mb-3">
+            <span class="badge-status px-2.5 py-1 rounded-full text-xs font-semibold ${device.paused ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/25'}">
+              <span class="w-2 h-2 rounded-full mr-1.5 ${device.paused ? 'bg-rose-400' : 'bg-emerald-400 animate-pulse'}"></span>
+              ${device.paused ? t('statusPaused') : t('statusOnline')}
+            </span>
+
+            <span class="badge-status px-2.5 py-1 rounded-full text-xs bg-slate-800/80 text-slate-300 border border-slate-700/60 flex items-center gap-1">
+              ${device.connection}
+            </span>
+
+            ${device.parental ? '<span class="badge-status px-2 py-0.5 rounded-full text-[11px] bg-purple-500/15 text-purple-300 border border-purple-500/30">Parental</span>' : ''}
+            ${device.qos === 'high' ? '<span class="badge-status px-2 py-0.5 rounded-full text-[11px] bg-amber-500/15 text-amber-300 border border-amber-500/30">⚡ QoS</span>' : ''}
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 p-3 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs mb-3">
+            <div>
+              <span class="text-slate-500 block text-[10px]">IP :</span>
+              <span class="font-mono text-slate-200 font-medium">${device.ip}</span>
+            </div>
+            <div class="text-right">
+              <span class="text-slate-500 block text-[10px]">${t('trafficToday')}</span>
+              <span class="font-bold text-sky-300">${device.dataToday}</span>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-1">
+            <span class="text-[10px] font-mono text-slate-500">${device.mac}</span>
+            <button type="button" class="inspect-device-btn px-3.5 py-1.5 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 text-xs font-semibold flex items-center gap-1 transition-all" data-id="${device.id}">
+              <span>${t('btnConfigure')}</span>
+            </button>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+
+      // Attach Pause Button Events
+      container.querySelectorAll('.toggle-pause-btn').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const id = parseInt(btn.dataset.id);
+          const dev = state.devices.find(d => d.id === id);
+          if (!dev) return;
+          dev.paused = !dev.paused;
+          renderDevices();
+          showToast(dev.paused ? t('toastPauseOn') : t('toastPauseOff'), dev.name, dev.paused ? "warning" : "success");
+        };
+      });
+
+      // Attach Inspect Button Events
+      container.querySelectorAll('.inspect-device-btn').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const id = parseInt(btn.dataset.id);
+          openDeviceModal(id);
+        };
+      });
+    }
+
+    // Device Inspector Modal
+    let activeEditId = null;
+    function openDeviceModal(id) {
+      const dev = state.devices.find(d => d.id === id);
+      if (!dev) return;
+      activeEditId = id;
+
+      document.getElementById('modal-device-name').value = dev.name;
+      document.getElementById('modal-device-ip').textContent = dev.ip;
+      document.getElementById('modal-device-mac').textContent = dev.mac;
+      document.getElementById('modal-device-vendor').textContent = dev.vendor;
+      document.getElementById('modal-device-connection').textContent = dev.connection;
+      document.getElementById('modal-device-location').value = dev.location;
+      document.getElementById('modal-device-qos').value = dev.qos;
+      document.getElementById('modal-device-parental').checked = dev.parental;
+      document.getElementById('modal-device-pause-toggle').checked = dev.paused;
+
+      const modal = document.getElementById('device-modal');
+      modal.style.display = 'flex';
+    }
+
+    // Save Device Modal
+    document.getElementById('save-device-settings').onclick = () => {
+      if (!activeEditId) return;
+      const dev = state.devices.find(d => d.id === activeEditId);
+      if (!dev) return;
+
+      dev.name = document.getElementById('modal-device-name').value;
+      dev.location = document.getElementById('modal-device-location').value;
+      dev.qos = document.getElementById('modal-device-qos').value;
+      dev.parental = document.getElementById('modal-device-parental').checked;
+      dev.paused = document.getElementById('modal-device-pause-toggle').checked;
+
+      const modal = document.getElementById('device-modal');
+      modal.style.display = 'none';
+
+      renderDevices();
+      showToast(t('toastSaved'), dev.name, "success");
+    };
+
+    document.getElementById('close-device-modal').onclick = () => {
+      const modal = document.getElementById('device-modal');
+      modal.style.display = 'none';
+    };
+
+    // VPN Section UI
+    function updateVpnUI() {
+      const btn = document.getElementById('vpn-main-toggle');
+      const pill = document.getElementById('vpn-status-pill');
+      const txt = document.getElementById('vpn-status-text');
+      const ip = document.getElementById('vpn-virtual-ip');
+      const ping = document.getElementById('vpn-ping');
+
+      if (state.vpnConnected) {
+        btn.innerHTML = `
+          <span class="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span>
+          <span class="font-bold text-white">${t('vpnBtnDisconnect')}</span>
+        `;
+        btn.className = 'w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold flex items-center justify-center gap-3 shadow-lg shadow-emerald-900/30 border border-emerald-400/40 transition-all';
+
+        pill.className = 'badge-status px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1.5';
+        pill.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> ' + t('vpnStatusConnected');
+
+        txt.textContent = state.lang === 'fr' 
+          ? "Votre tunnel sécurisé vers la maison est actif. Accédez à vos disques et caméras comme si vous étiez dans votre salon."
+          : state.lang === 'de'
+          ? "Ihr sicherer Heimtunnel ist aktiv. Voller Zugriff auf Heimdaten wie auf der heimischen Couch."
+          : "Your secure tunnel to home is active. Access your local storage and cameras just like on your home couch.";
+
+        ip.textContent = "10.8.0.2 / 24";
+        ping.textContent = "12 ms";
+      } else {
+        btn.innerHTML = `
+          <svg class="w-5 h-5 text-sky-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9"/></svg>
+          <span class="font-bold text-white">${t('vpnBtnConnect')}</span>
+        `;
+        btn.className = 'w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-bold flex items-center justify-center gap-3 shadow-lg shadow-sky-900/30 border border-sky-400/40 transition-all';
+
+        pill.className = 'badge-status px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-1.5';
+        pill.innerHTML = '<span class="w-2 h-2 rounded-full bg-slate-500"></span> ' + t('vpnStatusDisconnected');
+
+        txt.textContent = state.lang === 'fr'
+          ? "Le tunnel distant est désactivé. Vos appareils locaux ne sont pas accessibles depuis l'extérieur."
+          : state.lang === 'de'
+          ? "Der Fernzugriff ist deaktiviert. Heimgeräte sind von außen nicht erreichbar."
+          : "Remote tunnel is disconnected. Local home devices are not accessible from outside.";
+
+        ip.textContent = "—";
+        ping.textContent = "—";
+      }
+
+      updateNetworkAnalytics();
+      renderCanvasChart();
+    }
+
+    document.getElementById('vpn-main-toggle').onclick = () => {
+      state.vpnConnected = !state.vpnConnected;
+      updateVpnUI();
+      showToast(state.vpnConnected ? t('toastVpnOn') : t('toastVpnOff'), state.vpnConnected ? "WireGuard 10.8.0.2" : "", state.vpnConnected ? "success" : "info");
+    };
+
+    // QR Code Modal
+    document.getElementById('show-qr-btn').onclick = () => {
+      const q = document.getElementById('qr-modal');
+      q.style.display = 'flex';
+    };
+    document.getElementById('close-qr-modal').onclick = () => {
+      const q = document.getElementById('qr-modal');
+      q.style.display = 'none';
+    };
+
+    // Radar Modal
+    document.getElementById('scan-network-btn').onclick = () => {
+      const r = document.getElementById('radar-scan-modal');
+      const f = document.getElementById('radar-found-box');
+      r.style.display = 'flex';
+      f.style.display = 'none';
+
+      document.getElementById('radar-status-text').textContent = t('radarScanning');
+
+      setTimeout(() => {
+        f.style.display = 'block';
+        document.getElementById('radar-status-text').textContent = t('radarFoundTitle');
+      }, 2000);
+    };
+
+    document.getElementById('close-radar-modal').onclick = () => {
+      const r = document.getElementById('radar-scan-modal');
+      r.style.display = 'none';
+    };
+
+    document.getElementById('add-discovered-device-btn').onclick = () => {
+      state.devices.push({
+        id: Date.now(),
+        name: "Capteur Aqara Zigbee",
+        category: "iot",
+        icon: "hub",
+        ip: "192.168.1.189",
+        mac: "54:EF:44:A1:09:BB",
+        connection: "Wi-Fi 2.4 GHz",
+        dataToday: "2.4 MB",
+        paused: false,
+        qos: "normal",
+        parental: false,
+        vendor: "Aqara",
+        location: "Entrée"
+      });
+
+      const r = document.getElementById('radar-scan-modal');
+      r.style.display = 'none';
+
+      renderDevices();
+      showToast(t('toastSaved'), "Capteur Aqara Zigbee", "success");
+    };
+
+    // Standalone Canvas Traffic Chart
+    let chartPoints = [35, 52, 78, 110, 85, 62, 94, 120, 95, 88];
+    function renderCanvasChart() {
+      const canvas = document.getElementById('vpn-traffic-chart');
+      if (!canvas) return;
+
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+
+      canvas.width = rect.width * (window.devicePixelRatio || 1);
+      canvas.height = rect.height * (window.devicePixelRatio || 1);
+
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Grid lines
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.lineWidth = 1;
+      for (let i = 1; i <= 3; i++) {
+        const y = (h / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+      }
+
+      if (!state.vpnConnected) {
+        ctx.fillStyle = '#64748b';
+        ctx.font = '14px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('VPN Déconnecté', w / 2, h / 2);
+        return;
+      }
+
+      // Draw Gradient Area & Line
+      const pts = chartPoints;
+      const step = w / (pts.length - 1);
+
+      ctx.beginPath();
+      ctx.moveTo(0, h - (pts[0] / 150) * h);
+
+      for (let i = 1; i < pts.length; i++) {
+        const x = i * step;
+        const y = h - (pts[i] / 150) * h;
+        const prevX = (i - 1) * step;
+        const prevY = h - (pts[i - 1] / 150) * h;
+        const cpX = (prevX + x) / 2;
+        ctx.bezierCurveTo(cpX, prevY, cpX, y, x, y);
+      }
+
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 3 * (window.devicePixelRatio || 1);
+      ctx.stroke();
+
+      // Fill Gradient
+      ctx.lineTo(w, h);
+      ctx.lineTo(0, h);
+      ctx.closePath();
+
+      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, 'rgba(56, 189, 248, 0.35)');
+      grad.addColorStop(1, 'rgba(56, 189, 248, 0.0)');
+      ctx.fillStyle = grad;
+      ctx.fill();
+    }
+
+    window.addEventListener('resize', renderCanvasChart);
+
+    // Pulse live chart values
+    setInterval(() => {
+      if (state.vpnConnected && state.currentTab === 'vpn') {
+        chartPoints.shift();
+        chartPoints.push(Math.floor(Math.random() * 50 + 60));
+        renderCanvasChart();
+      }
+    }, 2000);
+
+    // DNS Providers
+    document.querySelectorAll('.dns-provider-card').forEach(card => {
+      card.onclick = () => {
+        document.querySelectorAll('.dns-provider-card').forEach(c => {
+          c.className = 'dns-provider-card cursor-pointer p-3 rounded-2xl border border-slate-800 bg-slate-900/60 hover:border-slate-700 transition-all';
+        });
+        card.className = 'dns-provider-card cursor-pointer p-3 rounded-2xl border border-sky-500 bg-sky-500/10 glow-cyan transition-all';
+        state.selectedDns = card.dataset.dns;
+        showToast(t('toastSaved'), card.querySelector('h4').textContent.trim(), "info");
+      };
+    });
+
+    // DNS Shields
+    function bindDns(id, key) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.onchange = (e) => {
+        state.dnsFilters[key] = e.target.checked;
+        showToast(t('toastSaved'), t('dnsSectionTitle'), "success");
+      };
+    }
+    bindDns('dns-toggle-adblock', 'adblock');
+    bindDns('dns-toggle-malware', 'malware');
+    bindDns('dns-toggle-doh', 'doh');
+    bindDns('dns-toggle-parental', 'parental');
+
+    // DNS Log
+    function renderDnsLog() {
+      const body = document.getElementById('dns-query-log-body');
+      if (!body) return;
+
+      const filter = document.getElementById('dns-log-filter').value;
+      const filtered = state.dnsQueries.filter(q => {
+        if (filter === 'all') return true;
+        if (filter === 'blocked') return q.status === 'blocked' || q.status === 'threat';
+        if (filter === 'allowed') return q.status === 'allowed';
+        return true;
+      });
+
+      const statusLabels = {
+        allowed: { fr: "Autorisé", en: "Allowed", de: "Erlaubt", badge: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" },
+        blocked: { fr: "Pub bloquée", en: "Ad blocked", de: "Werbung geblockt", badge: "bg-rose-500/15 text-rose-300 border-rose-500/30" },
+        threat: { fr: "⚠️ Menace évitée", en: "⚠️ Threat stopped", de: "⚠️ Bedrohung geblockt", badge: "bg-amber-500/20 text-amber-300 border-amber-500/40" }
+      };
+
+      body.innerHTML = filtered.map(query => {
+        const info = statusLabels[query.status] || statusLabels.allowed;
+        const statusText = info[state.lang] || info.fr;
+
+        return `
+          <div class="p-3 rounded-2xl bg-slate-900/60 border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="font-mono text-white text-xs font-semibold truncate">${query.domain}</span>
+                <span class="badge-status px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${info.badge}">
+                  ${statusText}
+                </span>
+              </div>
+              <div class="text-[11px] text-slate-400 flex items-center gap-1.5 flex-wrap">
+                <span>${query.client}</span>
+                <span>•</span>
+                <span class="text-slate-500">${query.time}</span>
+                <span>•</span>
+                <span class="text-slate-400 italic truncate">${query.reason}</span>
+              </div>
+            </div>
+            
+            <button type="button" class="toggle-domain-btn px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all ${query.status === 'allowed' ? 'bg-rose-500/15 text-rose-300 hover:bg-rose-500/25 border border-rose-500/30' : 'bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 border border-emerald-500/30'}" data-id="${query.id}">
+              ${query.status === 'allowed' ? (state.lang === 'fr' ? 'Bloquer' : state.lang === 'de' ? 'Blockieren' : 'Block') : (state.lang === 'fr' ? 'Autoriser' : state.lang === 'de' ? 'Erlauben' : 'Allow')}
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      body.querySelectorAll('.toggle-domain-btn').forEach(btn => {
+        btn.onclick = () => {
+          const id = parseInt(btn.dataset.id);
+          const q = state.dnsQueries.find(item => item.id === id);
+          if (!q) return;
+
+          if (q.status === 'allowed') {
+            q.status = 'blocked';
+            q.reason = state.lang === 'fr' ? "Bloqué par l'utilisateur" : "Blocked by user";
+            state.dnsStats.blockedQueries++;
+          } else {
+            q.status = 'allowed';
+            q.reason = state.lang === 'fr' ? "Autorisé par l'utilisateur" : "Allowed by user";
+            if (state.dnsStats.blockedQueries > 0) state.dnsStats.blockedQueries--;
+          }
+
+          document.getElementById('stat-blocked-count').textContent = state.dnsStats.blockedQueries.toLocaleString();
+          renderDnsLog();
+        };
+      });
+    }
+
+    document.getElementById('dns-log-filter').onchange = renderDnsLog;
+
+    // Presentation Demo Actions
+    document.getElementById('demo-simulate-attack').onclick = () => {
+      state.dnsStats.threatsBlocked++;
+      state.dnsStats.blockedQueries += 3;
+      document.getElementById('stat-threats-count').textContent = state.dnsStats.threatsBlocked.toLocaleString();
+      document.getElementById('stat-blocked-count').textContent = state.dnsStats.blockedQueries.toLocaleString();
+      updateNetworkAnalytics();
+
+      state.dnsQueries.unshift({
+        id: Date.now(),
+        domain: "phishing-bank-login.cc",
+        client: "Smart TV Salon",
+        time: new Date().toTimeString().substring(0, 5),
+        status: "threat",
+        reason: state.lang === 'fr' ? "Lien malveillant bloqué" : "Malicious domain stopped"
+      });
+
+      renderDnsLog();
+      showToast(t('toastAttackTitle'), t('toastAttackDesc'), "danger");
+    };
+
+    document.getElementById('demo-reset-state').onclick = () => {
+      state.devices.forEach(d => d.paused = false);
+      state.vpnConnected = true;
+      renderDevices();
+      updateVpnUI();
+      showToast(t('toastResetTitle'), t('toastResetDesc'), "info");
+    };
+
+    // Attach Language Select Listener
+    const langSelect = document.getElementById('lang-select');
+    if (langSelect) {
+      langSelect.onchange = (e) => setLanguage(e.target.value);
+    }
+
+    // Attach Tab Switching Listeners (Both Desktop & Mobile Nav)
+    document.querySelectorAll('.nav-tab').forEach(tab => {
+      tab.onclick = () => switchTab(tab.dataset.tab);
+    });
+
+    // News Category Filters
+    document.querySelectorAll('.news-cat-pill').forEach(pill => {
+      pill.onclick = () => {
+        document.querySelectorAll('.news-cat-pill').forEach(p => {
+          p.className = 'news-cat-pill px-4 py-2 rounded-2xl text-xs font-semibold transition-all shrink-0 bg-slate-800/80 text-slate-300 hover:text-white';
+        });
+        pill.className = 'news-cat-pill px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 bg-sky-500 text-white';
+        state.newsCategoryFilter = pill.dataset.category;
+        renderNews();
+      };
+    });
+
+    // Device Category Filters
+    document.querySelectorAll('.device-cat-pill').forEach(pill => {
+      pill.onclick = () => {
+        document.querySelectorAll('.device-cat-pill').forEach(p => {
+          p.className = 'device-cat-pill px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 bg-slate-800/80 text-slate-300';
+        });
+        pill.className = 'device-cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 bg-sky-500 text-white';
+        state.deviceCategoryFilter = pill.dataset.category;
+        renderDevices();
+      };
+    });
+
+    // Device Search
+    const searchInput = document.getElementById('device-search');
+    if (searchInput) {
+      searchInput.oninput = (e) => {
+        state.searchDeviceQuery = e.target.value;
+        renderDevices();
+      };
+    }
+
+    // Initialize Default View
+    setLanguage('fr');
+    switchTab('news');
+    loadLiveNews();
+  })();
+  </script>
+</body>
+</html>

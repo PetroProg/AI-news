@@ -47,7 +47,6 @@ class OllamaClient:
             "}"
         )
 
-        # Для Celeron берем только первые 600 символов (главная суть в лиде статьи)
         truncated_text = text[:600]
         user_prompt = f"Заголовок: {title}\nТекст: {truncated_text}"
 
@@ -58,10 +57,9 @@ class OllamaClient:
             "stream": False,
             "format": "json",
             "options": {
-                "temperature": 0.1,
-                "num_ctx": 1024,
-                "num_predict": 180,
-                "num_thread": 2,
+                "temperature": 0.2,
+                "num_ctx": 2048,
+                "num_predict": 600,
             },
         }
 
