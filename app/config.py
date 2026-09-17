@@ -1,5 +1,6 @@
+from typing import Optional
 from functools import lru_cache
-from pydantic import PostgresDsn, computed_field
+from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -45,6 +46,11 @@ class Settings(BaseSettings):
     OLLAMA_BASE_URL: str = "http://ollama:11434"
     OLLAMA_MODEL: str = "qwen2.5:1.5b"
     OLLAMA_TIMEOUT_SECONDS: float = 60.0
+
+    # Telegram Client API (Telethon)
+    TELEGRAM_API_ID: Optional[int] = None
+    TELEGRAM_API_HASH: Optional[str] = None
+    TELEGRAM_SESSION_NAME: str = "news_collector"
 
 
 @lru_cache
