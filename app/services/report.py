@@ -112,7 +112,7 @@ class ReportBuilderService:
         lines.append(
             f"📊 Всего собрано: {total_collected} | Отобрано в отчет: {len(articles)}"
         )
-        lines.append("🌐 Личный веб-дашборд: http://100.114.251.81:8000")
+        lines.append("🌐 Личный веб-дашборд: http://100.107.4.120:8000")
 
         content_markdown = "\n".join(lines)
 

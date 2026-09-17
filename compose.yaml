@@ -5,56 +5,18 @@ services:
       dockerfile: Dockerfile
     container_name: news_ai_app
     restart: unless-stopped
-    env_file:
-      - .env
+    command: uvicorn app.api:app --host 0.0.0.0 --port 8000 --reload
     ports:
       - "8000:8000"
-    command: uvicorn app.api:app --host 0.0.0.0 --port 8000
+    env_file:
+      - .env
     environment:
       - TZ=Europe/Zurich
     depends_on:
       postgres:
         condition: service_healthy
-      ollama:
-        condition: service_healthy
     volumes:
       - .:/app
-
-  postgres:
-    image: postgres:16-alpine
-    container_name: news_ai_postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  ollama:
-    image: ollama/ollama:latest
-    container_name: news_ai_ollama
-    restart: unless-stopped
-    environment:
-      - OLLAMA_KEEP_ALIVE=5m
-      - OLLAMA_NUM_PARALLEL=1
-    deploy:
-      resources:
-        limits:
-          cpus: '2.0'
-          memory: 2500M
-    volumes:
-      - ollama_data:/root/.ollama
-    healthcheck:
-      test: ["CMD-SHELL", "ollama list || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   bot:
     build:
@@ -72,6 +34,44 @@ services:
         condition: service_healthy
     volumes:
       - .:/app
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: news_ai_postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      TZ: Europe/Zurich
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: news_ai_ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2500M
 
 volumes:
   postgres_data:
