@@ -1,18 +1,18 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 def get_main_keyboard() -> ReplyKeyboardMarkup:
-    """Main dashboard keyboard with quick action buttons."""
+    """Mobile-friendly dashboard keyboard with balanced button widths."""
     keyboard = [
         [
-            KeyboardButton(text="📰 Свежий дайджест"),
-            KeyboardButton(text="⚡ Сгенерировать сейчас")
+            KeyboardButton(text="📰 Свежий дайджест")
         ],
         [
-            KeyboardButton(text="🚀 Запустить полный пайплайн"),
-            KeyboardButton(text="🖥 Статус сервера")
+            KeyboardButton(text="🚀 Полный запуск"),
+            KeyboardButton(text="⚡ Сгенерировать")
         ],
         [
-            KeyboardButton(text="🔌 Разбудить ПК (WoL)")
+            KeyboardButton(text="🖥 Статус сервера"),
+            KeyboardButton(text="🔌 Разбудить ПК")
         ]
     ]
     return ReplyKeyboardMarkup(

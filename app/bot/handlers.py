@@ -74,7 +74,7 @@ async def cmd_latest_digest(message: Message):
 
 
 @router.message(Command("generate"))
-@router.message(F.text == "⚡ Сгенерировать сейчас")
+@router.message(F.text.in_(["⚡ Сгенерировать", "⚡ Сгенерировать сейчас"]))
 async def cmd_generate_digest(message: Message):
     """Triggers on-demand digest generation and returns the compiled result."""
     status_msg = await message.answer("⏳ Анализирую статьи за последние 48 часов и формирую дайджест...")
@@ -144,7 +144,7 @@ async def cmd_status(message: Message):
 
 
 @router.message(Command("wake_pc"))
-@router.message(F.text == "🔌 Разбудить ПК (WoL)")
+@router.message(F.text.in_(["🔌 Разбудить ПК", "🔌 Разбудить ПК (WoL)"]))
 async def cmd_wake_pc(message: Message):
     """Sends a Wake-on-LAN magic packet to wake up the RTX 3060 PC."""
     try:
@@ -164,7 +164,7 @@ async def cmd_wake_pc(message: Message):
 from app.services.orchestrator import PipelineOrchestrator
 
 @router.message(Command("run_pipeline"))
-@router.message(F.text == "🚀 Запустить полный пайплайн")
+@router.message(F.text.in_(["🚀 Полный запуск", "🚀 Запустить полный пайплайн"]))
 async def cmd_run_pipeline(message: Message, bot: Bot):
     """Executes the complete autonomous pipeline on demand and reports progress."""
     status_msg = await message.answer(
