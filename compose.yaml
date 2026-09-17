@@ -56,6 +56,23 @@ services:
       timeout: 5s
       retries: 5
 
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: news_ai_bot
+    restart: unless-stopped
+    command: python -m app.bot.bot
+    env_file:
+      - .env
+    environment:
+      - TZ=Europe/Zurich
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - .:/app
+
 volumes:
   postgres_data:
     driver: local
