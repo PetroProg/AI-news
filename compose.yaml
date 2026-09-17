@@ -10,6 +10,8 @@ services:
     ports:
       - "8000:8000"
     command: uvicorn app.api:app --host 0.0.0.0 --port 8000
+    environment:
+      - TZ=Europe/Zurich
     depends_on:
       postgres:
         condition: service_healthy
