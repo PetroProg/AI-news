@@ -2,7 +2,7 @@ import logging
 import httpx
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from aiogram import Router, F
+from aiogram import Bot, Router, F
 from aiogram.filters import CommandStart, Command, Filter
 from aiogram.types import Message
 from sqlalchemy import select, func
@@ -160,3 +160,28 @@ async def cmd_wake_pc(message: Message):
     except Exception as exc:
         logger.error(f"Failed to send WoL packet: {exc}", exc_info=True)
         await message.answer(f"❌ Ошибка отправки Wake-on-LAN: `{exc}`", parse_mode="Markdown")
+
+from app.services.orchestrator import PipelineOrchestrator
+
+@router.message(Command("run_pipeline"))
+@router.message(F.text == "🚀 Запустить полный пайплайн")
+async def cmd_run_pipeline(message: Message, bot: Bot):
+    """Executes the complete autonomous pipeline on demand and reports progress."""
+    status_msg = await message.answer(
+        "🚀 **Запуск полного автономного пайплайна!**\n\n"
+        "1. Отправляю WoL на ПК с RTX 3060...\n"
+        "2. Сбор RSS и Telegram...\n"
+        "3. Очистка и дедупликация...\n"
+        "4. AI-суммаризация...\n"
+        "5. Формирование и отправка дайджеста.\n\n"
+        "⏳ Подожди около 30–60 секунд...",
+        parse_mode="Markdown"
+    )
+
+    try:
+        orchestrator = PipelineOrchestrator(bot=bot)
+        await orchestrator.run_full_pipeline(report_type=ReportType.CUSTOM)
+        await status_msg.edit_text("✅ **Автономный пайплайн успешно завершен!**", parse_mode="Markdown")
+    except Exception as exc:
+        logger.error("Manual pipeline run failed: %s", exc, exc_info=True)
+        await status_msg.edit_text(f"❌ Ошибка выполнения пайплайна: `{exc}`", parse_mode="Markdown")
