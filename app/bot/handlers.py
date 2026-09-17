@@ -12,7 +12,7 @@ from app.database.session import async_session_maker
 from app.database.models import Article, Report, ReportType, ArticleStatus
 from app.services.report import ReportBuilderService
 from app.bot.keyboards import get_main_keyboard
-from app.bot.utils import send_wake_on_lan, split_message
+from app.bot.utils import send_wake_on_lan, send_remote_sleep, split_message
 
 logger = logging.getLogger("news_ai.bot")
 router = Router()
@@ -185,3 +185,13 @@ async def cmd_run_pipeline(message: Message, bot: Bot):
     except Exception as exc:
         logger.error("Manual pipeline run failed: %s", exc, exc_info=True)
         await status_msg.edit_text(f"❌ Ошибка выполнения пайплайна: `{exc}`", parse_mode="Markdown")
+@router.message(Command("sleep_pc"))
+@router.message(F.text.in_(["💤 Усыпить ПК", "💤 Спать ПК"]))
+async def cmd_sleep_pc(message: Message):
+    """Sends a remote sleep command via SSH to suspend the workstation."""
+    status_msg = await message.answer("⏳ Отправляю сигнал перехода в спящий режим на ПК...")
+    success = await send_remote_sleep()
+    if success:
+        await status_msg.edit_text("💤 *Компьютер переведён в спящий режим.*", parse_mode="Markdown")
+    else:
+        await status_msg.edit_text("⚠️ Не удалось отправить команду сна. Проверьте соединение через Tailscale.")

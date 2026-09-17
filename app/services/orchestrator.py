@@ -13,7 +13,7 @@ from app.services.ingestion import IngestionService
 from app.services.processing import ProcessingService
 from app.services.summarizer import SummarizerService
 from app.services.report import ReportBuilderService
-from app.bot.utils import send_wake_on_lan, split_message
+from app.bot.utils import send_wake_on_lan, send_remote_sleep, split_message
 
 logger = logging.getLogger("news_ai.orchestrator")
 
@@ -120,5 +120,12 @@ class PipelineOrchestrator:
                 logger.info("Digest successfully delivered to Telegram.")
             elif not report:
                 logger.info("No articles met threshold for scheduled digest. Nothing sent.")
+
+        # 8. Put GPU worker PC back to sleep
+        try:
+            logger.info("Putting AI GPU worker back to sleep...")
+            await send_remote_sleep()
+        except Exception as exc:
+            logger.error("Failed to put GPU PC to sleep: %s", exc)
 
         logger.info("Autonomous pipeline finished.")

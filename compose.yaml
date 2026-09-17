@@ -34,6 +34,7 @@ services:
         condition: service_healthy
     volumes:
       - .:/app
+      - /home/petroprog/.ssh:/home/appuser/.ssh:ro
 
   postgres:
     image: postgres:16-alpine

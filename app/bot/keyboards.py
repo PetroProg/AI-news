@@ -11,8 +11,11 @@ def get_main_keyboard() -> ReplyKeyboardMarkup:
             KeyboardButton(text="⚡ Сгенерировать")
         ],
         [
-            KeyboardButton(text="🖥 Статус сервера"),
-            KeyboardButton(text="🔌 Разбудить ПК")
+            KeyboardButton(text="🔌 Разбудить ПК"),
+            KeyboardButton(text="💤 Усыпить ПК")
+        ],
+        [
+            KeyboardButton(text="🖥 Статус сервера")
         ]
     ]
     return ReplyKeyboardMarkup(

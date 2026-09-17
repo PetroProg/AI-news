@@ -60,6 +60,11 @@ class Settings(BaseSettings):
     WOL_MAC_ADDRESS: str = "18:31:BF:B5:27:AA"
     WOL_BROADCAST_IP: str = "192.168.178.255"
 
+    # Remote Workstation Sleep (SSH)
+    WINDOWS_SSH_HOST: str = "100.114.251.81"
+    WINDOWS_SSH_USER: str = "Admin"
+    WINDOWS_SSH_KEY_PATH: str = "/home/appuser/.ssh/id_ed25519"
+
 
 @lru_cache
 def get_settings() -> Settings:

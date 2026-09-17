@@ -29,3 +29,5 @@ aiogram>=3.13.0,<4.0.0
 
 # Scheduling & Automation
 apscheduler~=3.10.4
+# Remote Management
+asyncssh>=2.24.0
