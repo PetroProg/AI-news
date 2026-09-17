@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
+from zoneinfo import ZoneInfo
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -14,7 +15,6 @@ from app.database.models import (
     Source,
 )
 from app.processing.cleaner import ContentCleaner
-from zoneinfo import ZoneInfo
 
 logger = logging.getLogger("news_ai.services.report")
 
@@ -23,7 +23,6 @@ class ReportBuilderService:
     """Aggregates, ranks, filters, and formats curated daily digests."""
 
     MIN_IMPORTANCE_THRESHOLD = 5.0
-    
     TOP_HIGHLIGHT_THRESHOLD = 7.5
 
     def __init__(self, session: AsyncSession) -> None:
@@ -79,40 +78,67 @@ class ReportBuilderService:
         now_str = datetime.now(tz).strftime("%d.%m.%Y — %H:%M")
         
         lines: List[str] = [
-            f"📰 {title_text}",
+            f"📰 *{title_text}*",
             f"📅 {now_str}\n",
         ]
 
         if top_articles:
-            lines.append("🔥 ГЛАВНОЕ\n")
+            lines.append("🔥 *ГЛАВНОЕ*")
             for i, art in enumerate(top_articles, 1):
+                safe_title = art.title.replace("[", "(").replace("]", ")").replace("*", "").strip()
                 score_str = f" [🔥 {art.importance_score:.1f}]" if art.importance_score else ""
-                lines.append(f"{i}. {art.title}{score_str}")
+                url = art.original_url or "#"
                 
-                if art.summary:
-                    lines.append(f"   {art.summary.short_summary}")
-                    if art.summary.why_it_matters:
-                        lines.append(f"   💡 Почему важно: {art.summary.why_it_matters}")
-                
-                source_name = art.source.name if art.source else "Источник"
-                lines.append(f"   🔗 {source_name}: {art.original_url or '#'}\n")
-
-        for cat_name, cat_articles in categorized.items():
-            clean_cat = cat_name.split("(")[0].strip() or "Технологии"
-            lines.append(f"📂 {clean_cat.upper()}")
-            for art in cat_articles[:5]:
-                summary_snippet = ""
+                lines.append(f"{i}. [{safe_title}]({url}){score_str}")
                 if art.summary and art.summary.short_summary:
-                    summary_snippet = f"\n   ↳ {art.summary.short_summary[:120]}..."
-                
-                lines.append(f"• {art.title} — {art.original_url or '#'}{summary_snippet}")
-            lines.append("")
+                    clean_sum = art.summary.short_summary.strip()
+                    lines.append(f"> {clean_sum}")
+                    if art.summary.why_it_matters:
+                        lines.append(f"> 💡 *Почему важно:* {art.summary.why_it_matters.strip()}")
+                lines.append("")
 
-        lines.append("─────────────────────────")
-        lines.append(
-            f"📊 Всего собрано: {total_collected} | Отобрано в отчет: {len(articles)}"
-        )
-        lines.append("🌐 Личный веб-дашборд: http://100.107.4.120:8000")
+        cat_icons = {
+            "LINUX": "🐧",
+            "DEV": "💻",
+            "DEVELOPMENT": "💻",
+            "CS": "🎮",
+            "GAMING": "🎮",
+            "CYBERSPORT": "🎮",
+            "AI": "🤖",
+            "TECH": "⚡",
+            "SECURITY": "🛡",
+        }
+
+        # 3. Блок категорий с кликабельными ссылками и цитатами
+        for cat_name, cat_articles in categorized.items():
+            clean_cat = cat_name.split("(")[0].strip().upper() or "ТЕХНОЛОГИИ"
+            
+            icon = "📁"
+            for key, emoji in cat_icons.items():
+                if key in clean_cat:
+                    icon = emoji
+                    break
+
+            lines.append(f"── {icon} *{clean_cat}* ─────────────────")
+
+            for art in cat_articles[:5]:
+                score = art.importance_score or 5.0
+                badge = "🔥" if score >= 7.5 else "•"
+                safe_title = art.title.replace("[", "(").replace("]", ")").replace("*", "").strip()
+                url = art.original_url or "#"
+
+                lines.append(f"{badge} [{safe_title}]({url})")
+
+                if art.summary and art.summary.short_summary:
+                    clean_summary = art.summary.short_summary.strip()
+                    quote_lines = "\n".join([f"> {l}" for l in clean_summary.split("\n") if l.strip()])
+                    lines.append(quote_lines)
+
+                lines.append("")
+
+        lines.append("─────────────────────────────────────")
+        lines.append(f"📊 Всего собрано: {total_collected}  •  Отобрано: {len(articles)}")
+        lines.append("🌐 [Личный веб-дашборд](http://100.107.4.120:8000)")
 
         content_markdown = "\n".join(lines)
 

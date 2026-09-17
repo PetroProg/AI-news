@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr" class="dark">
+<html lang="ru" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>HomeGuard - Contrôle Réseau Domestique, IA & VPN</title>
+  <title>HomeGuard - Управление домашней сетью, ИИ & VPN</title>
   
   <!-- Tailwind CSS via CDN with Fallback Styles -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -255,7 +255,7 @@
             <p class="hidden sm:flex text-xs text-slate-400 items-center gap-1.5 mt-0.5">
               <span class="text-emerald-400 font-semibold flex items-center gap-1">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span data-i18n="gatewayStatus">En ligne</span>
+                <span data-i18n="gatewayStatus">В сети</span>
               </span>
               <span>•</span>
               <span>Keenetic Titan</span>
@@ -269,15 +269,15 @@
         <nav class="desktop-nav items-center p-1.5 rounded-2xl bg-slate-900/90 border border-slate-800">
           <button type="button" class="nav-tab desktop-tab px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all bg-sky-500/20 text-sky-400 border border-sky-500/40 shadow-sm" data-tab="news">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z"/></svg>
-            <span data-i18n="tabNews">Actualités</span>
+            <span data-i18n="tabNews">Новости</span>
           </button>
           <button type="button" class="nav-tab desktop-tab px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all text-slate-400 border border-transparent hover:text-white" data-tab="devices">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"/></svg>
-            <span data-i18n="tabDevices">Mes Appareils</span>
+            <span data-i18n="tabDevices">Мои устройства</span>
           </button>
           <button type="button" class="nav-tab desktop-tab px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all text-slate-400 border border-transparent hover:text-white" data-tab="vpn">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
-            <span data-i18n="tabVpn">VPN & Sécurité</span>
+            <span data-i18n="tabVpn">VPN & Сеть</span>
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
           </button>
         </nav>
@@ -288,23 +288,14 @@
           <!-- Language Select List (Dropdown) -->
           <div class="relative flex items-center">
             <select id="lang-select" class="appearance-none bg-slate-900/90 border border-slate-700/90 text-white text-xs font-bold py-2 pl-3 pr-8 rounded-xl focus:outline-none focus:border-sky-500 transition-all cursor-pointer shadow-sm">
-              <option value="fr">🇫🇷 Français</option>
+              <option value="ru" selected>🇷🇺 Русский</option>
               <option value="en">🇬🇧 English</option>
-              <option value="de">🇩🇪 Deutsch</option>
+              <option value="fr">🇫🇷 Français</option>
             </select>
             <svg class="w-3.5 h-3.5 text-slate-400 absolute right-2.5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
           </div>
 
-          <!-- Demo Attack Trigger Button -->
-          <button type="button" id="demo-simulate-attack" class="p-2 sm:px-3 sm:py-2 rounded-xl text-xs font-semibold bg-rose-500/15 text-rose-300 hover:bg-rose-500/25 border border-rose-500/30 flex items-center gap-1.5 transition-all shadow-sm" title="Simuler une attaque pour la démo">
-            <svg class="w-4 h-4 text-rose-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
-            <span class="hidden lg:inline" data-i18n="testAttackBtn">Test d'attaque</span>
-          </button>
-
-          <!-- Reset Button -->
-          <button type="button" id="demo-reset-state" class="p-2 sm:py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-400 hover:text-white border border-slate-700 transition-all shadow-sm" title="Réinitialiser">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
-          </button>
+          <!-- Demo Buttons Removed -->
 
         </div>
 
@@ -314,7 +305,7 @@
       <div class="flex sm:hidden items-center justify-between px-3 py-1.5 rounded-xl bg-slate-900/70 border border-slate-800/80 text-[11px] text-slate-300">
         <div class="flex items-center gap-1.5 text-emerald-400 font-medium">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span data-i18n="gatewayStatus">En ligne</span>
+          <span data-i18n="gatewayStatus">В сети</span>
         </div>
         <div class="text-slate-400">Keenetic Titan</div>
         <div class="text-slate-500 font-mono text-[10px]">94.25.180.12</div>
@@ -341,24 +332,19 @@
           <div class="flex items-center gap-2">
             <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-sky-500/20 text-sky-300 border border-sky-500/40 flex items-center gap-1.5">
               <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z"/></svg>
-              <span data-i18n="aiServerBadge">Serveur IA HomeGuard • Flux en temps réel</span>
+              <span data-i18n="aiServerBadge">✨ Сервер ИИ HomeGuard • Поток в реальном времени</span>
             </span>
           </div>
-          <h2 class="text-xl sm:text-3xl font-extrabold text-white font-heading" data-i18n="aiServerTitle">Actualités & Tendances du Web</h2>
+          <h2 class="text-xl sm:text-3xl font-extrabold text-white font-heading" data-i18n="aiServerTitle">Актуальные события и новости</h2>
           <p class="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed" data-i18n="aiServerDesc">
-            Articles résumés automatiquement par l'IA dans vos domaines préférés.
+            Статьи, автоматически структурированные и обработанные искусственным интеллектом.
           </p>
         </div>
       </div>
 
       <!-- Categories Filter Pills -->
-      <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-        <button type="button" class="news-cat-pill px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 bg-sky-500 text-white" data-category="all" data-i18n="catAll">Toutes</button>
-        <button type="button" class="news-cat-pill px-4 py-2 rounded-2xl text-xs font-semibold transition-all shrink-0 bg-slate-800/80 text-slate-300 hover:text-white" data-category="ai" data-i18n="catAi">IA & Tech</button>
-        <button type="button" class="news-cat-pill px-4 py-2 rounded-2xl text-xs font-semibold transition-all shrink-0 bg-slate-800/80 text-slate-300 hover:text-white" data-category="gaming" data-i18n="catGaming">Jeux Vidéo</button>
-        <button type="button" class="news-cat-pill px-4 py-2 rounded-2xl text-xs font-semibold transition-all shrink-0 bg-slate-800/80 text-slate-300 hover:text-white" data-category="science" data-i18n="catScience">Sciences</button>
-        <button type="button" class="news-cat-pill px-4 py-2 rounded-2xl text-xs font-semibold transition-all shrink-0 bg-slate-800/80 text-slate-300 hover:text-white" data-category="lifestyle" data-i18n="catLifestyle">Tendances</button>
-        <button type="button" class="news-cat-pill px-4 py-2 rounded-2xl text-xs font-semibold transition-all shrink-0 bg-slate-800/80 text-slate-300 hover:text-white" data-category="security" data-i18n="catSecurity">Sécurité</button>
+      <div id="category-pills-container" class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <button type="button" class="news-cat-pill px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 bg-sky-500 text-white" onclick="setDynamicCategory('all')">Все</button>
       </div>
 
       <!-- News Cards Container -->
@@ -692,11 +678,11 @@
     </button>
     <button type="button" class="nav-tab mobile-tab flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-xl text-slate-400 font-medium" data-tab="devices">
       <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"/></svg>
-      <span class="text-[11px]" data-i18n="tabDevices">Appareils</span>
+      <span class="text-[11px]" data-i18n="tabDevices">Устройства</span>
     </button>
     <button type="button" class="nav-tab mobile-tab flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-xl text-slate-400 font-medium" data-tab="vpn">
       <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
-      <span class="text-[11px]" data-i18n="tabVpn">VPN & DNS</span>
+      <span class="text-[11px]" data-i18n="tabVpn">VPN & Сеть</span>
     </button>
   </nav>
 
@@ -849,7 +835,7 @@
   (function() {
     // Application State
     const state = {
-      lang: 'fr',
+      lang: 'ru',
       currentTab: 'news',
       searchDeviceQuery: '',
       deviceCategoryFilter: 'all',
@@ -869,108 +855,108 @@
       }
     };
 
-    // Dictionary for Multilingual Support
+                // Dictionary for Multilingual Support
     const i18n = {
-      fr: {
+      ru: {
         appName: "HomeGuard",
-        gatewayStatus: "En ligne",
-        tabNews: "Actualités",
-        tabDevices: "Mes Appareils",
-        tabVpn: "VPN & Sécurité",
-        testAttackBtn: "Test d'attaque",
-        aiServerBadge: "Serveur IA HomeGuard • Flux en temps réel",
-        aiServerTitle: "Actualités & Tendances du Web",
-        aiServerDesc: "Articles résumés automatiquement par l'IA dans vos domaines préférés.",
-        catAll: "Toutes",
-        catAi: "IA & Tech",
-        catGaming: "Jeux Vidéo",
-        catScience: "Sciences",
-        catLifestyle: "Tendances",
-        catSecurity: "Sécurité",
-        readOfficialSource: "Lire la source officielle",
-        aiSummaryLabel: "Résumé par IA :",
-        netProtection: "Protection Réseau",
-        netProtectionSub: "Tous les boucliers actifs",
-        attacksBlocked: "Menaces Bloquées",
-        attacksBlockedSub: "0 intrusion",
-        internetSpeed: "Débit Internet",
-        internetSpeedSub: "Fibre optique (8 ms)",
-        remoteAccess: "Accès à distance",
-        remoteAccessSub: "WireGuard prêt",
-        devicesOverviewTitle: "Appareils connectés",
-        statTotal: "Total :",
-        statActive: "Actifs :",
-        statPaused: "En pause :",
-        scanNetworkBtn: "Scanner le réseau",
-        searchPlaceholder: "Rechercher par nom, IP...",
-        catDevAll: "Tous",
-        catDevComp: "Ordinateurs",
-        catDevMob: "Smartphones",
-        catDevMedia: "TV & Consoles",
-        catDevIot: "Maison connectée",
-        catDevGuest: "Invités",
-        btnPauseInternet: "Couper Internet",
-        btnResumeInternet: "Réactiver",
-        statusOnline: "En ligne",
-        statusPaused: "Internet coupé",
-        btnConfigure: "Gérer",
-        trafficToday: "Trafic aujourd'hui :",
-        modalDeviceTitle: "Gérer cet appareil",
-        modalDeviceDesc: "Paramètres d'accès et de priorité pour ce membre de la famille.",
-        deviceNameLabel: "Nom de l'appareil :",
-        deviceRoomLabel: "Pièce / Emplacement :",
-        qosLabel: "Priorité de la connexion (QoS) :",
-        qosHigh: "Haute (Jeux en ligne, streaming 4K sans lag)",
-        qosNormal: "Normale (Navigation web, réseaux sociaux)",
-        qosLow: "Basse (Téléchargements en arrière-plan)",
-        parentalLabel: "Contrôle parental (bloquer contenu sensible)",
-        pauseToggleLabel: "Couper temporairement Internet pour cet appareil",
-        saveBtn: "Enregistrer",
-        radarTitle: "Radar du routeur",
-        radarScanning: "Recherche des nouveaux appareils Wi-Fi...",
-        radarFoundTitle: "Nouvel appareil détecté !",
-        radarAddBtn: "Autoriser et ajouter à la maison",
-        vpnSectionBadge: "Accès à distance",
-        vpnSectionTitle: "Connexion sécurisée à la maison",
-        vpnDesc: "Connectez-vous à votre réseau domestique depuis n'importe où (café, 5G, vacances).",
-        vpnStatusConnected: "Connecté à la maison",
-        vpnStatusDisconnected: "Déconnecté",
-        vpnBtnDisconnect: "DÉCONNECTER LE VPN",
-        vpnBtnConnect: "SE CONNECTER À LA MAISON",
-        virtualIpLabel: "IP Virtuelle :",
-        pingLabel: "Ping maison :",
-        encryptionLabel: "Chiffrement :",
-        qrCodeBtn: "Afficher le QR code pour mon téléphone",
-        chartTitle: "Vitesse du trafic en direct (Mb/s)",
-        chartLive: "FLUX EN DIRECT",
-        dnsSectionBadge: "Filtre DNS & Protection",
-        dnsSectionTitle: "Bouclier intelligent de la maison",
-        dnsDesc: "Bloque les pubs et les sites suspects pour TOUS vos appareils sans rien installer.",
-        dnsProviderLabel: "Fournisseur DNS actif :",
-        shieldAdblockTitle: "Bloqueur de publicités",
-        shieldAdblockDesc: "Supprime les bannières, pop-ups et vidéos de pub",
-        shieldMalwareTitle: "Protection contre les virus & arnaques",
-        shieldMalwareDesc: "Bloque les faux sites bancaires et liens piégés",
-        shieldDohTitle: "Chiffrement DNS (DoH)",
-        shieldDohDesc: "Empêche votre opérateur de voir vos sites visités",
-        shieldParentalTitle: "Mode Famille / Contrôle parental",
-        shieldParentalDesc: "Filtre les contenus inappropriés pour les jeunes",
-        statQueries: "Requêtes :",
-        statBlocked: "Pubs bloquées :",
-        statThreats: "Arnaques :",
-        dnsLogTitle: "Journal des requêtes en direct",
-        dnsLogFilterAll: "Toutes les requêtes",
-        dnsLogFilterBlocked: "Bloquées uniquement",
-        dnsLogFilterAllowed: "Autorisées uniquement",
-        toastAttackTitle: "⚠️ Arnaque bloquée !",
-        toastAttackDesc: "HomeGuard a neutralisé une tentative de connexion suspecte.",
-        toastResetTitle: "Paramètres réinitialisés",
-        toastResetDesc: "Les valeurs ont été remises à zéro.",
-        toastPauseOn: "Internet mis en pause",
-        toastPauseOff: "Internet réactivé",
-        toastVpnOn: "VPN connecté à la maison",
-        toastVpnOff: "VPN déconnecté",
-        toastSaved: "Modifications enregistrées"
+        gatewayStatus: "В сети",
+        tabNews: "Новости",
+        tabDevices: "Мои устройства",
+        tabVpn: "VPN & Сеть",
+        testAttackBtn: "Тест атаки",
+        aiServerBadge: "Сервер ИИ HomeGuard • Поток в реальном времени",
+        aiServerTitle: "Актуальные события и новости",
+        aiServerDesc: "Статьи, автоматически структурированные и обработанные искусственным интеллектом.",
+        catAll: "Все",
+        catAi: "ИИ & Tech",
+        catGaming: "Игры & CS:GO",
+        catScience: "Наука",
+        catLifestyle: "Тренды",
+        catSecurity: "Безопасность",
+        readOfficialSource: "Читать в источнике",
+        aiSummaryLabel: "Резюме нейросети (AI):",
+        netProtection: "Защита Сети",
+        netProtectionSub: "Все экраны активны",
+        attacksBlocked: "Угроз заблокировано",
+        attacksBlockedSub: "0 вторжений",
+        internetSpeed: "Скорость Сети",
+        internetSpeedSub: "Оптоволокно (8 мс)",
+        remoteAccess: "Удаленный Доступ",
+        remoteAccessSub: "WireGuard активен",
+        devicesOverviewTitle: "Подключенные устройства",
+        statTotal: "Всего :",
+        statActive: "Активно :",
+        statPaused: "На паузе :",
+        scanNetworkBtn: "Сканировать сеть",
+        searchPlaceholder: "Поиск по имени, IP...",
+        catDevAll: "Все",
+        catDevComp: "Компьютеры",
+        catDevMob: "Смартфоны",
+        catDevMedia: "ТВ & Консоли",
+        catDevIot: "Умный дом",
+        catDevGuest: "Гостевые",
+        btnPauseInternet: "Отключить интернет",
+        btnResumeInternet: "Возобновить",
+        statusOnline: "В сети",
+        statusPaused: "Интернет отключен",
+        btnConfigure: "Управление",
+        trafficToday: "Трафик сегодня :",
+        modalDeviceTitle: "Управление устройством",
+        modalDeviceDesc: "Настройки доступа и приоритета для этого члена семьи.",
+        deviceNameLabel: "Имя устройства :",
+        deviceRoomLabel: "Комната / Расположение :",
+        qosLabel: "Приоритет подключения (QoS) :",
+        qosHigh: "Высокий (Онлайн-игры, 4K видео без задержек)",
+        qosNormal: "Обычный (Веб-серфинг, соцсети)",
+        qosLow: "Низкий (Фоновые загрузки)",
+        parentalLabel: "Родительский контроль (фильтрация контента)",
+        pauseToggleLabel: "Временно заблокировать доступ к интернету",
+        saveBtn: "Сохранить",
+        radarTitle: "Радар роутера",
+        radarScanning: "Поиск новых Wi-Fi устройств...",
+        radarFoundTitle: "Обнаружено новое устройство!",
+        radarAddBtn: "Разрешить и добавить в домашнюю сеть",
+        vpnSectionBadge: "Удаленный доступ",
+        vpnSectionTitle: "Безопасное подключение к дому",
+        vpnDesc: "Подключайтесь к домашней сети из любой точки мира (кафе, 5G, путешествия).",
+        vpnStatusConnected: "Подключено к дому",
+        vpnStatusDisconnected: "Отключено",
+        vpnBtnDisconnect: "ОТКЛЮЧИТЬ VPN",
+        vpnBtnConnect: "ПОДКЛЮЧИТЬСЯ К ДОМУ (VPN)",
+        virtualIpLabel: "Виртуальный IP :",
+        pingLabel: "Пинг до дома :",
+        encryptionLabel: "Шифрование :",
+        qrCodeBtn: "Показать QR-код для смартфона",
+        chartTitle: "Скорость трафика в реальном времени (Мбит/с)",
+        chartLive: "ПРЯМОЙ ЭФИР",
+        dnsSectionBadge: "DNS-фильтр и защита",
+        dnsSectionTitle: "Интеллектуальный домашний щит",
+        dnsDesc: "Блокирует рекламу, трекеры и подозрительные сайты для ВСЕХ устройств без установки приложений.",
+        dnsProviderLabel: "Активный DNS-провайдер :",
+        shieldAdblockTitle: "Блокировщик рекламы",
+        shieldAdblockDesc: "Удаляет навязчивые баннеры, всплывающие окна и рекламу в видео",
+        shieldMalwareTitle: "Защита от вирусов и фишинга",
+        shieldMalwareDesc: "Блокирует поддельные банковские сайты и вредоносные ссылки",
+        shieldDohTitle: "Шифрование DNS (DoH)",
+        shieldDohDesc: "Защищает историю посещений от отслеживания провайдером",
+        shieldParentalTitle: "Семейный режим / Родительский контроль",
+        shieldParentalDesc: "Фильтрует контент для взрослых и включает безопасный поиск",
+        statQueries: "Запросов :",
+        statBlocked: "Рекламы заблокировано :",
+        statThreats: "Угроз отбито :",
+        dnsLogTitle: "Журнал DNS-запросов в реальном времени",
+        dnsLogFilterAll: "Все запросы",
+        dnsLogFilterBlocked: "Только заблокированные",
+        dnsLogFilterAllowed: "Только разрешенные",
+        toastAttackTitle: "⚠️ Угроза нейтрализована!",
+        toastAttackDesc: "HomeGuard заблокировал подозрительную попытку соединения.",
+        toastResetTitle: "Параметры сброшены",
+        toastResetDesc: "Значения возвращены к исходным настройкам.",
+        toastPauseOn: "Интернет приостановлен",
+        toastPauseOff: "Доступ к интернету возобновлен",
+        toastVpnOn: "VPN подключен к домашней сети",
+        toastVpnOff: "VPN отключен",
+        toastSaved: "Изменения успешно сохранены"
       },
       en: {
         appName: "HomeGuard",
@@ -1073,112 +1059,112 @@
         toastVpnOff: "VPN disconnected",
         toastSaved: "Settings saved successfully"
       },
-      de: {
+      fr: {
         appName: "HomeGuard",
-        gatewayStatus: "Online",
-        tabNews: "Nachrichten",
-        tabDevices: "Meine Geräte",
-        tabVpn: "VPN & Sicherheit",
-        testAttackBtn: "Angriffstest",
-        aiServerBadge: "HomeGuard KI-Server • Echtzeit-Feed",
-        aiServerTitle: "Kuratiertes Web & Trends",
-        aiServerDesc: "Von der KI zusammengefasste Top-Artikel aus Ihren Lieblingskategorien.",
-        catAll: "Alle",
-        catAi: "KI & Tech",
-        catGaming: "Gaming",
-        catScience: "Wissenschaft",
-        catLifestyle: "Trends",
-        catSecurity: "Sicherheit",
-        readOfficialSource: "Offizielle Quelle lesen",
-        aiSummaryLabel: "KI-Zusammenfassung:",
-        netProtection: "Netzwerkschutz",
-        netProtectionSub: "Alle Schutzschilde aktiv",
-        attacksBlocked: "Bedrohungen geblockt",
-        attacksBlockedSub: "0 Einbrüche",
-        internetSpeed: "Internet-Speed",
-        internetSpeedSub: "Glasfaser (8 ms)",
-        remoteAccess: "Fernzugriff",
-        remoteAccessSub: "WireGuard aktiv",
-        devicesOverviewTitle: "Verbundene Geräte",
-        statTotal: "Gesamt:",
-        statActive: "Aktiv:",
-        statPaused: "Pausiert:",
-        scanNetworkBtn: "Netzwerk scannen",
-        searchPlaceholder: "Nach Name, IP suchen...",
-        catDevAll: "Alle",
-        catDevComp: "Computer",
+        gatewayStatus: "En ligne",
+        tabNews: "Actualités",
+        tabDevices: "Mes Appareils",
+        tabVpn: "VPN & Sécurité",
+        testAttackBtn: "Test d'attaque",
+        aiServerBadge: "Serveur IA HomeGuard • Flux en temps réel",
+        aiServerTitle: "Actualités & Tendances du Web",
+        aiServerDesc: "Articles résumés automatiquement par l'IA dans vos domaines préférés.",
+        catAll: "Toutes",
+        catAi: "IA & Tech",
+        catGaming: "Jeux Vidéo",
+        catScience: "Sciences",
+        catLifestyle: "Tendances",
+        catSecurity: "Sécurité",
+        readOfficialSource: "Lire la source officielle",
+        aiSummaryLabel: "Résumé par IA :",
+        netProtection: "Protection Réseau",
+        netProtectionSub: "Tous les boucliers actifs",
+        attacksBlocked: "Menaces Bloquées",
+        attacksBlockedSub: "0 intrusion",
+        internetSpeed: "Débit Internet",
+        internetSpeedSub: "Fibre optique (8 ms)",
+        remoteAccess: "Accès à distance",
+        remoteAccessSub: "WireGuard prêt",
+        devicesOverviewTitle: "Appareils connectés",
+        statTotal: "Total :",
+        statActive: "Actifs :",
+        statPaused: "En pause :",
+        scanNetworkBtn: "Scanner le réseau",
+        searchPlaceholder: "Rechercher par nom, IP...",
+        catDevAll: "Tous",
+        catDevComp: "Ordinateurs",
         catDevMob: "Smartphones",
-        catDevMedia: "TV & Konsolen",
-        catDevIot: "Smart Home",
-        catDevGuest: "Gäste",
-        btnPauseInternet: "Internet sperren",
-        btnResumeInternet: "Aktivieren",
-        statusOnline: "Online",
-        statusPaused: "Internet pausiert",
-        btnConfigure: "Verwalten",
-        trafficToday: "Daten heute:",
-        modalDeviceTitle: "Gerät verwalten",
-        modalDeviceDesc: "Internetzugriff und Priorität für dieses Familienmitglied steuern.",
-        deviceNameLabel: "Gerätename:",
-        deviceRoomLabel: "Raum / Ort:",
-        qosLabel: "Geschwindigkeitspriorität (QoS):",
-        qosHigh: "Hoch (Gaming ohne Lags, 4K Streaming)",
-        qosNormal: "Normal (Surfen, Social Media)",
-        qosLow: "Niedrig (Hintergrund-Downloads)",
-        parentalLabel: "Kindersicherung (jugendgefährdende Inhalte sperren)",
-        pauseToggleLabel: "Internet für dieses Gerät vorübergehend sperren",
-        saveBtn: "Speichern",
-        radarTitle: "Router-Radar",
-        radarScanning: "Suche nach neuen WLAN-Geräten...",
-        radarFoundTitle: "Neues Gerät entdeckt!",
-        radarAddBtn: "Zulassen und verbinden",
-        vpnSectionBadge: "Fernzugriff",
-        vpnSectionTitle: "Sicherer Heimtunnel",
-        vpnDesc: "Verbinden Sie sich von unterwegs (Café, 5G, Urlaub) sicher mit Ihrem Heimnetzwerk.",
-        vpnStatusConnected: "Mit Zuhause verbunden",
-        vpnStatusDisconnected: "Getrennt",
-        vpnBtnDisconnect: "REMOTE-VPN TRENNEN",
-        vpnBtnConnect: "MIT ZUHAUSE VERBINDEN",
-        virtualIpLabel: "Virtuelle IP:",
-        pingLabel: "Heim-Ping:",
-        encryptionLabel: "Verschlüsselung:",
-        qrCodeBtn: "QR-Code fürs Smartphone",
-        chartTitle: "Echtzeit-Verbindungsrate (Mb/s)",
-        chartLive: "LIVE-STREAM",
-        dnsSectionBadge: "DNS-Filter & Schutzschild",
-        dnsSectionTitle: "Smart-Home-Schutzschild",
-        dnsDesc: "Blockiert Werbung, Tracker und Phishing auf ALLEN Geräten ohne App-Installation.",
-        dnsProviderLabel: "Aktiver DNS-Dienst:",
-        shieldAdblockTitle: "Werbe- und Tracker-Blocker",
-        shieldAdblockDesc: "Entfernt lästige Banner, Popups und Videoanzeigen",
-        shieldMalwareTitle: "Schutz vor Betrug und Viren",
-        shieldMalwareDesc: "Blockiert Fake-Bankenseiten und schädliche Webseiten",
-        shieldDohTitle: "DNS-Verschlüsselung (DoH)",
-        shieldDohDesc: "Verhindert, dass Provider Ihre besuchten Seiten sehen",
-        shieldParentalTitle: "Familien- und Jugendschutz",
-        shieldParentalDesc: "Filtert ungeeignete Inhalte und aktiviert SafeSearch",
-        statQueries: "Anfragen:",
-        statBlocked: "Werbung geblockt:",
-        statThreats: "Bedrohungen gestoppt:",
-        dnsLogTitle: "Live-DNS-Anfragenprotokoll",
-        dnsLogFilterAll: "Alle Anfragen",
-        dnsLogFilterBlocked: "Nur blockierte",
-        dnsLogFilterAllowed: "Nur erlaubte",
-        toastAttackTitle: "⚠️ Bedrohung abgewehrt!",
-        toastAttackDesc: "HomeGuard hat einen verdächtigen Zugriffsversuch blockiert.",
-        toastResetTitle: "Einstellungen zurückgesetzt",
-        toastResetDesc: "Demo-Werte wurden wiederhergestellt.",
-        toastPauseOn: "Internet pausiert",
-        toastPauseOff: "Internet wieder aktiv",
-        toastVpnOn: "VPN mit Zuhause verbunden",
-        toastVpnOff: "VPN getrennt",
-        toastSaved: "Erfolgreich gespeichert"
+        catDevMedia: "TV & Consoles",
+        catDevIot: "Maison connectée",
+        catDevGuest: "Invités",
+        btnPauseInternet: "Couper Internet",
+        btnResumeInternet: "Réactiver",
+        statusOnline: "En ligne",
+        statusPaused: "Internet coupé",
+        btnConfigure: "Gérer",
+        trafficToday: "Trafic aujourd'hui :",
+        modalDeviceTitle: "Gérer cet appareil",
+        modalDeviceDesc: "Paramètres d'accès et de priorité pour ce membre de la famille.",
+        deviceNameLabel: "Nom de l'appareil :",
+        deviceRoomLabel: "Pièce / Emplacement :",
+        qosLabel: "Priorité de la connexion (QoS) :",
+        qosHigh: "Haute (Jeux en ligne, streaming 4K sans lag)",
+        qosNormal: "Normale (Navigation web, réseaux sociaux)",
+        qosLow: "Basse (Téléchargements en arrière-plan)",
+        parentalLabel: "Contrôle parental (bloquer contenu sensible)",
+        pauseToggleLabel: "Couper temporairement Internet pour cet appareil",
+        saveBtn: "Enregistrer",
+        radarTitle: "Radar du routeur",
+        radarScanning: "Recherche des nouveaux appareils Wi-Fi...",
+        radarFoundTitle: "Nouvel appareil détecté !",
+        radarAddBtn: "Autoriser et ajouter à la maison",
+        vpnSectionBadge: "Accès à distance",
+        vpnSectionTitle: "Connexion sécurisée à la maison",
+        vpnDesc: "Connectez-vous à votre réseau domestique depuis n'importe où (café, 5G, vacances).",
+        vpnStatusConnected: "Connecté à la maison",
+        vpnStatusDisconnected: "Déconnecté",
+        vpnBtnDisconnect: "DÉCONNECTER LE VPN",
+        vpnBtnConnect: "SE CONNECTER À LA MAISON",
+        virtualIpLabel: "IP Virtuelle :",
+        pingLabel: "Ping maison :",
+        encryptionLabel: "Chiffrement :",
+        qrCodeBtn: "Afficher le QR code pour mon téléphone",
+        chartTitle: "Vitesse du trafic en direct (Mb/s)",
+        chartLive: "FLUX EN DIRECT",
+        dnsSectionBadge: "Filtre DNS & Protection",
+        dnsSectionTitle: "Bouclier intelligent de la maison",
+        dnsDesc: "Bloque les pubs et les sites suspects pour TOUS vos appareils sans rien installer.",
+        dnsProviderLabel: "Fournisseur DNS actif :",
+        shieldAdblockTitle: "Bloqueur de publicités",
+        shieldAdblockDesc: "Supprime les bannières, pop-ups et vidéos de pub",
+        shieldMalwareTitle: "Protection contre les virus & arnaques",
+        shieldMalwareDesc: "Bloque les faux sites bancaires et liens piégés",
+        shieldDohTitle: "Chiffrement DNS (DoH)",
+        shieldDohDesc: "Empêche votre opérateur de voir vos sites visités",
+        shieldParentalTitle: "Mode Famille / Contrôle parental",
+        shieldParentalDesc: "Filtre les contenus inappropriés pour les jeunes",
+        statQueries: "Requêtes :",
+        statBlocked: "Pubs bloquées :",
+        statThreats: "Arnaques :",
+        dnsLogTitle: "Journal des requêtes en direct",
+        dnsLogFilterAll: "Toutes les requêtes",
+        dnsLogFilterBlocked: "Bloquées uniquement",
+        dnsLogFilterAllowed: "Autorisées uniquement",
+        toastAttackTitle: "⚠️ Arnaque bloquée !",
+        toastAttackDesc: "HomeGuard a neutralisé une tentative de connexion suspecte.",
+        toastResetTitle: "Paramètres réinitialisés",
+        toastResetDesc: "Les valeurs ont été remises à zéro.",
+        toastPauseOn: "Internet mis en pause",
+        toastPauseOff: "Internet réactivé",
+        toastVpnOn: "VPN connecté à la maison",
+        toastVpnOff: "VPN déconnecté",
+        toastSaved: "Modifications enregistrées"
       }
     };
 
     function t(key) {
-      const dict = i18n[state.lang] || i18n.fr;
-      return dict[key] || key;
+      const dict = i18n[state.lang] || i18n.ru || i18n.fr;
+      return dict[key] || (i18n.ru && i18n.ru[key]) || key;
     }
 
     // AI News Database
@@ -1375,6 +1361,8 @@
         if (key && t(key)) el.placeholder = t(key);
       });
 
+      renderCategoryPills();
+      renderCategoryPills();
       renderNews();
       renderDevices();
       updateVpnUI();
@@ -1425,14 +1413,173 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-        // Загрузка реальных новостей из нашей базы данных через FastAPI
+            // ==========================================
+    // AI NEWS & DYNAMIC CATEGORIES LOGIC
+    // ==========================================
+    const THEMATIC_IMAGES = {
+      csgo: [
+        'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=800&q=80'
+      ],
+      linux: [
+        'https://images.unsplash.com/photo-1629654297299-c8506221ca97?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=800&q=80'
+      ],
+      dev: [
+        'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=800&q=80'
+      ],
+      ai: [
+        'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1655720828018-edd2daec9349?auto=format&fit=crop&w=800&q=80'
+      ],
+      security: [
+        'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1614064641938-3bbee52942c7?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=800&q=80'
+      ],
+      tech: [
+        'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?auto=format&fit=crop&w=800&q=80'
+      ]
+    };
+
+    function cleanText(text) {
+      if (!text) return '';
+      return text
+        .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
+        .replace(/\*\*|__/g, '')
+        .replace(/\*|_/g, '')
+        .replace(/^[\s💀🚨🔥⚡️👉•\*\-]+/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function normalizeCategory(rawCat) {
+      if (!rawCat) return 'Технологии';
+      let c = cleanText(rawCat);
+      c = c.replace(/^Категория\s*[\(:]?/i, '').replace(/[\)]+$/g, '').trim();
+
+      const map = {
+        'technology': 'Технологии',
+        'general tech': 'Общие технологии',
+        'it-аналитик': 'IT & Аналитика',
+        'it аналитик': 'IT & Аналитика',
+        'linux': 'Linux & Инфраструктура',
+        'linux & infrastructure': 'Linux & Инфраструктура',
+        'cybersecurity': 'Безопасность',
+        'security': 'Безопасность',
+        'development': 'Разработка',
+        'dev': 'Разработка',
+        'gaming': 'Игры & Киберспорт',
+        'ai': 'Искусственный интеллект'
+      };
+
+      const lower = c.toLowerCase();
+      return map[lower] || c;
+    }
+
+    function getCategoryEmoji(catName) {
+      const c = (catName || '').toUpperCase();
+      if (c.includes('LINUX') || c.includes('ИНФРАСТРУКТУРА') || c.includes('СЕРВЕР') || c.includes('UBUNTU')) return '🐧';
+      if (c.includes('РАЗРАБОТ') || c.includes('DEV') || c.includes('CODE') || c.includes('ПРОГРАММ') || c.includes('PYTHON')) return '💻';
+      if (c.includes('CS') || c.includes('GAME') || c.includes('ИГР') || c.includes('КИБЕРСПОРТ') || c.includes('NAVI')) return '🎮';
+      if (c.includes('AI') || c.includes('ИИ') || c.includes('ИНТЕЛЛЕКТ') || c.includes('АНАЛИТИК') || c.includes('НЕЙРО') || c.includes('LLM')) return '🤖';
+      if (c.includes('БЕЗОПАС') || c.includes('SEC') || c.includes('УЯЗВИМ') || c.includes('ХАКЕР') || c.includes('VULN')) return '🛡️';
+      if (c.includes('СЕТЬ') || c.includes('VPN') || c.includes('NET') || c.includes('WIREGUARD')) return '🌐';
+      if (c.includes('ЖЕЛЕЗО') || c.includes('HARDWARE') || c.includes('ЧИП') || c.includes('CPU') || c.includes('GPU')) return '⚡';
+      return '⚡';
+    }
+
+    function getArticleImage(article, index) {
+      if (article.image_url) return article.image_url;
+      if (article.raw_content) {
+        const match = article.raw_content.match(/<img[^>]+src=["'](https?:\\\/\\\/[^"']+)["']/i);
+        if (match && match[1]) return match[1];
+      }
+
+      const text = ((article.title || '') + ' ' + (article.category || '') + ' ' + (article.source || '')).toLowerCase();
+      let pool = THEMATIC_IMAGES.tech;
+
+      if (text.includes('cs') || text.includes('navi') || text.includes('apex') || text.includes('game') || text.includes('игр') || text.includes('турнир') || text.includes('киберспорт')) {
+        pool = THEMATIC_IMAGES.csgo;
+      } else if (text.includes('linux') || text.includes('ubuntu') || text.includes('opennet') || text.includes('сервер') || text.includes('freebsd') || text.includes('nginx') || text.includes('kernel')) {
+        pool = THEMATIC_IMAGES.linux;
+      } else if (text.includes('уязвим') || text.includes('безопас') || text.includes('взлом') || text.includes('exploit') || text.includes('cve') || text.includes('crowdsec') || text.includes('leak')) {
+        pool = THEMATIC_IMAGES.security;
+      } else if (text.includes('ai') || text.includes('ии') || text.includes('нейросет') || text.includes('модел') || text.includes('gpt') || text.includes('llm') || text.includes('аналитик') || text.includes('qwen')) {
+        pool = THEMATIC_IMAGES.ai;
+      } else if (text.includes('dev') || text.includes('mojo') || text.includes('python') || text.includes('программир') || text.includes('браузер') || text.includes('код') || text.includes('code') || text.includes('rust')) {
+        pool = THEMATIC_IMAGES.dev;
+      }
+
+      const hash = Math.abs((article.id || 0) + (article.title ? article.title.length : index) * 7);
+      return pool[hash % pool.length];
+    }
+
+    window.setDynamicCategory = function(cat) {
+      state.newsCategoryFilter = (cat === 'all' || cat === 'Все') ? 'all' : cat;
+      renderCategoryPills();
+      renderNews();
+    };
+
+    function renderCategoryPills() {
+      const container = document.getElementById('category-pills-container');
+      if (!container) return;
+
+      const totalCount = state.articles.length;
+      const catCounts = {};
+
+      state.articles.forEach(a => {
+        const c = a._displayCategory || normalizeCategory(a.category);
+        a._displayCategory = c;
+        catCounts[c] = (catCounts[c] || 0) + 1;
+      });
+
+      const sortedCategories = Object.keys(catCounts).sort((a, b) => catCounts[b] - catCounts[a]);
+      const categories = ['Все', ...sortedCategories];
+
+      container.innerHTML = categories.map(cat => {
+        const isAll = (cat === 'Все');
+        const count = isAll ? totalCount : (catCounts[cat] || 0);
+        const isActive = (isAll && (state.newsCategoryFilter === 'all' || !state.newsCategoryFilter || state.newsCategoryFilter === 'Все')) ||
+                         (!isAll && state.newsCategoryFilter && state.newsCategoryFilter.toLowerCase() === cat.toLowerCase());
+        const emoji = isAll ? '📂' : getCategoryEmoji(cat);
+
+        const activeClass = isActive
+          ? 'bg-sky-500 text-white font-bold shadow-lg shadow-sky-500/25 border-sky-400'
+          : 'bg-slate-900/60 hover:bg-slate-800 text-slate-300 hover:text-white border-slate-800/80 font-medium';
+
+        return `
+          <button type="button" onclick="setDynamicCategory('${isAll ? 'all' : cat.replace(/'/g, "\\\\'")}')" class="news-cat-pill px-4 py-2 rounded-2xl text-xs flex items-center gap-2 transition-all shrink-0 border ${activeClass}">
+            <span>${emoji}</span>
+            <span>${cat}</span>
+            <span class="text-[10px] opacity-75 bg-black/30 px-1.5 py-0.5 rounded-md font-mono">${count}</span>
+          </button>
+        `;
+      }).join('');
+    }
+
     async function loadLiveNews() {
       try {
-        const response = await fetch('/api/news?limit=25');
+        const response = await fetch('/api/news?limit=50');
         if (response.ok) {
           const liveArticles = await response.json();
           if (liveArticles && liveArticles.length > 0) {
             state.articles = liveArticles;
+            state.articles.forEach(a => {
+              a._displayCategory = normalizeCategory(a.category);
+            });
+            renderCategoryPills();
             renderNews();
           }
         }
@@ -1441,63 +1588,62 @@
       }
     }
 
-    // Отрисовка новостей (поддерживает и живой API, и демо-режим)
     function renderNews() {
       const container = document.getElementById('news-container');
       if (!container) return;
       container.innerHTML = '';
 
       const filtered = state.articles.filter(item => {
-        if (state.newsCategoryFilter === 'all') return true;
-        const itemCat = (item.category || '').toLowerCase();
-        return itemCat.includes(state.newsCategoryFilter.toLowerCase());
+        if (!state.newsCategoryFilter || state.newsCategoryFilter === 'all' || state.newsCategoryFilter === 'Все') return true;
+        const itemCat = (item._displayCategory || normalizeCategory(item.category)).toLowerCase();
+        return itemCat === state.newsCategoryFilter.toLowerCase();
       });
 
       if (filtered.length === 0) {
         container.innerHTML = `
-          <div class="col-span-full py-10 text-center text-slate-400 glass-panel rounded-3xl p-6">
-            <p class="text-sm font-semibold text-slate-300">Новостей в этой категории пока нет</p>
+          <div class="col-span-full py-12 text-center text-slate-400 glass-panel rounded-3xl p-6 border border-slate-800">
+            <p class="text-sm font-semibold text-slate-300">В этой категории пока нет новостей</p>
           </div>
         `;
         return;
       }
 
-      filtered.forEach(article => {
-        const title = (article.titles && article.titles[state.lang]) || article.title || 'Новость';
-        const summary = (article.summaries && article.summaries[state.lang]) || article.summary || '';
-        const catName = article.category || 'Технологии';
+      filtered.forEach((article, index) => {
+        const title = cleanText(article.title || 'Новость');
+        const sourceUrl = article.sourceUrl || article.url || article.original_url || '#';
         const sourceName = article.sourceName || article.source || 'Инфо-поток';
-        const sourceUrl = article.sourceUrl || article.url || '#';
-        const timeStr = article.time || (article.published_at ? new Date(article.published_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Сегодня');
-        const scoreBadge = article.importance_score ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">🔥 ${article.importance_score}/10</span>` : '';
-        const whyMattersBlock = article.why_it_matters ? `
-          <div class="mt-2 pt-2 border-t border-sky-500/20 text-[11px] text-sky-200/90">
-            <strong class="text-sky-300">💡 Почему это важно:</strong> ${article.why_it_matters}
-          </div>
-        ` : '';
+        const category = article._displayCategory || normalizeCategory(article.category || 'Технологии');
+        const score = article.importance_score ? Number(article.importance_score).toFixed(1) : '5.0';
+        const summary = cleanText(article.summary || '');
+        const whyItMatters = cleanText(article.why_it_matters || '');
+        const image = getArticleImage(article, index);
+        const timeStr = article.published_at 
+          ? new Date(article.published_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) 
+          : 'Сегодня';
 
-        const imageUrl = article.imageUrl || 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&auto=format&fit=crop&q=60';
+        const scoreBadge = `<span class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-amber-500/20 backdrop-blur-md text-amber-300 border border-amber-500/40 shadow-lg flex items-center gap-1">🔥 ${score}/10</span>`;
 
         const card = document.createElement('div');
-        card.className = 'glass-panel glass-panel-hover rounded-3xl overflow-hidden border border-slate-800 flex flex-col group';
+        card.className = 'glass-panel glass-panel-hover rounded-3xl overflow-hidden border border-slate-800/80 hover:border-sky-500/30 flex flex-col group transition-all duration-300 hover:shadow-2xl hover:shadow-sky-500/5 hover:-translate-y-1';
 
         card.innerHTML = `
-          <div class="relative w-full aspect-video overflow-hidden bg-slate-900">
-            <img src="${imageUrl}" alt="${title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80"></div>
+          <div class="relative w-full aspect-video overflow-hidden bg-slate-950">
+            <img src="${image}" alt="${title}" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80'" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90 group-hover:opacity-100">
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
             
             <div class="absolute top-3 left-3 flex items-center gap-2">
-              <span class="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-slate-950/80 backdrop-blur-md text-sky-300 border border-sky-500/30">
-                ${catName}
+              <span class="px-3 py-1 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-slate-950/80 backdrop-blur-md text-sky-300 border border-sky-500/30 shadow-lg flex items-center gap-1.5">
+                <span>${getCategoryEmoji(category)}</span>
+                <span>${category}</span>
               </span>
               ${scoreBadge}
             </div>
 
             <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs text-slate-300">
-              <span class="font-semibold text-white flex items-center gap-1.5 bg-slate-900/80 backdrop-blur-md px-2.5 py-0.5 rounded-lg border border-slate-700/50">
+              <span class="font-semibold text-white flex items-center gap-1.5 bg-slate-900/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-slate-700/50">
                 ${sourceName}
               </span>
-              <span class="text-slate-400 text-[11px]">${timeStr}</span>
+              <span class="text-slate-400 text-[11px] bg-slate-900/80 backdrop-blur-md px-2 py-1 rounded-lg border border-slate-800">${timeStr}</span>
             </div>
           </div>
 
@@ -1507,17 +1653,21 @@
                 ${title}
               </h3>
               
-              <div class="mt-3 p-3 rounded-2xl bg-sky-950/20 border border-sky-500/20 text-xs text-slate-300 leading-relaxed">
-                <span class="text-[11px] font-bold text-sky-400 uppercase tracking-wider block mb-1">
-                  🤖 Резюме нейросети (AI):
+              <div class="mt-3 p-3.5 rounded-2xl bg-slate-950/50 border border-slate-800/70 text-xs text-slate-300 leading-relaxed">
+                <span class="text-[11px] font-bold text-sky-400 uppercase tracking-wider block mb-1 flex items-center gap-1">
+                  <span>🤖</span> <span>Резюме нейросети (AI):</span>
                 </span>
-                ${summary}
-                ${whyMattersBlock}
+                <p class="text-slate-300 leading-relaxed">${summary || 'Краткое резюме формируется.'}</p>
+                ${whyItMatters ? `
+                  <div class="mt-2.5 pt-2.5 border-t border-slate-800/80 text-[11px] text-slate-400">
+                    <strong class="text-amber-300">💡 Почему это важно:</strong> ${whyItMatters}
+                  </div>
+                ` : ''}
               </div>
             </div>
 
-            <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between">
-              <span class="text-[11px] text-slate-400">News AI Server</span>
+            <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between">
+              <span class="text-[11px] text-slate-500">News AI Server</span>
               <a href="${sourceUrl}" target="_blank" rel="noopener noreferrer" class="px-3.5 py-1.5 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all">
                 <span>Читать в источнике</span>
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
@@ -1530,400 +1680,7 @@
       });
     }
 
-    // Render Devices
-    function updateNetworkAnalytics() {
-      const p = document.getElementById('metric-protection');
-      const a = document.getElementById('metric-attacks');
-      const s = document.getElementById('metric-speed');
-      const r = document.getElementById('metric-remote');
 
-      if (p) p.textContent = "99.8%";
-      if (a) a.textContent = state.dnsStats.threatsBlocked + " " + (state.lang === 'fr' ? 'menaces' : state.lang === 'de' ? 'Bedrohungen' : 'threats');
-      if (s) s.textContent = "500 Mb/s";
-      if (r) r.textContent = state.vpnConnected ? "WireGuard" : "Off";
-    }
-
-    function renderDevices() {
-      const container = document.getElementById('devices-container');
-      if (!container) return;
-
-      const total = state.devices.length;
-      const paused = state.devices.filter(d => d.paused).length;
-      const active = total - paused;
-
-      const stTotal = document.getElementById('stat-total-devices');
-      const stAct = document.getElementById('stat-active-devices');
-      const stPau = document.getElementById('stat-paused-devices');
-
-      if (stTotal) stTotal.textContent = total;
-      if (stAct) stAct.textContent = active;
-      if (stPau) stPau.textContent = paused;
-
-      updateNetworkAnalytics();
-
-      const filtered = state.devices.filter(d => {
-        const matchQuery = d.name.toLowerCase().includes(state.searchDeviceQuery.toLowerCase()) ||
-                           d.ip.includes(state.searchDeviceQuery) ||
-                           d.location.toLowerCase().includes(state.searchDeviceQuery.toLowerCase());
-        const matchCat = state.deviceCategoryFilter === 'all' || d.category === state.deviceCategoryFilter;
-        return matchQuery && matchCat;
-      });
-
-      container.innerHTML = '';
-
-      if (filtered.length === 0) {
-        container.innerHTML = `
-          <div class="col-span-full py-10 text-center text-slate-400 glass-panel rounded-3xl p-6">
-            <p class="text-sm font-semibold text-slate-300">Aucun appareil trouvé</p>
-          </div>
-        `;
-        return;
-      }
-
-      filtered.forEach(device => {
-        const card = document.createElement('div');
-        card.className = `glass-panel rounded-3xl p-5 border transition-all ${device.paused ? 'border-rose-500/40 bg-rose-950/15' : 'border-slate-800'}`;
-
-        card.innerHTML = `
-          <div class="flex items-start justify-between gap-3 mb-3">
-            <div class="flex items-center gap-3 min-w-0">
-              <div class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${device.paused ? 'bg-rose-500/20 text-rose-400' : 'bg-sky-500/20 text-sky-400'}">
-                ${getDeviceIcon(device.icon)}
-              </div>
-              <div class="min-w-0">
-                <h4 class="font-bold text-white text-sm sm:text-base leading-snug truncate">${device.name}</h4>
-                <p class="text-[11px] text-slate-400 truncate">${device.vendor} • ${device.location}</p>
-              </div>
-            </div>
-
-            <!-- Quick Internet Cut/Resume Button -->
-            <button type="button" class="toggle-pause-btn px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0 ${device.paused ? 'bg-rose-500/20 border border-rose-500/40 text-rose-300' : 'bg-slate-800/90 border border-slate-700 text-slate-200 hover:text-white'}" data-id="${device.id}">
-              ${device.paused 
-                ? '<svg class="w-3.5 h-3.5 text-rose-300" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>' 
-                : '<svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'}
-              <span>${device.paused ? t('btnResumeInternet') : t('btnPauseInternet')}</span>
-            </button>
-          </div>
-
-          <div class="flex flex-wrap items-center gap-2 mb-3">
-            <span class="badge-status px-2.5 py-1 rounded-full text-xs font-semibold ${device.paused ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/25'}">
-              <span class="w-2 h-2 rounded-full mr-1.5 ${device.paused ? 'bg-rose-400' : 'bg-emerald-400 animate-pulse'}"></span>
-              ${device.paused ? t('statusPaused') : t('statusOnline')}
-            </span>
-
-            <span class="badge-status px-2.5 py-1 rounded-full text-xs bg-slate-800/80 text-slate-300 border border-slate-700/60 flex items-center gap-1">
-              ${device.connection}
-            </span>
-
-            ${device.parental ? '<span class="badge-status px-2 py-0.5 rounded-full text-[11px] bg-purple-500/15 text-purple-300 border border-purple-500/30">Parental</span>' : ''}
-            ${device.qos === 'high' ? '<span class="badge-status px-2 py-0.5 rounded-full text-[11px] bg-amber-500/15 text-amber-300 border border-amber-500/30">⚡ QoS</span>' : ''}
-          </div>
-
-          <div class="grid grid-cols-2 gap-2 p-3 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs mb-3">
-            <div>
-              <span class="text-slate-500 block text-[10px]">IP :</span>
-              <span class="font-mono text-slate-200 font-medium">${device.ip}</span>
-            </div>
-            <div class="text-right">
-              <span class="text-slate-500 block text-[10px]">${t('trafficToday')}</span>
-              <span class="font-bold text-sky-300">${device.dataToday}</span>
-            </div>
-          </div>
-
-          <div class="flex items-center justify-between pt-1">
-            <span class="text-[10px] font-mono text-slate-500">${device.mac}</span>
-            <button type="button" class="inspect-device-btn px-3.5 py-1.5 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 text-xs font-semibold flex items-center gap-1 transition-all" data-id="${device.id}">
-              <span>${t('btnConfigure')}</span>
-            </button>
-          </div>
-        `;
-
-        container.appendChild(card);
-      });
-
-      // Attach Pause Button Events
-      container.querySelectorAll('.toggle-pause-btn').forEach(btn => {
-        btn.onclick = (e) => {
-          e.stopPropagation();
-          const id = parseInt(btn.dataset.id);
-          const dev = state.devices.find(d => d.id === id);
-          if (!dev) return;
-          dev.paused = !dev.paused;
-          renderDevices();
-          showToast(dev.paused ? t('toastPauseOn') : t('toastPauseOff'), dev.name, dev.paused ? "warning" : "success");
-        };
-      });
-
-      // Attach Inspect Button Events
-      container.querySelectorAll('.inspect-device-btn').forEach(btn => {
-        btn.onclick = (e) => {
-          e.stopPropagation();
-          const id = parseInt(btn.dataset.id);
-          openDeviceModal(id);
-        };
-      });
-    }
-
-    // Device Inspector Modal
-    let activeEditId = null;
-    function openDeviceModal(id) {
-      const dev = state.devices.find(d => d.id === id);
-      if (!dev) return;
-      activeEditId = id;
-
-      document.getElementById('modal-device-name').value = dev.name;
-      document.getElementById('modal-device-ip').textContent = dev.ip;
-      document.getElementById('modal-device-mac').textContent = dev.mac;
-      document.getElementById('modal-device-vendor').textContent = dev.vendor;
-      document.getElementById('modal-device-connection').textContent = dev.connection;
-      document.getElementById('modal-device-location').value = dev.location;
-      document.getElementById('modal-device-qos').value = dev.qos;
-      document.getElementById('modal-device-parental').checked = dev.parental;
-      document.getElementById('modal-device-pause-toggle').checked = dev.paused;
-
-      const modal = document.getElementById('device-modal');
-      modal.style.display = 'flex';
-    }
-
-    // Save Device Modal
-    document.getElementById('save-device-settings').onclick = () => {
-      if (!activeEditId) return;
-      const dev = state.devices.find(d => d.id === activeEditId);
-      if (!dev) return;
-
-      dev.name = document.getElementById('modal-device-name').value;
-      dev.location = document.getElementById('modal-device-location').value;
-      dev.qos = document.getElementById('modal-device-qos').value;
-      dev.parental = document.getElementById('modal-device-parental').checked;
-      dev.paused = document.getElementById('modal-device-pause-toggle').checked;
-
-      const modal = document.getElementById('device-modal');
-      modal.style.display = 'none';
-
-      renderDevices();
-      showToast(t('toastSaved'), dev.name, "success");
-    };
-
-    document.getElementById('close-device-modal').onclick = () => {
-      const modal = document.getElementById('device-modal');
-      modal.style.display = 'none';
-    };
-
-    // VPN Section UI
-    function updateVpnUI() {
-      const btn = document.getElementById('vpn-main-toggle');
-      const pill = document.getElementById('vpn-status-pill');
-      const txt = document.getElementById('vpn-status-text');
-      const ip = document.getElementById('vpn-virtual-ip');
-      const ping = document.getElementById('vpn-ping');
-
-      if (state.vpnConnected) {
-        btn.innerHTML = `
-          <span class="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span>
-          <span class="font-bold text-white">${t('vpnBtnDisconnect')}</span>
-        `;
-        btn.className = 'w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold flex items-center justify-center gap-3 shadow-lg shadow-emerald-900/30 border border-emerald-400/40 transition-all';
-
-        pill.className = 'badge-status px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1.5';
-        pill.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> ' + t('vpnStatusConnected');
-
-        txt.textContent = state.lang === 'fr' 
-          ? "Votre tunnel sécurisé vers la maison est actif. Accédez à vos disques et caméras comme si vous étiez dans votre salon."
-          : state.lang === 'de'
-          ? "Ihr sicherer Heimtunnel ist aktiv. Voller Zugriff auf Heimdaten wie auf der heimischen Couch."
-          : "Your secure tunnel to home is active. Access your local storage and cameras just like on your home couch.";
-
-        ip.textContent = "10.8.0.2 / 24";
-        ping.textContent = "12 ms";
-      } else {
-        btn.innerHTML = `
-          <svg class="w-5 h-5 text-sky-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9"/></svg>
-          <span class="font-bold text-white">${t('vpnBtnConnect')}</span>
-        `;
-        btn.className = 'w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-bold flex items-center justify-center gap-3 shadow-lg shadow-sky-900/30 border border-sky-400/40 transition-all';
-
-        pill.className = 'badge-status px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-1.5';
-        pill.innerHTML = '<span class="w-2 h-2 rounded-full bg-slate-500"></span> ' + t('vpnStatusDisconnected');
-
-        txt.textContent = state.lang === 'fr'
-          ? "Le tunnel distant est désactivé. Vos appareils locaux ne sont pas accessibles depuis l'extérieur."
-          : state.lang === 'de'
-          ? "Der Fernzugriff ist deaktiviert. Heimgeräte sind von außen nicht erreichbar."
-          : "Remote tunnel is disconnected. Local home devices are not accessible from outside.";
-
-        ip.textContent = "—";
-        ping.textContent = "—";
-      }
-
-      updateNetworkAnalytics();
-      renderCanvasChart();
-    }
-
-    document.getElementById('vpn-main-toggle').onclick = () => {
-      state.vpnConnected = !state.vpnConnected;
-      updateVpnUI();
-      showToast(state.vpnConnected ? t('toastVpnOn') : t('toastVpnOff'), state.vpnConnected ? "WireGuard 10.8.0.2" : "", state.vpnConnected ? "success" : "info");
-    };
-
-    // QR Code Modal
-    document.getElementById('show-qr-btn').onclick = () => {
-      const q = document.getElementById('qr-modal');
-      q.style.display = 'flex';
-    };
-    document.getElementById('close-qr-modal').onclick = () => {
-      const q = document.getElementById('qr-modal');
-      q.style.display = 'none';
-    };
-
-    // Radar Modal
-    document.getElementById('scan-network-btn').onclick = () => {
-      const r = document.getElementById('radar-scan-modal');
-      const f = document.getElementById('radar-found-box');
-      r.style.display = 'flex';
-      f.style.display = 'none';
-
-      document.getElementById('radar-status-text').textContent = t('radarScanning');
-
-      setTimeout(() => {
-        f.style.display = 'block';
-        document.getElementById('radar-status-text').textContent = t('radarFoundTitle');
-      }, 2000);
-    };
-
-    document.getElementById('close-radar-modal').onclick = () => {
-      const r = document.getElementById('radar-scan-modal');
-      r.style.display = 'none';
-    };
-
-    document.getElementById('add-discovered-device-btn').onclick = () => {
-      state.devices.push({
-        id: Date.now(),
-        name: "Capteur Aqara Zigbee",
-        category: "iot",
-        icon: "hub",
-        ip: "192.168.1.189",
-        mac: "54:EF:44:A1:09:BB",
-        connection: "Wi-Fi 2.4 GHz",
-        dataToday: "2.4 MB",
-        paused: false,
-        qos: "normal",
-        parental: false,
-        vendor: "Aqara",
-        location: "Entrée"
-      });
-
-      const r = document.getElementById('radar-scan-modal');
-      r.style.display = 'none';
-
-      renderDevices();
-      showToast(t('toastSaved'), "Capteur Aqara Zigbee", "success");
-    };
-
-    // Standalone Canvas Traffic Chart
-    let chartPoints = [35, 52, 78, 110, 85, 62, 94, 120, 95, 88];
-    function renderCanvasChart() {
-      const canvas = document.getElementById('vpn-traffic-chart');
-      if (!canvas) return;
-
-      const rect = canvas.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) return;
-
-      canvas.width = rect.width * (window.devicePixelRatio || 1);
-      canvas.height = rect.height * (window.devicePixelRatio || 1);
-
-      const ctx = canvas.getContext('2d');
-      const w = canvas.width;
-      const h = canvas.height;
-
-      ctx.clearRect(0, 0, w, h);
-
-      // Grid lines
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-      ctx.lineWidth = 1;
-      for (let i = 1; i <= 3; i++) {
-        const y = (h / 4) * i;
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(w, y);
-        ctx.stroke();
-      }
-
-      if (!state.vpnConnected) {
-        ctx.fillStyle = '#64748b';
-        ctx.font = '14px Inter, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('VPN Déconnecté', w / 2, h / 2);
-        return;
-      }
-
-      // Draw Gradient Area & Line
-      const pts = chartPoints;
-      const step = w / (pts.length - 1);
-
-      ctx.beginPath();
-      ctx.moveTo(0, h - (pts[0] / 150) * h);
-
-      for (let i = 1; i < pts.length; i++) {
-        const x = i * step;
-        const y = h - (pts[i] / 150) * h;
-        const prevX = (i - 1) * step;
-        const prevY = h - (pts[i - 1] / 150) * h;
-        const cpX = (prevX + x) / 2;
-        ctx.bezierCurveTo(cpX, prevY, cpX, y, x, y);
-      }
-
-      ctx.strokeStyle = '#38bdf8';
-      ctx.lineWidth = 3 * (window.devicePixelRatio || 1);
-      ctx.stroke();
-
-      // Fill Gradient
-      ctx.lineTo(w, h);
-      ctx.lineTo(0, h);
-      ctx.closePath();
-
-      const grad = ctx.createLinearGradient(0, 0, 0, h);
-      grad.addColorStop(0, 'rgba(56, 189, 248, 0.35)');
-      grad.addColorStop(1, 'rgba(56, 189, 248, 0.0)');
-      ctx.fillStyle = grad;
-      ctx.fill();
-    }
-
-    window.addEventListener('resize', renderCanvasChart);
-
-    // Pulse live chart values
-    setInterval(() => {
-      if (state.vpnConnected && state.currentTab === 'vpn') {
-        chartPoints.shift();
-        chartPoints.push(Math.floor(Math.random() * 50 + 60));
-        renderCanvasChart();
-      }
-    }, 2000);
-
-    // DNS Providers
-    document.querySelectorAll('.dns-provider-card').forEach(card => {
-      card.onclick = () => {
-        document.querySelectorAll('.dns-provider-card').forEach(c => {
-          c.className = 'dns-provider-card cursor-pointer p-3 rounded-2xl border border-slate-800 bg-slate-900/60 hover:border-slate-700 transition-all';
-        });
-        card.className = 'dns-provider-card cursor-pointer p-3 rounded-2xl border border-sky-500 bg-sky-500/10 glow-cyan transition-all';
-        state.selectedDns = card.dataset.dns;
-        showToast(t('toastSaved'), card.querySelector('h4').textContent.trim(), "info");
-      };
-    });
-
-    // DNS Shields
-    function bindDns(id, key) {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.onchange = (e) => {
-        state.dnsFilters[key] = e.target.checked;
-        showToast(t('toastSaved'), t('dnsSectionTitle'), "success");
-      };
-    }
-    bindDns('dns-toggle-adblock', 'adblock');
-    bindDns('dns-toggle-malware', 'malware');
-    bindDns('dns-toggle-doh', 'doh');
-    bindDns('dns-toggle-parental', 'parental');
 
     // DNS Log
     function renderDnsLog() {
@@ -1995,36 +1752,45 @@
       });
     }
 
-    document.getElementById('dns-log-filter').onchange = renderDnsLog;
+    const dnsFilterEl = document.getElementById('dns-log-filter');
+    if (dnsFilterEl) dnsFilterEl.onchange = renderDnsLog;
 
-    // Presentation Demo Actions
-    document.getElementById('demo-simulate-attack').onclick = () => {
-      state.dnsStats.threatsBlocked++;
-      state.dnsStats.blockedQueries += 3;
-      document.getElementById('stat-threats-count').textContent = state.dnsStats.threatsBlocked.toLocaleString();
-      document.getElementById('stat-blocked-count').textContent = state.dnsStats.blockedQueries.toLocaleString();
-      updateNetworkAnalytics();
+    // Presentation Demo Actions (Safely guarded)
+    const attackBtn = document.getElementById('demo-simulate-attack');
+    if (attackBtn) {
+      attackBtn.onclick = () => {
+        state.dnsStats.threatsBlocked++;
+        state.dnsStats.blockedQueries += 3;
+        const threatsEl = document.getElementById('stat-threats-count');
+        const blockedEl = document.getElementById('stat-blocked-count');
+        if (threatsEl) threatsEl.textContent = state.dnsStats.threatsBlocked.toLocaleString();
+        if (blockedEl) blockedEl.textContent = state.dnsStats.blockedQueries.toLocaleString();
+        updateNetworkAnalytics();
 
-      state.dnsQueries.unshift({
-        id: Date.now(),
-        domain: "phishing-bank-login.cc",
-        client: "Smart TV Salon",
-        time: new Date().toTimeString().substring(0, 5),
-        status: "threat",
-        reason: state.lang === 'fr' ? "Lien malveillant bloqué" : "Malicious domain stopped"
-      });
+        state.dnsQueries.unshift({
+          id: Date.now(),
+          domain: "phishing-bank-login.cc",
+          client: "Smart TV Salon",
+          time: new Date().toTimeString().substring(0, 5),
+          status: "threat",
+          reason: state.lang === 'fr' ? "Lien malveillant bloqué" : (state.lang === 'ru' ? "Опасный домен заблокирован" : "Malicious domain stopped")
+        });
 
-      renderDnsLog();
-      showToast(t('toastAttackTitle'), t('toastAttackDesc'), "danger");
-    };
+        renderDnsLog();
+        showToast(t('toastAttackTitle'), t('toastAttackDesc'), "danger");
+      };
+    }
 
-    document.getElementById('demo-reset-state').onclick = () => {
-      state.devices.forEach(d => d.paused = false);
-      state.vpnConnected = true;
-      renderDevices();
-      updateVpnUI();
-      showToast(t('toastResetTitle'), t('toastResetDesc'), "info");
-    };
+    const resetBtn = document.getElementById('demo-reset-state');
+    if (resetBtn) {
+      resetBtn.onclick = () => {
+        state.devices.forEach(d => d.paused = false);
+        state.vpnConnected = true;
+        renderDevices();
+        updateVpnUI();
+        showToast(t('toastResetTitle'), t('toastResetDesc'), "info");
+      };
+    }
 
     // Attach Language Select Listener
     const langSelect = document.getElementById('lang-select');
@@ -2071,7 +1837,7 @@
     }
 
     // Initialize Default View
-    setLanguage('fr');
+    setLanguage('ru');
     switchTab('news');
     loadLiveNews();
   })();
