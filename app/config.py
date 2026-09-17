@@ -52,8 +52,19 @@ class Settings(BaseSettings):
     TELEGRAM_API_HASH: Optional[str] = None
     TELEGRAM_SESSION_NAME: str = "news_collector"
 
+    # Telegram Bot Settings
+    TELEGRAM_BOT_TOKEN: str = ""
+    TELEGRAM_ADMIN_CHAT_ID: int = 0
+
+    # Wake-on-LAN
+    WOL_MAC_ADDRESS: str = "18:31:BF:B5:27:AA"
+    WOL_BROADCAST_IP: str = "192.168.178.255"
+
 
 @lru_cache
 def get_settings() -> Settings:
     """Singleton helper to return cached settings instance."""
     return Settings()
+
+
+settings = get_settings()
