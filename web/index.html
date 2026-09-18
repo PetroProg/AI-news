@@ -347,6 +347,314 @@
         <button type="button" class="news-cat-pill px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 bg-sky-500 text-white" onclick="setDynamicCategory('all')">Все</button>
       </div>
 
+      <!-- ======================================================= -->
+      <!-- PROGRAMMING LANGUAGES ANALYTICS HUB & DEEP DIVE (NEW)   -->
+      <!-- ======================================================= -->
+      <div id="programming-analytics-hub" class="space-y-6 pt-2 pb-4 transition-all duration-500">
+        
+        <!-- Header Banner for Analytics -->
+        <div class="glass-panel p-6 sm:p-7 rounded-3xl border border-sky-500/30 bg-gradient-to-br from-slate-900/90 via-slate-950/80 to-sky-950/20 relative overflow-hidden shadow-2xl">
+          <div class="absolute -right-12 -top-12 w-56 h-56 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
+            <div>
+              <div class="flex items-center gap-2 mb-2 flex-wrap">
+                <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-sky-500/20 text-sky-300 border border-sky-500/40 flex items-center gap-1.5">
+                  <span>💻</span> <span>Аналитический хаб • IT & Языки программирования</span>
+                </span>
+                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  🔥 Фильтр качества: Оценка ≥ 7.0
+                </span>
+              </div>
+              <h3 class="text-xl sm:text-2xl font-black text-white font-heading tracking-tight">
+                Мировой рейтинг & Архитектурный анализ языков
+              </h3>
+              <p class="text-xs sm:text-sm text-slate-300 max-w-2xl mt-1 leading-relaxed">
+                Актуальная аналитика популярности (TIOBE, GitHub Octoverse, Stack Overflow) и детальный технический разбор восходящих звёзд индустрии.
+              </p>
+            </div>
+
+            <!-- Quick sub-filter chips -->
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <button type="button" onclick="filterByLanguage('all')" class="lang-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-500 text-white border border-sky-400 transition-all shadow-md" data-lang="all">Все языки</button>
+              <button type="button" onclick="filterByLanguage('python')" class="lang-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all" data-lang="python">🐍 Python</button>
+              <button type="button" onclick="filterByLanguage('rust')" class="lang-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all" data-lang="rust">🦀 Rust</button>
+              <button type="button" onclick="filterByLanguage('go')" class="lang-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all" data-lang="go">🐹 Go</button>
+              <button type="button" onclick="filterByLanguage('c++')" class="lang-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all" data-lang="c++">⚡ C++</button>
+              <button type="button" onclick="filterByLanguage('typescript')" class="lang-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all" data-lang="typescript">🔷 TS / JS</button>
+              <button type="button" onclick="filterByLanguage('mojo')" class="lang-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all" data-lang="mojo">🔥 Mojo</button>
+              <button type="button" onclick="filterByLanguage('zig')" class="lang-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all" data-lang="zig">⚡ Zig</button>
+            </div>
+          </div>
+
+          <!-- TOP 10 GLOBAL LANGUAGES METRICS GRID -->
+          <div class="mt-6 pt-6 border-t border-slate-800/80">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-sky-400 mb-3 flex items-center gap-2">
+              <span>🌐</span> <span>Топ-10 языков программирования в мире (Рейтинг & Сферы применения)</span>
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+              
+              <!-- 1. Python -->
+              <div onclick="filterByLanguage('python')" class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-amber-500/50 cursor-pointer transition-all hover:-translate-y-0.5 group">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-xs font-bold text-white group-hover:text-amber-300 flex items-center gap-1.5">
+                    <span>🐍</span> <span>Python</span>
+                  </span>
+                  <span class="text-[11px] font-mono font-bold text-amber-400">#1 • 25.4%</span>
+                </div>
+                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-2">
+                  <div class="bg-amber-400 h-full rounded-full" style="width: 100%"></div>
+                </div>
+                <p class="text-[11px] text-slate-300 leading-tight">
+                  <strong class="text-white">Для чего:</strong> ИИ / ML (PyTorch), Data Science, FastAPI бэкенд, скрипты автоматизации.
+                </p>
+              </div>
+
+              <!-- 2. JS / TS -->
+              <div onclick="filterByLanguage('typescript')" class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-blue-500/50 cursor-pointer transition-all hover:-translate-y-0.5 group">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-xs font-bold text-white group-hover:text-blue-300 flex items-center gap-1.5">
+                    <span>🔷</span> <span>JS / TypeScript</span>
+                  </span>
+                  <span class="text-[11px] font-mono font-bold text-blue-400">#2 • 19.8%</span>
+                </div>
+                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-2">
+                  <div class="bg-blue-400 h-full rounded-full" style="width: 78%"></div>
+                </div>
+                <p class="text-[11px] text-slate-300 leading-tight">
+                  <strong class="text-white">Для чего:</strong> Веб-фронтенд (React, Vue, Next.js), Фуллстек Node.js, Мобильные кроссплатформенные приложения.
+                </p>
+              </div>
+
+              <!-- 3. Java -->
+              <div onclick="filterByLanguage('java')" class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-red-500/50 cursor-pointer transition-all hover:-translate-y-0.5 group">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-xs font-bold text-white group-hover:text-red-300 flex items-center gap-1.5">
+                    <span>☕</span> <span>Java</span>
+                  </span>
+                  <span class="text-[11px] font-mono font-bold text-red-400">#3 • 10.2%</span>
+                </div>
+                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-2">
+                  <div class="bg-red-400 h-full rounded-full" style="width: 40%"></div>
+                </div>
+                <p class="text-[11px] text-slate-300 leading-tight">
+                  <strong class="text-white">Для чего:</strong> Enterprise-бэкенд (Spring Boot), Банковские процессинги, Финтех.
+                </p>
+              </div>
+
+              <!-- 4. C# / .NET -->
+              <div onclick="filterByLanguage('c#')" class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-purple-500/50 cursor-pointer transition-all hover:-translate-y-0.5 group">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-xs font-bold text-white group-hover:text-purple-300 flex items-center gap-1.5">
+                    <span>🎯</span> <span>C# / .NET</span>
+                  </span>
+                  <span class="text-[11px] font-mono font-bold text-purple-400">#4 • 7.6%</span>
+                </div>
+                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-2">
+                  <div class="bg-purple-400 h-full rounded-full" style="width: 30%"></div>
+                </div>
+                <p class="text-[11px] text-slate-300 leading-tight">
+                  <strong class="text-white">Для чего:</strong> Игры (Unity), Корпоративные платформы Microsoft, Cloud-сервисы.
+                </p>
+              </div>
+
+              <!-- 5. C++ -->
+              <div onclick="filterByLanguage('c++')" class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-sky-500/50 cursor-pointer transition-all hover:-translate-y-0.5 group">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-xs font-bold text-white group-hover:text-sky-300 flex items-center gap-1.5">
+                    <span>⚡</span> <span>C++</span>
+                  </span>
+                  <span class="text-[11px] font-mono font-bold text-sky-400">#5 • 7.1%</span>
+                </div>
+                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-2">
+                  <div class="bg-sky-400 h-full rounded-full" style="width: 28%"></div>
+                </div>
+                <p class="text-[11px] text-slate-300 leading-tight">
+                  <strong class="text-white">Для чего:</strong> Unreal Engine, AAA-игры, Высокочастотный трейдинг (HFT), Встраиваемые системы.
+                </p>
+              </div>
+
+              <!-- 6. Go (Golang) -->
+              <div onclick="filterByLanguage('go')" class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-cyan-500/50 cursor-pointer transition-all hover:-translate-y-0.5 group">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-xs font-bold text-white group-hover:text-cyan-300 flex items-center gap-1.5">
+                    <span>🐹</span> <span>Go</span>
+                  </span>
+                  <span class="text-[11px] font-mono font-bold text-cyan-400">#6 • 6.5%</span>
+                </div>
+                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-2">
+                  <div class="bg-cyan-400 h-full rounded-full" style="width: 25%"></div>
+                </div>
+                <p class="text-[11px] text-slate-300 leading-tight">
+                  <strong class="text-white">Для чего:</strong> Облачная инфраструктура (K8s, Docker), Микросервисы, Сетевые демоны.
+                </p>
+              </div>
+
+              <!-- 7. C -->
+              <div onclick="filterByLanguage('c ')" class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-slate-500/50 cursor-pointer transition-all hover:-translate-y-0.5 group">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-xs font-bold text-white group-hover:text-slate-200 flex items-center gap-1.5">
+                    <span>⚙️</span> <span>C</span>
+                  </span>
+                  <span class="text-[11px] font-mono font-bold text-slate-400">#7 • 5.2%</span>
+                </div>
+                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-2">
+                  <div class="bg-slate-400 h-full rounded-full" style="width: 20%"></div>
+                </div>
+                <p class="text-[11px] text-slate-300 leading-tight">
+                  <strong class="text-white">Для чего:</strong> Ядро ОС (Linux), Низкоуровневые драйверы, Микроконтроллеры (IoT).
+                </p>
+              </div>
+
+              <!-- 8. Rust -->
+              <div onclick="filterByLanguage('rust')" class="p-3.5 rounded-2xl bg-slate-950/60 border border-orange-500/40 hover:border-orange-400 cursor-pointer transition-all hover:-translate-y-0.5 group shadow-lg shadow-orange-500/5">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-xs font-bold text-white group-hover:text-orange-300 flex items-center gap-1.5">
+                    <span>🦀</span> <span>Rust</span>
+                  </span>
+                  <span class="text-[11px] font-mono font-bold text-orange-400">#8 • 4.8% 🔥</span>
+                </div>
+                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-2">
+                  <div class="bg-orange-500 h-full rounded-full" style="width: 19%"></div>
+                </div>
+                <p class="text-[11px] text-slate-300 leading-tight">
+                  <strong class="text-white">Для чего:</strong> Безопасность памяти без GC, Системный софт, Ядро Linux, WebAssembly.
+                </p>
+              </div>
+
+              <!-- 9. PHP -->
+              <div onclick="filterByLanguage('php')" class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-indigo-500/50 cursor-pointer transition-all hover:-translate-y-0.5 group">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-xs font-bold text-white group-hover:text-indigo-300 flex items-center gap-1.5">
+                    <span>🐘</span> <span>PHP</span>
+                  </span>
+                  <span class="text-[11px] font-mono font-bold text-indigo-400">#9 • 4.1%</span>
+                </div>
+                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-2">
+                  <div class="bg-indigo-400 h-full rounded-full" style="width: 16%"></div>
+                </div>
+                <p class="text-[11px] text-slate-300 leading-tight">
+                  <strong class="text-white">Для чего:</strong> Веб-сайты, CMS (WordPress), Современные фреймворки (Laravel, Symfony).
+                </p>
+              </div>
+
+              <!-- 10. Kotlin / Swift -->
+              <div onclick="filterByLanguage('kotlin')" class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-emerald-500/50 cursor-pointer transition-all hover:-translate-y-0.5 group">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-xs font-bold text-white group-hover:text-emerald-300 flex items-center gap-1.5">
+                    <span>🍏</span> <span>Kotlin / Swift</span>
+                  </span>
+                  <span class="text-[11px] font-mono font-bold text-emerald-400">#10 • 3.8%</span>
+                </div>
+                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-2">
+                  <div class="bg-emerald-400 h-full rounded-full" style="width: 15%"></div>
+                </div>
+                <p class="text-[11px] text-slate-300 leading-tight">
+                  <strong class="text-white">Для чего:</strong> Нативная мобильная разработка: Android (Google) и iOS/macOS (Apple).
+                </p>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- DEEP DIVE: RISING STARS & NEXT-GEN LANGUAGES -->
+        <div class="glass-panel p-6 sm:p-7 rounded-3xl border border-slate-800/90 bg-slate-900/60 space-y-4">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h4 class="text-sm sm:text-base font-extrabold text-white font-heading flex items-center gap-2">
+                <span>🚀</span> <span>Восходящие звёзды & Прорывные технологии (Углублённый анализ)</span>
+              </h4>
+              <p class="text-xs text-slate-400 mt-0.5">
+                Языки, которые меняют архитектуру софта и вытесняют устаревшие технологии.
+              </p>
+            </div>
+            <span class="text-xs text-slate-500 font-mono">Анализ компиляторов & Бенчмарков</span>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2">
+            
+            <!-- Deep Dive: Rust -->
+            <div class="p-5 rounded-2xl bg-slate-950/70 border border-orange-500/30 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-bold text-orange-400 flex items-center gap-2">
+                  <span>🦀</span> <span>Rust — Революция безопасности памяти</span>
+                </span>
+                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-orange-500/20 text-orange-300 border border-orange-500/30">
+                  Системный стандарт
+                </span>
+              </div>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                <strong class="text-white">В чём технологический прорыв:</strong> Управление памятью без сборщика мусора (GC) через концепцию <em>Ownership & Borrowing</em>. Компилятор математически доказывает отсутствие гонок данных (data races), утечек памяти и атак переполнения буфера (buffer overflow).
+              </p>
+              <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] text-slate-300 space-y-1">
+                <div><strong class="text-amber-300">📊 Бенчмарки:</strong> Скорость C/C++, но потребляет в 3-5 раз меньше RAM, чем Go и Java. Нет stop-the-world пауз.</div>
+                <div><strong class="text-sky-300">🏢 Внедрение:</strong> Microsoft переписывает компоненты ядра Windows 11; Linux официально включил Rust во 2-й язык ядра; Cloudflare перешёл с Nginx на Pingora (Rust).</div>
+              </div>
+            </div>
+
+            <!-- Deep Dive: Mojo -->
+            <div class="p-5 rounded-2xl bg-slate-950/70 border border-rose-500/30 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-bold text-rose-400 flex items-center gap-2">
+                  <span>🔥</span> <span>Mojo — Язык эпохи искусственного интеллекта</span>
+                </span>
+                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                  AI Acceleration
+                </span>
+              </div>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                <strong class="text-white">В чём технологический прорыв:</strong> Создан Крисом Латтнером (автором LLVM и Swift). Сочетает простоту Python с мощью C++/CUDA. Компилируется через MLIR с автоматической векторизацией под GPU/TPU тензорные ядра.
+              </p>
+              <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] text-slate-300 space-y-1">
+                <div><strong class="text-rose-300">📊 Бенчмарки:</strong> В операциях с матрицами и инференсом LLM работает <span class="text-white font-bold">до 68,000 раз быстрее стандартного Python</span>.</div>
+                <div><strong class="text-amber-300">🎯 Для чего:</strong> Тюнинг моделей, разработка собственных кастомных ядер для нейросетей без мучений с C++ и CUDA.</div>
+              </div>
+            </div>
+
+            <!-- Deep Dive: Go -->
+            <div class="p-5 rounded-2xl bg-slate-950/70 border border-cyan-500/30 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-bold text-cyan-400 flex items-center gap-2">
+                  <span>🐹</span> <span>Go (Golang) — Абсолютный монополист облаков</span>
+                </span>
+                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                  Cloud Native
+                </span>
+              </div>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                <strong class="text-white">В чём технологический прорыв:</strong> Модель параллелизма CSP (Communicating Sequential Processes). Легковесные горутины занимают всего ~2 КБ памяти (против 1-2 МБ у тредов ОС), позволяя держать сотни тысяч соединений на одном сервере.
+              </p>
+              <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] text-slate-300 space-y-1">
+                <div><strong class="text-cyan-300">📊 Простота:</strong> Всего 25 ключевых слов, компиляция за секунды в 1 бинарник без внешних .so библиотек.</div>
+                <div><strong class="text-emerald-300">🏢 Доминирование:</strong> Kubernetes, Docker, Terraform, Prometheus, etcd — весь мировой DevOps написан на Go.</div>
+              </div>
+            </div>
+
+            <!-- Deep Dive: Zig -->
+            <div class="p-5 rounded-2xl bg-slate-950/70 border border-amber-500/30 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-bold text-amber-400 flex items-center gap-2">
+                  <span>⚡</span> <span>Zig — Прагматичный преемник C</span>
+                </span>
+                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  Next-Gen C
+                </span>
+              </div>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                <strong class="text-white">В чём технологический прорыв:</strong> Полное отсутствие скрытого потока управления (нет макросов, нет перегрузки операторов, нет скрытого выделения памяти). Мощный механизм <code>comptime</code> выполняет код прямо во время компиляции.
+              </p>
+              <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] text-slate-300 space-y-1">
+                <div><strong class="text-amber-300">🛠 Инструмент:</strong> Включает встроенный компилятор C/C++, позволяя кросс-компилировать чужой софт под любую архитектуру одной командой.</div>
+                <div><strong class="text-sky-300">🎯 Применение:</strong> Движки баз данных (TigerBeetle), JavaScript-рантайм Bun, GameDev, микроконтроллеры.</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+
       <!-- News Cards Container -->
       <div id="news-container" class="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
         <!-- Injected dynamically by JavaScript -->
@@ -1412,43 +1720,39 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-            // ==========================================
+                // ==========================================
     // AI NEWS & DYNAMIC CATEGORIES LOGIC
     // ==========================================
+    state.selectedLanguage = 'all';
+
     const THEMATIC_IMAGES = {
       csgo: [
         'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80',
         'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=800&q=80'
+        'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80'
       ],
       linux: [
         'https://images.unsplash.com/photo-1629654297299-c8506221ca97?auto=format&fit=crop&w=800&q=80',
         'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=800&q=80'
+        'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80'
       ],
       dev: [
         'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=800&q=80',
         'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=800&q=80'
+        'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=800&q=80'
       ],
       ai: [
         'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=800&q=80',
         'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1655720828018-edd2daec9349?auto=format&fit=crop&w=800&q=80'
+        'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=800&q=80'
       ],
       security: [
         'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1614064641938-3bbee52942c7?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=800&q=80'
+        'https://images.unsplash.com/photo-1614064641938-3bbee52942c7?auto=format&fit=crop&w=800&q=80'
       ],
       tech: [
         'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?auto=format&fit=crop&w=800&q=80'
+        'https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=800&q=80'
       ]
     };
 
@@ -1469,20 +1773,25 @@
       c = c.replace(/^Категория\s*[\(:]?/i, '').replace(/[\)]+$/g, '').trim();
 
       const map = {
-        'technology': 'Технологии',
-        'general tech': 'Общие технологии',
+        'it & аналитика': 'IT & Аналитика',
         'it-аналитик': 'IT & Аналитика',
         'it аналитик': 'IT & Аналитика',
+        'development': 'IT & Аналитика',
+        'dev': 'IT & Аналитика',
+        'programming': 'IT & Аналитика',
+        'разработка': 'IT & Аналитика',
+        'языки программирования': 'IT & Аналитика',
         'linux': 'Linux & Инфраструктура',
         'linux & infrastructure': 'Linux & Инфраструктура',
         'cybersecurity': 'Безопасность',
         'security': 'Безопасность',
-        'development': 'Разработка',
-        'dev': 'Разработка',
         'gaming': 'Игры & Киберспорт',
         'ai': 'Искусственный интеллект',
+        'ai & нейросети': 'Искусственный интеллект',
         'science': 'Наука',
-        'lifestyle': 'Тренды & Стиль'
+        'lifestyle': 'Тренды & Стиль',
+        'general tech': 'Общие технологии',
+        'technology': 'Общие технологии'
       };
 
       const lower = c.toLowerCase();
@@ -1491,37 +1800,35 @@
 
     function getCategoryEmoji(catName) {
       const c = (catName || '').toUpperCase();
-      if (c.includes('LINUX') || c.includes('ИНФРАСТРУКТУРА') || c.includes('СЕРВЕР') || c.includes('UBUNTU')) return '🐧';
-      if (c.includes('РАЗРАБОТ') || c.includes('DEV') || c.includes('CODE') || c.includes('ПРОГРАММ') || c.includes('PYTHON')) return '💻';
-      if (c.includes('CS') || c.includes('GAME') || c.includes('ИГР') || c.includes('КИБЕРСПОРТ') || c.includes('NAVI')) return '🎮';
-      if (c.includes('AI') || c.includes('ИИ') || c.includes('ИНТЕЛЛЕКТ') || c.includes('АНАЛИТИК') || c.includes('НЕЙРО') || c.includes('LLM')) return '🤖';
-      if (c.includes('БЕЗОПАС') || c.includes('SEC') || c.includes('УЯЗВИМ') || c.includes('ХАКЕР') || c.includes('VULN')) return '🛡️';
-      if (c.includes('СЕТЬ') || c.includes('VPN') || c.includes('NET') || c.includes('WIREGUARD')) return '🌐';
-      if (c.includes('ЖЕЛЕЗО') || c.includes('HARDWARE') || c.includes('ЧИП') || c.includes('CPU') || c.includes('GPU')) return '⚡';
-      if (c.includes('НАУК') || c.includes('SCIENCE')) return '🔬';
-      if (c.includes('ТРЕНД') || c.includes('LIFESTYLE') || c.includes('СТИЛЬ')) return '✨';
+      if (c.includes('АНАЛИТИК') || c.includes('DEV') || c.includes('ПРОГРАММ') || c.includes('IT')) return '💻';
+      if (c.includes('LINUX') || c.includes('ИНФРАСТРУКТУРА') || c.includes('СЕРВЕР')) return '🐧';
+      if (c.includes('CS') || c.includes('GAME') || c.includes('ИГР') || c.includes('КИБЕРСПОРТ')) return '🎮';
+      if (c.includes('AI') || c.includes('ИИ') || c.includes('ИНТЕЛЛЕКТ') || c.includes('НЕЙРО')) return '🤖';
+      if (c.includes('БЕЗОПАС') || c.includes('SEC') || c.includes('УЯЗВИМ')) return '🛡️';
+      if (c.includes('СЕТЬ') || c.includes('VPN')) return '🌐';
+      if (c.includes('НАУК')) return '🔬';
       return '⚡';
     }
 
     function getArticleImage(article, index) {
       if (article.image_url) return article.image_url;
       if (article.raw_content) {
-        const match = article.raw_content.match(/<img[^>]+src=["'](https?:\\\/\\\/[^"']+)["']/i);
+        const match = article.raw_content.match(/<img[^>]+src=["'](https?:\/\/[^"']+)["']/i);
         if (match && match[1]) return match[1];
       }
 
       const text = ((article.title || '') + ' ' + (article.category || '') + ' ' + (article.source || '')).toLowerCase();
       let pool = THEMATIC_IMAGES.tech;
 
-      if (text.includes('cs') || text.includes('navi') || text.includes('apex') || text.includes('game') || text.includes('игр') || text.includes('турнир') || text.includes('киберспорт')) {
+      if (text.includes('cs') || text.includes('game') || text.includes('игр')) {
         pool = THEMATIC_IMAGES.csgo;
-      } else if (text.includes('linux') || text.includes('ubuntu') || text.includes('opennet') || text.includes('сервер') || text.includes('freebsd') || text.includes('nginx') || text.includes('kernel')) {
+      } else if (text.includes('linux') || text.includes('opennet') || text.includes('сервер')) {
         pool = THEMATIC_IMAGES.linux;
-      } else if (text.includes('уязвим') || text.includes('безопас') || text.includes('взлом') || text.includes('exploit') || text.includes('cve') || text.includes('crowdsec') || text.includes('leak')) {
+      } else if (text.includes('безопас') || text.includes('взлом') || text.includes('cve')) {
         pool = THEMATIC_IMAGES.security;
-      } else if (text.includes('ai') || text.includes('ии') || text.includes('нейросет') || text.includes('модел') || text.includes('gpt') || text.includes('llm') || text.includes('аналитик') || text.includes('qwen')) {
+      } else if (text.includes('ai') || text.includes('ии') || text.includes('нейро')) {
         pool = THEMATIC_IMAGES.ai;
-      } else if (text.includes('dev') || text.includes('mojo') || text.includes('python') || text.includes('программир') || text.includes('браузер') || text.includes('код') || text.includes('code') || text.includes('rust')) {
+      } else if (text.includes('dev') || text.includes('rust') || text.includes('python') || text.includes('mojo') || text.includes('код')) {
         pool = THEMATIC_IMAGES.dev;
       }
 
@@ -1529,8 +1836,36 @@
       return pool[hash % pool.length];
     }
 
+    window.filterByLanguage = function(lang) {
+      state.selectedLanguage = lang || 'all';
+      
+      // Update UI buttons
+      document.querySelectorAll('.lang-filter-btn').forEach(btn => {
+        const blang = btn.getAttribute('data-lang');
+        if (blang === state.selectedLanguage) {
+          btn.className = 'lang-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-500 text-white border border-sky-400 transition-all shadow-md';
+        } else {
+          btn.className = 'lang-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all';
+        }
+      });
+
+      renderNews();
+    };
+
     window.setDynamicCategory = function(cat) {
       state.newsCategoryFilter = (cat === 'all' || cat === 'Все') ? 'all' : cat;
+      
+      // Show or hide Programming Analytics Hub
+      const hub = document.getElementById('programming-analytics-hub');
+      if (hub) {
+        const isProg = cat === 'IT & Аналитика' || cat.toLowerCase().includes('аналитик') || cat === 'all';
+        if (isProg) {
+          hub.style.display = 'block';
+        } else {
+          hub.style.display = 'none';
+        }
+      }
+
       renderCategoryPills();
       renderNews();
     };
@@ -1563,7 +1898,7 @@
           : 'bg-slate-900/60 hover:bg-slate-800 text-slate-300 hover:text-white border-slate-800/80 font-medium';
 
         return `
-          <button type="button" onclick="setDynamicCategory('${isAll ? 'all' : cat.replace(/'/g, "\\\\'")}')" class="news-cat-pill px-4 py-2 rounded-2xl text-xs flex items-center gap-2 transition-all shrink-0 border ${activeClass}">
+          <button type="button" onclick="setDynamicCategory('${isAll ? 'all' : cat.replace(/'/g, "\\'")}')" class="news-cat-pill px-4 py-2 rounded-2xl text-xs flex items-center gap-2 transition-all shrink-0 border ${activeClass}">
             <span>${emoji}</span>
             <span>${cat}</span>
             <span class="text-[10px] opacity-75 bg-black/30 px-1.5 py-0.5 rounded-md font-mono">${count}</span>
@@ -1574,7 +1909,7 @@
 
     async function loadLiveNews() {
       try {
-        const response = await fetch('/api/news?limit=50');
+        const response = await fetch('/api/news?limit=100');
         if (response.ok) {
           const liveArticles = await response.json();
           if (liveArticles && liveArticles.length > 0) {
@@ -1597,15 +1932,48 @@
       container.innerHTML = '';
 
       const filtered = state.articles.filter(item => {
-        if (!state.newsCategoryFilter || state.newsCategoryFilter === 'all' || state.newsCategoryFilter === 'Все') return true;
         const itemCat = (item._displayCategory || normalizeCategory(item.category)).toLowerCase();
-        return itemCat === state.newsCategoryFilter.toLowerCase();
+        const isProgCategory = itemCat.includes('аналитик') || itemCat.includes('программир') || itemCat.includes('dev');
+        const score = item.importance_score ? Number(item.importance_score) : 5.0;
+
+        // Strict Quality Filter ONLY when viewing IT & Analytics category:
+        const isViewingProgCategory = state.newsCategoryFilter && (state.newsCategoryFilter.toLowerCase().includes('аналитик') || state.newsCategoryFilter.toLowerCase().includes('программир') || state.newsCategoryFilter.toLowerCase().includes('dev'));
+        if (isViewingProgCategory) {
+          if (score < 7.0) return false;
+          if (!item.summary && (!item.summaries || !item.summaries[state.lang])) return false;
+        }
+
+        // Category Filter
+        if (state.newsCategoryFilter && state.newsCategoryFilter !== 'all' && state.newsCategoryFilter !== 'Все') {
+          if (itemCat !== state.newsCategoryFilter.toLowerCase()) return false;
+        }
+
+        // Language Sub-Filter
+        if (state.selectedLanguage && state.selectedLanguage !== 'all') {
+          const fullText = ((item.title || '') + ' ' + (item.summary || '') + ' ' + (item.why_it_matters || '') + ' ' + (item.source || '')).toLowerCase();
+          const target = state.selectedLanguage.toLowerCase();
+          
+          if (target === 'python' && !fullText.includes('python') && !fullText.includes('питон') && !fullText.includes('fastapi') && !fullText.includes('django')) return false;
+          if (target === 'rust' && !fullText.includes('rust') && !fullText.includes('раст') && !fullText.includes('cargo') && !fullText.includes('crates')) return false;
+          if (target === 'go' && !fullText.includes('golang') && !fullText.includes(' go ') && !fullText.includes(' go,') && !fullText.includes('kubernetes') && !fullText.includes('docker')) return false;
+          if (target === 'c++' && !fullText.includes('c++') && !fullText.includes('cpp') && !fullText.includes('си++')) return false;
+          if (target === 'typescript' && !fullText.includes('typescript') && !fullText.includes('javascript') && !fullText.includes('ts') && !fullText.includes('js') && !fullText.includes('react') && !fullText.includes('node')) return false;
+          if (target === 'mojo' && !fullText.includes('mojo')) return false;
+          if (target === 'zig' && !fullText.includes('zig')) return false;
+          if (target === 'java' && !fullText.includes('java') && !fullText.includes('spring')) return false;
+        }
+
+        return true;
       });
 
       if (filtered.length === 0) {
         container.innerHTML = `
           <div class="col-span-full py-12 text-center text-slate-400 glass-panel rounded-3xl p-6 border border-slate-800">
-            <p class="text-sm font-semibold text-slate-300">В этой категории пока нет новостей</p>
+            <span class="text-3xl block mb-2">🔍</span>
+            <p class="text-sm font-semibold text-slate-300">В этой выборке нет новостей (для IT & Аналитики действует строгий фильтр: оценка ≥ 7.0)</p>
+            <button type="button" onclick="filterByLanguage('all'); setDynamicCategory('all');" class="mt-3 px-4 py-2 rounded-xl bg-sky-500/20 text-sky-300 border border-sky-500/30 text-xs font-semibold hover:bg-sky-500/30 transition-all">
+              Показать все новости
+            </button>
           </div>
         `;
         return;
@@ -1624,7 +1992,14 @@
           ? new Date(article.published_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) 
           : 'Сегодня';
 
-        const scoreBadge = `<span class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-amber-500/20 backdrop-blur-md text-amber-300 border border-amber-500/40 shadow-lg flex items-center gap-1">🔥 ${score}/10</span>`;
+        const isHighQuality = Number(score) >= 7.0;
+        const scoreBadge = isHighQuality
+          ? `<span class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-amber-500/25 backdrop-blur-md text-amber-300 border border-amber-500/40 shadow-lg flex items-center gap-1">🔥 ${score}/10</span>`
+          : `<span class="px-2.5 py-1 rounded-xl text-[11px] font-semibold bg-slate-800/80 backdrop-blur-md text-slate-300 border border-slate-700/50 shadow-md">${score}/10</span>`;
+
+        const diagramBadge = article.has_diagram
+          ? `<span class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-purple-500/25 backdrop-blur-md text-purple-300 border border-purple-500/40 shadow-lg flex items-center gap-1 animate-pulse">📊 Диаграмма / График</span>`
+          : '';
 
         const card = document.createElement('div');
         card.className = 'glass-panel glass-panel-hover rounded-3xl overflow-hidden border border-slate-800/80 hover:border-sky-500/30 flex flex-col group transition-all duration-300 hover:shadow-2xl hover:shadow-sky-500/5 hover:-translate-y-1';
@@ -1634,12 +2009,13 @@
             <img src="${image}" alt="${title}" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80'" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90 group-hover:opacity-100">
             <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
             
-            <div class="absolute top-3 left-3 flex items-center gap-2">
+            <div class="absolute top-3 left-3 flex items-center gap-2 flex-wrap">
               <span class="px-3 py-1 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-slate-950/80 backdrop-blur-md text-sky-300 border border-sky-500/30 shadow-lg flex items-center gap-1.5">
                 <span>${getCategoryEmoji(category)}</span>
                 <span>${category}</span>
               </span>
               ${scoreBadge}
+              ${diagramBadge}
             </div>
 
             <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs text-slate-300">
@@ -1670,7 +2046,7 @@
             </div>
 
             <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between">
-              <span class="text-[11px] text-slate-500">News AI Server</span>
+              <span class="text-[11px] text-slate-500">News AI Engine</span>
               <a href="${sourceUrl}" target="_blank" rel="noopener noreferrer" class="px-3.5 py-1.5 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all">
                 <span>Читать в источнике</span>
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
@@ -1682,8 +2058,6 @@
         container.appendChild(card);
       });
     }
-
-    
 
     // Render Devices
     function updateNetworkAnalytics() {
@@ -2235,7 +2609,7 @@
     }
 
     // Initialize Default View
-    setLanguage('fr');
+    setLanguage('ru');
     switchTab('news');
     loadLiveNews();
   })();

@@ -64,10 +64,19 @@ class PipelineOrchestrator:
             # 3. Collection Phase (RSS + Telegram)
             ingestion = IngestionService(session=session)
 
-            # RSS Sources
+            # Curated Developer & Programming Language Sources
             rss_sources = [
-                ("OpenNET Linux News", "https://www.opennet.ru/opennews/opennews_all.rss"),
+                ("Хабр: Разработка", "https://habr.com/ru/rss/hub/programming/all/?fl=ru"),
+                ("Хабр: Python", "https://habr.com/ru/rss/hub/python/all/?fl=ru"),
+                ("Хабр: Rust", "https://habr.com/ru/rss/hub/rust/all/?fl=ru"),
+                ("Хабр: Golang", "https://habr.com/ru/rss/hub/go/all/?fl=ru"),
+                ("Хабр: C++", "https://habr.com/ru/rss/hub/cpp/all/?fl=ru"),
+                ("Tproger: Главное", "https://tproger.ru/feed/"),
+                ("Python Software Foundation", "https://blog.python.org/feeds/posts/default"),
+                ("The Go Blog", "https://go.dev/blog/feed.atom"),
+                ("Official Rust Blog", "https://blog.rust-lang.org/feed.xml"),
                 ("Hacker News Frontpage", "https://news.ycombinator.com/rss"),
+                ("OpenNET Linux News", "https://www.opennet.ru/opennews/opennews_all.rss"),
             ]
             for name, feed_url in rss_sources:
                 try:
@@ -76,8 +85,16 @@ class PipelineOrchestrator:
                 except Exception as exc:
                     logger.error("Error collecting RSS '%s': %s", name, exc)
 
-            # Telegram Sources
-            tg_channels = ["newcsgo", "habr_com"]
+            # Telegram Developer & Tech Channels
+            tg_channels = [
+                "tproger_official",
+                "proglib",
+                "zen_of_python",
+                "golang_tg",
+                "rust_tg",
+                "habr_com",
+                "newcsgo"
+            ]
             for ch in tg_channels:
                 try:
                     collector = TelegramCollector(channel_username=ch, limit=15)

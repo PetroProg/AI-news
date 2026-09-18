@@ -3,29 +3,50 @@ import re
 from typing import List
 from app.config import settings
 
-def send_wake_on_lan(mac_address: str | None = None, broadcast_ip: str | None = None) -> bool:
-    """
-    Sends a Wake-on-LAN magic packet to wake up the workstation.
-    Magic packet format: 6 bytes of 0xFF followed by MAC address repeated 16 times.
-    """
+def send_wake_on_lan(
+    mac_address: str | None = None,
+    broadcast_ip: str | None = None,
+    port: int = 9,
+) -> bool:
+    """Sends Wake-on-LAN magic packets over physical network interfaces."""
+    import re
+    import socket
+    import logging
+    from app.config import settings
+
+    logger = logging.getLogger("news_ai.bot.utils")
     mac = mac_address or settings.WOL_MAC_ADDRESS
     bcast = broadcast_ip or settings.WOL_BROADCAST_IP
 
-    # Clean MAC string: remove colons, dashes, spaces
-    cleaned_mac = re.sub(r"[^0-9A-Fa-f]", "", mac)
-    if len(cleaned_mac) != 12:
-        raise ValueError(f"Invalid MAC address format: {mac}")
+    clean_mac = re.sub(r"[^0-9A-Fa-f]", "", mac)
+    if len(clean_mac) != 12:
+        logger.error("Invalid MAC address for WoL: %s", mac)
+        return False
 
-    mac_bytes = bytes.fromhex(cleaned_mac)
-    magic_packet = b"\xff" * 6 + mac_bytes * 16
+    magic_packet = bytes.fromhex("FF" * 6 + clean_mac * 16)
+    
+    # Broadcast to subnet IP and global 255.255.255.255 across ports 9 and 7
+    targets = [
+        (bcast, 9),
+        (bcast, 7),
+        ("255.255.255.255", 9),
+        ("255.255.255.255", 7),
+    ]
 
-    # Send broadcast UDP packet
+    sent_any = False
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        sock.sendto(magic_packet, (bcast, 9))
-    
-    return True
+        for target_ip, target_port in targets:
+            try:
+                sock.sendto(magic_packet, (target_ip, target_port))
+                sent_any = True
+            except Exception as exc:
+                logger.debug("Failed sending WoL to %s:%s: %s", target_ip, target_port, exc)
 
+    if sent_any:
+        logger.info("Wake-on-LAN magic packet successfully sent for %s to %s", mac, bcast)
+        return True
+    return False
 
 def split_message(text: str, max_length: int = 4000) -> List[str]:
     """
