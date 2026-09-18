@@ -21,7 +21,7 @@ class ArticleAnalysisResult(BaseModel):
 
 
 class OllamaClient:
-    """Asynchronous client optimized for low-power Intel Celeron processors."""
+    """Asynchronous client optimized for AI analysis with local LLM."""
 
     def __init__(
         self,
@@ -31,19 +31,32 @@ class OllamaClient:
     ) -> None:
         self.base_url = (base_url or settings.OLLAMA_BASE_URL).rstrip("/")
         self.model = model or settings.OLLAMA_MODEL
-        # Даем Celeron честные 180 секунд таймаута
         self.timeout = timeout or 180.0
 
     async def analyze_article(self, title: str, text: str) -> Optional[ArticleAnalysisResult]:
         """Analyze article and return structured JSON."""
         system_prompt = (
-            "Ты — IT-аналитик. Верни СТРОГО валидный JSON без markdown:\n"
+            "Ты — ведущий IT-аналитик и эксперт по языкам программирования.\n"
+            "Проанализируй текст новости и верни СТРОГО валидный JSON без markdown:\n\n"
+            "Правила классификации и оценки:\n"
+            "1. Доступные категории: 'IT & Аналитика', 'AI & Нейросети', 'Кибербезопасность', 'Linux & Инфраструктура', 'Игры & Киберспорт', 'Общие технологии'.\n"
+            "2. В категорию 'IT & Аналитика' относи ИСКЛЮЧИТЕЛЬНО новости о языках программирования (Python, Rust, Go, C++, TypeScript/JS, Java, C#, Zig, Mojo), их компиляторах, рантаймах, синтаксисе, стандартных библиотеках и бенчмарках.\n"
+            "3. Оценка важности (importance_score от 1.0 до 10.0):\n"
+            "   - 8.0 - 10.0: Ключевой мажорный релиз языка (например, Python no-GIL, Go 1.24, Rust 2024 edition), архитектурный прорыв, критическая уязвимость рантайма.\n"
+            "   - 7.0 - 7.9: Новые стандарты синтаксиса, заметные оптимизации производительности, важные инструменты экосистемы.\n"
+            "   - 4.0 - 6.5: Обычные минорные патчи, мелкие багфиксы.\n"
+            "   - Для категории 'IT & Аналитика' ставь 7.0 и выше только реально полезным и значимым событиям.\n"
+            "4. Формат резюме:\n"
+            "   - short_summary: 1-2 емких предложения с технической сутью релиза.\n"
+            "   - why_it_matters: Почему это важно для разработчиков и экосистемы.\n"
+            "   - key_points: 2-3 конкретных факта (синтаксис, бенчмарки, совместимость).\n\n"
+            "Формат JSON:\n"
             "{\n"
-            '  "short_summary": "Краткая суть новости (1-2 предложения по-русски)",\n'
-            '  "why_it_matters": "Почему это важно (по-русски)",\n'
+            '  "short_summary": "Краткая суть новости (по-русски)",\n'
+            '  "why_it_matters": "Почему это важно разработчикам (по-русски)",\n'
             '  "key_points": ["Факт 1", "Факт 2"],\n'
-            '  "importance_score": 7.0,\n'
-            '  "category": "Категория (AI, Cybersecurity, Linux & Infrastructure, Development, General Tech)"\n'
+            '  "importance_score": 7.5,\n'
+            '  "category": "IT & Аналитика"\n'
             "}"
         )
 
@@ -80,7 +93,7 @@ class OllamaClient:
             return result
 
         except httpx.TimeoutException:
-            logger.error("Timeout waiting for Ollama on Celeron processor for: %s", title[:35])
+            logger.error("Timeout waiting for Ollama for: %s", title[:35])
         except Exception as e:
             logger.error("Error during analysis: %s", e)
 

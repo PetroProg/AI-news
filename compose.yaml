@@ -23,12 +23,14 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: news_ai_bot
+    network_mode: host
     restart: unless-stopped
     command: python -m app.bot.bot
     env_file:
       - .env
     environment:
       - TZ=Europe/Zurich
+      - POSTGRES_HOST=127.0.0.1
     depends_on:
       postgres:
         condition: service_healthy
