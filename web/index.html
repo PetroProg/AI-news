@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>HomeGuard - Управление домашней сетью, ИИ & VPN</title>
+  <title>AI News - Агрегатор и аналитика новостей ИИ & IT</title>
   
   <!-- Tailwind CSS via CDN with Fallback Styles -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -238,7 +238,7 @@
           <div class="relative flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-sky-500 via-indigo-500 to-teal-400 p-[1px] shadow-lg shadow-sky-500/20 shrink-0">
             <div class="w-full h-full bg-slate-950 rounded-2xl flex items-center justify-center">
               <svg class="w-6 h-6 text-sky-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z"/>
               </svg>
             </div>
             <span class="absolute -top-1 -right-1 flex h-3 w-3">
@@ -246,22 +246,9 @@
               <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
             </span>
           </div>
-          <div>
-            <div class="flex items-center gap-1.5">
-              <span class="text-xl sm:text-2xl font-extrabold text-white tracking-tight font-heading">Home<span class="text-sky-400">Guard</span></span>
-              <span class="hidden sm:inline px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-sky-500/10 text-sky-400 border border-sky-500/20">Pro</span>
-            </div>
-            <!-- Desktop Status Tag -->
-            <p class="hidden sm:flex text-xs text-slate-400 items-center gap-1.5 mt-0.5">
-              <span class="text-emerald-400 font-semibold flex items-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span data-i18n="gatewayStatus">В сети</span>
-              </span>
-              <span>•</span>
-              <span>Keenetic Titan</span>
-              <span>•</span>
-              <span class="text-slate-500 font-mono">94.25.180.12</span>
-            </p>
+          <div class="flex items-center gap-2">
+            <span class="text-xl sm:text-2xl font-black text-white tracking-tight font-heading">AI<span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-indigo-400">News</span></span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-sky-500/15 text-sky-300 border border-sky-500/30">Live</span>
           </div>
         </div>
 
@@ -300,18 +287,6 @@
         </div>
 
       </div>
-
-      <!-- Mobile Expanded Sub-row: Network & Gateway Status Indicator -->
-      <div class="flex sm:hidden items-center justify-between px-3 py-1.5 rounded-xl bg-slate-900/70 border border-slate-800/80 text-[11px] text-slate-300">
-        <div class="flex items-center gap-1.5 text-emerald-400 font-medium">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span data-i18n="gatewayStatus">В сети</span>
-        </div>
-        <div class="text-slate-400">Keenetic Titan</div>
-        <div class="text-slate-500 font-mono text-[10px]">94.25.180.12</div>
-        <div class="text-sky-400 font-semibold">8 ms</div>
-      </div>
-
     </div>
   </header>
 
@@ -325,23 +300,6 @@
     <!-- ========================================== -->
     <section id="tab-news" class="tab-content active space-y-5">
       
-      <!-- AI Server Headline Banner -->
-      <div class="glass-panel rounded-3xl p-5 sm:p-7 border border-sky-500/30 bg-gradient-to-r from-sky-950/30 via-slate-900/60 to-indigo-950/30 shadow-xl relative overflow-hidden">
-        <div class="absolute -right-8 -bottom-8 w-48 h-48 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="relative z-10 space-y-2">
-          <div class="flex items-center gap-2">
-            <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-sky-500/20 text-sky-300 border border-sky-500/40 flex items-center gap-1.5">
-              <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z"/></svg>
-              <span data-i18n="aiServerBadge">✨ Сервер ИИ HomeGuard • Поток в реальном времени</span>
-            </span>
-          </div>
-          <h2 class="text-xl sm:text-3xl font-extrabold text-white font-heading" data-i18n="aiServerTitle">Актуальные события и новости</h2>
-          <p class="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed" data-i18n="aiServerDesc">
-            Статьи, автоматически структурированные и обработанные искусственным интеллектом.
-          </p>
-        </div>
-      </div>
-
       <!-- Categories Filter Pills (Dynamically populated) -->
       <div id="category-pills-container" class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
         <button type="button" class="news-cat-pill px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 bg-sky-500 text-white" onclick="setDynamicCategory('all')">Все</button>
