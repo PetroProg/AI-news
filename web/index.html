@@ -348,316 +348,368 @@
       </div>
 
       <!-- ======================================================= -->
-      <!-- PROGRAMMING LANGUAGES ANALYTICS HUB & DEEP DIVE (NEW)   -->
+      <!-- DEDICATED LANGUAGE SELECTION MENU BAR                  -->
       <!-- ======================================================= -->
-      <div id="programming-analytics-hub" class="space-y-6 pt-2 pb-4 transition-all duration-500">
-        
-        <!-- Header Banner for Analytics -->
-        <div class="glass-panel p-6 sm:p-7 rounded-3xl border border-sky-500/30 bg-gradient-to-br from-slate-900/90 via-slate-950/80 to-sky-950/20 relative overflow-hidden shadow-2xl">
-          <div class="absolute -right-12 -top-12 w-56 h-56 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
-          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
-            <div>
-              <div class="flex items-center gap-2 mb-2 flex-wrap">
-                <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-sky-500/20 text-sky-300 border border-sky-500/40 flex items-center gap-1.5">
-                  <span>💻</span> <span>Аналитический хаб • IT & Языки программирования</span>
-                </span>
-                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                  🔥 Фильтр качества: Оценка ≥ 7.0
-                </span>
-              </div>
-              <h3 class="text-xl sm:text-2xl font-black text-white font-heading tracking-tight">
-                Мировой рейтинг & Архитектурный анализ языков
-              </h3>
-              <p class="text-xs sm:text-sm text-slate-300 max-w-2xl mt-1 leading-relaxed">
-                Актуальная аналитика популярности (TIOBE, GitHub Octoverse, Stack Overflow) и детальный технический разбор восходящих звёзд индустрии.
-              </p>
-            </div>
-
-            <!-- Quick sub-filter chips -->
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <button type="button" onclick="filterByLanguage('all')" class="lang-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-500 text-white border border-sky-400 transition-all shadow-md" data-lang="all">Все языки</button>
-              <button type="button" onclick="filterByLanguage('python')" class="lang-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all" data-lang="python">🐍 Python</button>
-              <button type="button" onclick="filterByLanguage('rust')" class="lang-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all" data-lang="rust">🦀 Rust</button>
-              <button type="button" onclick="filterByLanguage('go')" class="lang-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all" data-lang="go">🐹 Go</button>
-              <button type="button" onclick="filterByLanguage('c++')" class="lang-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all" data-lang="c++">⚡ C++</button>
-              <button type="button" onclick="filterByLanguage('typescript')" class="lang-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all" data-lang="typescript">🔷 TS / JS</button>
-              <button type="button" onclick="filterByLanguage('mojo')" class="lang-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all" data-lang="mojo">🔥 Mojo</button>
-              <button type="button" onclick="filterByLanguage('zig')" class="lang-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all" data-lang="zig">⚡ Zig</button>
-            </div>
+      <div id="language-selection-bar" style="display: none;" class="glass-panel p-3.5 sm:p-4 rounded-2xl border border-sky-500/20 bg-slate-900/70 flex-col md:flex-row md:items-center justify-between gap-3 shadow-lg">
+        <div class="flex items-center gap-3 flex-wrap">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-sky-400 animate-pulse"></span>
+            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+              <span>💻</span>
+              <span>Язык программирования:</span>
+            </span>
           </div>
 
-          <!-- TOP 10 GLOBAL LANGUAGES METRICS GRID -->
-          <div class="mt-6 pt-6 border-t border-slate-800/80">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-sky-400 mb-3 flex items-center gap-2">
-              <span>🌐</span> <span>Топ-10 языков программирования в мире (Рейтинг & Сферы применения)</span>
-            </h4>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+          <!-- Dropdown Select Menu -->
+          <div class="relative">
+            <select id="language-select-dropdown" onchange="filterByLanguage(this.value)" class="bg-slate-950 text-sky-300 font-bold text-xs py-2 pl-3.5 pr-8 rounded-xl border border-sky-500/30 hover:border-sky-400 focus:border-sky-400 focus:outline-none focus:ring-1 focus:ring-sky-400 cursor-pointer appearance-none transition-all shadow-inner">
+              <option value="all">🌐 Все языки программирования</option>
+              <option value="python">🐍 Python (AI, ML, FastAPI)</option>
+              <option value="rust">🦀 Rust (Systems, Safe Memory)</option>
+              <option value="go">🐹 Go / Golang (Cloud, K8s)</option>
+              <option value="c++">⚡ C++ (High Perf, GameDev)</option>
+              <option value="typescript">🔷 TS / JS (Frontend & Node)</option>
+              <option value="mojo">🔥 Mojo (AI Acceleration)</option>
+              <option value="zig">⚡ Zig (Next-Gen C)</option>
+              <option value="java">☕ Java (Enterprise & FinTech)</option>
+              <option value="c#">🎯 C# / .NET (Unity, Cloud)</option>
+              <option value="c ">⚙️ C (Kernel & Embedded)</option>
+              <option value="php">🐘 PHP (Laravel, Web)</option>
+              <option value="kotlin">🍏 Kotlin / Swift (Mobile)</option>
+            </select>
+            <div class="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none text-sky-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Sub-Filter Chips -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none flex-wrap">
+          <button type="button" onclick="filterByLanguage('all')" class="lang-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-bold bg-sky-500 text-white border border-sky-400 transition-all shadow-md" data-lang="all">Все</button>
+          <button type="button" onclick="filterByLanguage('python')" class="lang-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all" data-lang="python">🐍 Python</button>
+          <button type="button" onclick="filterByLanguage('rust')" class="lang-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all" data-lang="rust">🦀 Rust</button>
+          <button type="button" onclick="filterByLanguage('go')" class="lang-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all" data-lang="go">🐹 Go</button>
+          <button type="button" onclick="filterByLanguage('c++')" class="lang-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all" data-lang="c++">⚡ C++</button>
+          <button type="button" onclick="filterByLanguage('typescript')" class="lang-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all" data-lang="typescript">🔷 TS/JS</button>
+          <button type="button" onclick="filterByLanguage('mojo')" class="lang-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all" data-lang="mojo">🔥 Mojo</button>
+          <button type="button" onclick="filterByLanguage('zig')" class="lang-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all" data-lang="zig">⚡ Zig</button>
+        </div>
+      </div>
+
+      <!-- ======================================================= -->
+      <!-- MAIN RESPONSIVE LAYOUT: NEWS (CENTER) + ASIDE SIDEBAR   -->
+      <!-- ======================================================= -->
+      <div id="news-layout-wrapper" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- Center Main Column (News Feed) - Full width by default on 'All' tab -->
+        <div id="news-main-column" class="lg:col-span-12 space-y-6">
+          <div id="news-container" class="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+            <!-- Injected dynamically by JavaScript -->
+          </div>
+        </div>
+
+        <!-- Aside Sidebar: Programming Analytics & Deep Dive (Shown ONLY on IT category) -->
+        <aside id="programming-analytics-aside" style="display: none;" class="lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto pr-1">
+          
+          <!-- ASIDE NAVIGATION SWITCHER TABS -->
+          <div class="glass-panel p-1.5 rounded-2xl border border-slate-800 bg-slate-950/90 flex items-center gap-1.5 shadow-lg sticky top-0 z-20 backdrop-blur-md">
+            <button type="button" id="aside-tab-top10" onclick="switchAsideTab('top10')" class="flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all bg-sky-500 text-white shadow-md flex items-center justify-center gap-1.5">
+              <span>🌐</span> <span>Топ-10 Рейтинг</span>
+            </button>
+            <button type="button" id="aside-tab-deepdive" onclick="switchAsideTab('deepdive')" class="flex-1 py-1.5 px-3 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-900/80 transition-all flex items-center justify-center gap-1.5">
+              <span>🚀</span> <span>Восходящие звёзды</span>
+            </button>
+            <button type="button" id="aside-tab-all" onclick="switchAsideTab('all')" class="py-1.5 px-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-900/80 transition-all flex items-center justify-center" title="Показать оба блока">
+              <span>Все</span>
+            </button>
+          </div>
+
+          <!-- ASIDE BLOCK 1: TOP 10 LANGUAGES LEADERBOARD -->
+          <div id="aside-block-top10" class="glass-panel p-5 rounded-3xl border border-sky-500/25 bg-gradient-to-b from-slate-900/90 via-slate-950/90 to-slate-900/80 shadow-2xl relative overflow-hidden">
+            <div class="absolute -right-8 -top-8 w-32 h-32 bg-sky-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+            <div class="flex items-center justify-between border-b border-slate-800/80 pb-3 mb-3 relative z-10">
+              <div>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-sky-500/20 text-sky-300 border border-sky-500/30 flex items-center gap-1 w-fit mb-1">
+                  <span>🌐</span> <span>Мировой Рейтинг</span>
+                </span>
+                <h3 class="text-sm font-black text-white font-heading">
+                  Топ-10 языков программирования
+                </h3>
+              </div>
+              <span class="text-[10px] font-mono text-slate-400 bg-slate-900/80 px-2 py-1 rounded-lg border border-slate-800">TIOBE / Octo</span>
+            </div>
+            
+            <p class="text-[11px] text-slate-400 mb-3 leading-relaxed">
+              Популярность и назначение. <span class="text-sky-400 font-semibold">Кликните по языку</span> для быстрой фильтрации новостей:
+            </p>
+
+            <div class="space-y-2 max-h-[520px] overflow-y-auto pr-1 scrollbar-thin">
               
               <!-- 1. Python -->
-              <div onclick="filterByLanguage('python')" class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-amber-500/50 cursor-pointer transition-all hover:-translate-y-0.5 group">
+              <div onclick="filterByLanguage('python')" class="aside-lang-card p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-amber-500/50 cursor-pointer transition-all hover:bg-slate-900/60 group" data-lang="python">
                 <div class="flex items-center justify-between mb-1.5">
                   <span class="text-xs font-bold text-white group-hover:text-amber-300 flex items-center gap-1.5">
                     <span>🐍</span> <span>Python</span>
                   </span>
                   <span class="text-[11px] font-mono font-bold text-amber-400">#1 • 25.4%</span>
                 </div>
-                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-2">
+                <div class="w-full bg-slate-800/80 h-1.5 rounded-full overflow-hidden mb-1.5">
                   <div class="bg-amber-400 h-full rounded-full" style="width: 100%"></div>
                 </div>
-                <p class="text-[11px] text-slate-300 leading-tight">
+                <p class="text-[11px] text-slate-300 leading-snug">
                   <strong class="text-white">Для чего:</strong> ИИ / ML (PyTorch), Data Science, FastAPI бэкенд, скрипты автоматизации.
                 </p>
               </div>
 
               <!-- 2. JS / TS -->
-              <div onclick="filterByLanguage('typescript')" class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-blue-500/50 cursor-pointer transition-all hover:-translate-y-0.5 group">
+              <div onclick="filterByLanguage('typescript')" class="aside-lang-card p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-blue-500/50 cursor-pointer transition-all hover:bg-slate-900/60 group" data-lang="typescript">
                 <div class="flex items-center justify-between mb-1.5">
                   <span class="text-xs font-bold text-white group-hover:text-blue-300 flex items-center gap-1.5">
                     <span>🔷</span> <span>JS / TypeScript</span>
                   </span>
                   <span class="text-[11px] font-mono font-bold text-blue-400">#2 • 19.8%</span>
                 </div>
-                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-2">
+                <div class="w-full bg-slate-800/80 h-1.5 rounded-full overflow-hidden mb-1.5">
                   <div class="bg-blue-400 h-full rounded-full" style="width: 78%"></div>
                 </div>
-                <p class="text-[11px] text-slate-300 leading-tight">
-                  <strong class="text-white">Для чего:</strong> Веб-фронтенд (React, Vue, Next.js), Фуллстек Node.js, Мобильные кроссплатформенные приложения.
+                <p class="text-[11px] text-slate-300 leading-snug">
+                  <strong class="text-white">Для чего:</strong> Веб-фронтенд (React, Vue, Next.js), Фуллстек Node.js, Кроссплатформенные приложения.
                 </p>
               </div>
 
               <!-- 3. Java -->
-              <div onclick="filterByLanguage('java')" class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-red-500/50 cursor-pointer transition-all hover:-translate-y-0.5 group">
+              <div onclick="filterByLanguage('java')" class="aside-lang-card p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-red-500/50 cursor-pointer transition-all hover:bg-slate-900/60 group" data-lang="java">
                 <div class="flex items-center justify-between mb-1.5">
                   <span class="text-xs font-bold text-white group-hover:text-red-300 flex items-center gap-1.5">
                     <span>☕</span> <span>Java</span>
                   </span>
                   <span class="text-[11px] font-mono font-bold text-red-400">#3 • 10.2%</span>
                 </div>
-                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-2">
+                <div class="w-full bg-slate-800/80 h-1.5 rounded-full overflow-hidden mb-1.5">
                   <div class="bg-red-400 h-full rounded-full" style="width: 40%"></div>
                 </div>
-                <p class="text-[11px] text-slate-300 leading-tight">
+                <p class="text-[11px] text-slate-300 leading-snug">
                   <strong class="text-white">Для чего:</strong> Enterprise-бэкенд (Spring Boot), Банковские процессинги, Финтех.
                 </p>
               </div>
 
               <!-- 4. C# / .NET -->
-              <div onclick="filterByLanguage('c#')" class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-purple-500/50 cursor-pointer transition-all hover:-translate-y-0.5 group">
+              <div onclick="filterByLanguage('c#')" class="aside-lang-card p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-purple-500/50 cursor-pointer transition-all hover:bg-slate-900/60 group" data-lang="c#">
                 <div class="flex items-center justify-between mb-1.5">
                   <span class="text-xs font-bold text-white group-hover:text-purple-300 flex items-center gap-1.5">
                     <span>🎯</span> <span>C# / .NET</span>
                   </span>
                   <span class="text-[11px] font-mono font-bold text-purple-400">#4 • 7.6%</span>
                 </div>
-                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-2">
+                <div class="w-full bg-slate-800/80 h-1.5 rounded-full overflow-hidden mb-1.5">
                   <div class="bg-purple-400 h-full rounded-full" style="width: 30%"></div>
                 </div>
-                <p class="text-[11px] text-slate-300 leading-tight">
+                <p class="text-[11px] text-slate-300 leading-snug">
                   <strong class="text-white">Для чего:</strong> Игры (Unity), Корпоративные платформы Microsoft, Cloud-сервисы.
                 </p>
               </div>
 
               <!-- 5. C++ -->
-              <div onclick="filterByLanguage('c++')" class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-sky-500/50 cursor-pointer transition-all hover:-translate-y-0.5 group">
+              <div onclick="filterByLanguage('c++')" class="aside-lang-card p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-sky-500/50 cursor-pointer transition-all hover:bg-slate-900/60 group" data-lang="c++">
                 <div class="flex items-center justify-between mb-1.5">
                   <span class="text-xs font-bold text-white group-hover:text-sky-300 flex items-center gap-1.5">
                     <span>⚡</span> <span>C++</span>
                   </span>
                   <span class="text-[11px] font-mono font-bold text-sky-400">#5 • 7.1%</span>
                 </div>
-                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-2">
+                <div class="w-full bg-slate-800/80 h-1.5 rounded-full overflow-hidden mb-1.5">
                   <div class="bg-sky-400 h-full rounded-full" style="width: 28%"></div>
                 </div>
-                <p class="text-[11px] text-slate-300 leading-tight">
-                  <strong class="text-white">Для чего:</strong> Unreal Engine, AAA-игры, Высокочастотный трейдинг (HFT), Встраиваемые системы.
+                <p class="text-[11px] text-slate-300 leading-snug">
+                  <strong class="text-white">Для чего:</strong> Unreal Engine, AAA-игры, High-Frequency Trading (HFT), Embedded.
                 </p>
               </div>
 
               <!-- 6. Go (Golang) -->
-              <div onclick="filterByLanguage('go')" class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-cyan-500/50 cursor-pointer transition-all hover:-translate-y-0.5 group">
+              <div onclick="filterByLanguage('go')" class="aside-lang-card p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-cyan-500/50 cursor-pointer transition-all hover:bg-slate-900/60 group" data-lang="go">
                 <div class="flex items-center justify-between mb-1.5">
                   <span class="text-xs font-bold text-white group-hover:text-cyan-300 flex items-center gap-1.5">
                     <span>🐹</span> <span>Go</span>
                   </span>
                   <span class="text-[11px] font-mono font-bold text-cyan-400">#6 • 6.5%</span>
                 </div>
-                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-2">
+                <div class="w-full bg-slate-800/80 h-1.5 rounded-full overflow-hidden mb-1.5">
                   <div class="bg-cyan-400 h-full rounded-full" style="width: 25%"></div>
                 </div>
-                <p class="text-[11px] text-slate-300 leading-tight">
+                <p class="text-[11px] text-slate-300 leading-snug">
                   <strong class="text-white">Для чего:</strong> Облачная инфраструктура (K8s, Docker), Микросервисы, Сетевые демоны.
                 </p>
               </div>
 
               <!-- 7. C -->
-              <div onclick="filterByLanguage('c ')" class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-slate-500/50 cursor-pointer transition-all hover:-translate-y-0.5 group">
+              <div onclick="filterByLanguage('c ')" class="aside-lang-card p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-slate-500/50 cursor-pointer transition-all hover:bg-slate-900/60 group" data-lang="c ">
                 <div class="flex items-center justify-between mb-1.5">
                   <span class="text-xs font-bold text-white group-hover:text-slate-200 flex items-center gap-1.5">
                     <span>⚙️</span> <span>C</span>
                   </span>
                   <span class="text-[11px] font-mono font-bold text-slate-400">#7 • 5.2%</span>
                 </div>
-                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-2">
+                <div class="w-full bg-slate-800/80 h-1.5 rounded-full overflow-hidden mb-1.5">
                   <div class="bg-slate-400 h-full rounded-full" style="width: 20%"></div>
                 </div>
-                <p class="text-[11px] text-slate-300 leading-tight">
+                <p class="text-[11px] text-slate-300 leading-snug">
                   <strong class="text-white">Для чего:</strong> Ядро ОС (Linux), Низкоуровневые драйверы, Микроконтроллеры (IoT).
                 </p>
               </div>
 
               <!-- 8. Rust -->
-              <div onclick="filterByLanguage('rust')" class="p-3.5 rounded-2xl bg-slate-950/60 border border-orange-500/40 hover:border-orange-400 cursor-pointer transition-all hover:-translate-y-0.5 group shadow-lg shadow-orange-500/5">
+              <div onclick="filterByLanguage('rust')" class="aside-lang-card p-3 rounded-2xl bg-slate-950/60 border border-orange-500/40 hover:border-orange-400 cursor-pointer transition-all hover:bg-slate-900/60 group shadow-lg shadow-orange-500/5" data-lang="rust">
                 <div class="flex items-center justify-between mb-1.5">
                   <span class="text-xs font-bold text-white group-hover:text-orange-300 flex items-center gap-1.5">
                     <span>🦀</span> <span>Rust</span>
                   </span>
                   <span class="text-[11px] font-mono font-bold text-orange-400">#8 • 4.8% 🔥</span>
                 </div>
-                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-2">
+                <div class="w-full bg-slate-800/80 h-1.5 rounded-full overflow-hidden mb-1.5">
                   <div class="bg-orange-500 h-full rounded-full" style="width: 19%"></div>
                 </div>
-                <p class="text-[11px] text-slate-300 leading-tight">
+                <p class="text-[11px] text-slate-300 leading-snug">
                   <strong class="text-white">Для чего:</strong> Безопасность памяти без GC, Системный софт, Ядро Linux, WebAssembly.
                 </p>
               </div>
 
               <!-- 9. PHP -->
-              <div onclick="filterByLanguage('php')" class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-indigo-500/50 cursor-pointer transition-all hover:-translate-y-0.5 group">
+              <div onclick="filterByLanguage('php')" class="aside-lang-card p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-indigo-500/50 cursor-pointer transition-all hover:bg-slate-900/60 group" data-lang="php">
                 <div class="flex items-center justify-between mb-1.5">
                   <span class="text-xs font-bold text-white group-hover:text-indigo-300 flex items-center gap-1.5">
                     <span>🐘</span> <span>PHP</span>
                   </span>
                   <span class="text-[11px] font-mono font-bold text-indigo-400">#9 • 4.1%</span>
                 </div>
-                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-2">
+                <div class="w-full bg-slate-800/80 h-1.5 rounded-full overflow-hidden mb-1.5">
                   <div class="bg-indigo-400 h-full rounded-full" style="width: 16%"></div>
                 </div>
-                <p class="text-[11px] text-slate-300 leading-tight">
+                <p class="text-[11px] text-slate-300 leading-snug">
                   <strong class="text-white">Для чего:</strong> Веб-сайты, CMS (WordPress), Современные фреймворки (Laravel, Symfony).
                 </p>
               </div>
 
               <!-- 10. Kotlin / Swift -->
-              <div onclick="filterByLanguage('kotlin')" class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-emerald-500/50 cursor-pointer transition-all hover:-translate-y-0.5 group">
+              <div onclick="filterByLanguage('kotlin')" class="aside-lang-card p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-emerald-500/50 cursor-pointer transition-all hover:bg-slate-900/60 group" data-lang="kotlin">
                 <div class="flex items-center justify-between mb-1.5">
                   <span class="text-xs font-bold text-white group-hover:text-emerald-300 flex items-center gap-1.5">
                     <span>🍏</span> <span>Kotlin / Swift</span>
                   </span>
                   <span class="text-[11px] font-mono font-bold text-emerald-400">#10 • 3.8%</span>
                 </div>
-                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-2">
+                <div class="w-full bg-slate-800/80 h-1.5 rounded-full overflow-hidden mb-1.5">
                   <div class="bg-emerald-400 h-full rounded-full" style="width: 15%"></div>
                 </div>
-                <p class="text-[11px] text-slate-300 leading-tight">
+                <p class="text-[11px] text-slate-300 leading-snug">
                   <strong class="text-white">Для чего:</strong> Нативная мобильная разработка: Android (Google) и iOS/macOS (Apple).
                 </p>
               </div>
 
             </div>
           </div>
-        </div>
 
-        <!-- DEEP DIVE: RISING STARS & NEXT-GEN LANGUAGES -->
-        <div class="glass-panel p-6 sm:p-7 rounded-3xl border border-slate-800/90 bg-slate-900/60 space-y-4">
-          <div class="flex items-center justify-between flex-wrap gap-2">
-            <div>
-              <h4 class="text-sm sm:text-base font-extrabold text-white font-heading flex items-center gap-2">
-                <span>🚀</span> <span>Восходящие звёзды & Прорывные технологии (Углублённый анализ)</span>
-              </h4>
-              <p class="text-xs text-slate-400 mt-0.5">
-                Языки, которые меняют архитектуру софта и вытесняют устаревшие технологии.
-              </p>
+          <!-- ASIDE BLOCK 2: DEEP DIVE (RISING STARS) -->
+          <div id="aside-block-deepdive" style="display: none;" class="glass-panel p-5 rounded-3xl border border-slate-800/90 bg-slate-900/60 shadow-2xl space-y-3.5">
+            <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
+              <div>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center gap-1 w-fit mb-1">
+                  <span>🚀</span> <span>Deep Dive</span>
+                </span>
+                <h3 class="text-sm font-black text-white font-heading">
+                  Восходящие звёзды индустрии
+                </h3>
+              </div>
+              <span class="text-[10px] font-mono text-slate-500">Next-Gen</span>
             </div>
-            <span class="text-xs text-slate-500 font-mono">Анализ компиляторов & Бенчмарков</span>
+
+            <p class="text-[11px] text-slate-400 leading-relaxed">
+              Технологические прорывы языков, вытесняющих устаревшие решения:
+            </p>
+
+            <div class="space-y-3">
+              
+              <!-- Rust -->
+              <div class="p-3.5 rounded-2xl bg-slate-950/70 border border-orange-500/30 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-orange-400 flex items-center gap-1.5">
+                    <span>🦀</span> <span>Rust</span>
+                  </span>
+                  <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-orange-500/20 text-orange-300 border border-orange-500/30">
+                    Системный стандарт
+                  </span>
+                </div>
+                <p class="text-[11px] text-slate-300 leading-snug">
+                  <strong class="text-white">Прорыв:</strong> Управление памятью без GC через <em>Ownership & Borrowing</em>. Без гонок данных и утечек.
+                </p>
+                <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-[10px] text-slate-300 space-y-1">
+                  <div><strong class="text-amber-300">📊 Бенчмарки:</strong> Скорость C/C++, в 3-5 раз меньше RAM, чем Go и Java.</div>
+                  <div><strong class="text-sky-300">🏢 Внедрение:</strong> Ядро Windows 11, Linux 6.x, Cloudflare Pingora.</div>
+                </div>
+              </div>
+
+              <!-- Mojo -->
+              <div class="p-3.5 rounded-2xl bg-slate-950/70 border border-rose-500/30 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-rose-400 flex items-center gap-1.5">
+                    <span>🔥</span> <span>Mojo</span>
+                  </span>
+                  <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                    AI Acceleration
+                  </span>
+                </div>
+                <p class="text-[11px] text-slate-300 leading-snug">
+                  <strong class="text-white">Прорыв:</strong> От автора LLVM/Swift. Синтаксис Python с мощью C++/CUDA через MLIR под тензорные ядра GPU/TPU.
+                </p>
+                <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-[10px] text-slate-300 space-y-1">
+                  <div><strong class="text-rose-300">📊 Скорость:</strong> До 68,000x быстрее стандартного Python в операциях с матрицами.</div>
+                  <div><strong class="text-amber-300">🎯 Для чего:</strong> Тюнинг моделей, разработка кастомных ядер для нейросетей.</div>
+                </div>
+              </div>
+
+              <!-- Go -->
+              <div class="p-3.5 rounded-2xl bg-slate-950/70 border border-cyan-500/30 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
+                    <span>🐹</span> <span>Go (Golang)</span>
+                  </span>
+                  <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                    Cloud Native
+                  </span>
+                </div>
+                <p class="text-[11px] text-slate-300 leading-snug">
+                  <strong class="text-white">Прорыв:</strong> Горутины CSP (~2 КБ памяти против 1-2 МБ у потоков ОС) для сотен тысяч одновременных соединений.
+                </p>
+                <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-[10px] text-slate-300 space-y-1">
+                  <div><strong class="text-cyan-300">📊 Простота:</strong> Всего 25 ключевых слов, 1 бинарник без .so зависимостей.</div>
+                  <div><strong class="text-emerald-300">🏢 Доминирование:</strong> K8s, Docker, Terraform, Prometheus.</div>
+                </div>
+              </div>
+
+              <!-- Zig -->
+              <div class="p-3.5 rounded-2xl bg-slate-950/70 border border-amber-500/30 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                    <span>⚡</span> <span>Zig</span>
+                  </span>
+                  <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    Next-Gen C
+                  </span>
+                </div>
+                <p class="text-[11px] text-slate-300 leading-snug">
+                  <strong class="text-white">Прорыв:</strong> 0 скрытого потока управления (нет макросов, нет скрытого выделения памяти). Мощный <code>comptime</code>.
+                </p>
+                <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-[10px] text-slate-300 space-y-1">
+                  <div><strong class="text-amber-300">🛠 Инструмент:</strong> Встроенный компилятор C/C++, кросс-компиляция любой ОС одной командой.</div>
+                  <div><strong class="text-sky-300">🎯 Применение:</strong> TigerBeetle DB, рантайм Bun, GameDev, микроконтроллеры.</div>
+                </div>
+              </div>
+
+            </div>
           </div>
 
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2">
-            
-            <!-- Deep Dive: Rust -->
-            <div class="p-5 rounded-2xl bg-slate-950/70 border border-orange-500/30 space-y-3">
-              <div class="flex items-center justify-between">
-                <span class="text-sm font-bold text-orange-400 flex items-center gap-2">
-                  <span>🦀</span> <span>Rust — Революция безопасности памяти</span>
-                </span>
-                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-orange-500/20 text-orange-300 border border-orange-500/30">
-                  Системный стандарт
-                </span>
-              </div>
-              <p class="text-xs text-slate-300 leading-relaxed">
-                <strong class="text-white">В чём технологический прорыв:</strong> Управление памятью без сборщика мусора (GC) через концепцию <em>Ownership & Borrowing</em>. Компилятор математически доказывает отсутствие гонок данных (data races), утечек памяти и атак переполнения буфера (buffer overflow).
-              </p>
-              <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] text-slate-300 space-y-1">
-                <div><strong class="text-amber-300">📊 Бенчмарки:</strong> Скорость C/C++, но потребляет в 3-5 раз меньше RAM, чем Go и Java. Нет stop-the-world пауз.</div>
-                <div><strong class="text-sky-300">🏢 Внедрение:</strong> Microsoft переписывает компоненты ядра Windows 11; Linux официально включил Rust во 2-й язык ядра; Cloudflare перешёл с Nginx на Pingora (Rust).</div>
-              </div>
-            </div>
+        </aside>
 
-            <!-- Deep Dive: Mojo -->
-            <div class="p-5 rounded-2xl bg-slate-950/70 border border-rose-500/30 space-y-3">
-              <div class="flex items-center justify-between">
-                <span class="text-sm font-bold text-rose-400 flex items-center gap-2">
-                  <span>🔥</span> <span>Mojo — Язык эпохи искусственного интеллекта</span>
-                </span>
-                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                  AI Acceleration
-                </span>
-              </div>
-              <p class="text-xs text-slate-300 leading-relaxed">
-                <strong class="text-white">В чём технологический прорыв:</strong> Создан Крисом Латтнером (автором LLVM и Swift). Сочетает простоту Python с мощью C++/CUDA. Компилируется через MLIR с автоматической векторизацией под GPU/TPU тензорные ядра.
-              </p>
-              <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] text-slate-300 space-y-1">
-                <div><strong class="text-rose-300">📊 Бенчмарки:</strong> В операциях с матрицами и инференсом LLM работает <span class="text-white font-bold">до 68,000 раз быстрее стандартного Python</span>.</div>
-                <div><strong class="text-amber-300">🎯 Для чего:</strong> Тюнинг моделей, разработка собственных кастомных ядер для нейросетей без мучений с C++ и CUDA.</div>
-              </div>
-            </div>
-
-            <!-- Deep Dive: Go -->
-            <div class="p-5 rounded-2xl bg-slate-950/70 border border-cyan-500/30 space-y-3">
-              <div class="flex items-center justify-between">
-                <span class="text-sm font-bold text-cyan-400 flex items-center gap-2">
-                  <span>🐹</span> <span>Go (Golang) — Абсолютный монополист облаков</span>
-                </span>
-                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                  Cloud Native
-                </span>
-              </div>
-              <p class="text-xs text-slate-300 leading-relaxed">
-                <strong class="text-white">В чём технологический прорыв:</strong> Модель параллелизма CSP (Communicating Sequential Processes). Легковесные горутины занимают всего ~2 КБ памяти (против 1-2 МБ у тредов ОС), позволяя держать сотни тысяч соединений на одном сервере.
-              </p>
-              <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] text-slate-300 space-y-1">
-                <div><strong class="text-cyan-300">📊 Простота:</strong> Всего 25 ключевых слов, компиляция за секунды в 1 бинарник без внешних .so библиотек.</div>
-                <div><strong class="text-emerald-300">🏢 Доминирование:</strong> Kubernetes, Docker, Terraform, Prometheus, etcd — весь мировой DevOps написан на Go.</div>
-              </div>
-            </div>
-
-            <!-- Deep Dive: Zig -->
-            <div class="p-5 rounded-2xl bg-slate-950/70 border border-amber-500/30 space-y-3">
-              <div class="flex items-center justify-between">
-                <span class="text-sm font-bold text-amber-400 flex items-center gap-2">
-                  <span>⚡</span> <span>Zig — Прагматичный преемник C</span>
-                </span>
-                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                  Next-Gen C
-                </span>
-              </div>
-              <p class="text-xs text-slate-300 leading-relaxed">
-                <strong class="text-white">В чём технологический прорыв:</strong> Полное отсутствие скрытого потока управления (нет макросов, нет перегрузки операторов, нет скрытого выделения памяти). Мощный механизм <code>comptime</code> выполняет код прямо во время компиляции.
-              </p>
-              <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] text-slate-300 space-y-1">
-                <div><strong class="text-amber-300">🛠 Инструмент:</strong> Включает встроенный компилятор C/C++, позволяя кросс-компилировать чужой софт под любую архитектуру одной командой.</div>
-                <div><strong class="text-sky-300">🎯 Применение:</strong> Движки баз данных (TigerBeetle), JavaScript-рантайм Bun, GameDev, микроконтроллеры.</div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-      </div>
-
-
-      <!-- News Cards Container -->
-      <div id="news-container" class="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
-        <!-- Injected dynamically by JavaScript -->
       </div>
 
     </section>
@@ -1839,31 +1891,106 @@
     window.filterByLanguage = function(lang) {
       state.selectedLanguage = lang || 'all';
       
-      // Update UI buttons
+      // Synchronize Dropdown Select
+      const dropdown = document.getElementById('language-select-dropdown');
+      if (dropdown && dropdown.value !== state.selectedLanguage) {
+        dropdown.value = state.selectedLanguage;
+      }
+
+      // Update UI quick buttons
       document.querySelectorAll('.lang-filter-btn').forEach(btn => {
         const blang = btn.getAttribute('data-lang');
         if (blang === state.selectedLanguage) {
-          btn.className = 'lang-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-500 text-white border border-sky-400 transition-all shadow-md';
+          btn.className = 'lang-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-bold bg-sky-500 text-white border border-sky-400 transition-all shadow-md';
         } else {
-          btn.className = 'lang-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all';
+          btn.className = 'lang-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all';
+        }
+      });
+
+      // Highlight active Aside Card if matching
+      document.querySelectorAll('.aside-lang-card').forEach(card => {
+        const clang = card.getAttribute('data-lang');
+        if (clang && clang === state.selectedLanguage) {
+          card.classList.add('border-sky-400', 'bg-sky-950/40', 'shadow-md', 'shadow-sky-500/10');
+        } else {
+          card.classList.remove('border-sky-400', 'bg-sky-950/40', 'shadow-md', 'shadow-sky-500/10');
         }
       });
 
       renderNews();
     };
 
+    window.switchAsideTab = function(tab) {
+      const bTop10 = document.getElementById('aside-block-top10');
+      const bDeep = document.getElementById('aside-block-deepdive');
+      const btnTop10 = document.getElementById('aside-tab-top10');
+      const btnDeep = document.getElementById('aside-tab-deepdive');
+      const btnAll = document.getElementById('aside-tab-all');
+
+      if (!bTop10 || !bDeep) return;
+
+      const activeClass = 'flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all bg-sky-500 text-white shadow-md flex items-center justify-center gap-1.5';
+      const inactiveClass = 'flex-1 py-1.5 px-3 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-900/80 transition-all flex items-center justify-center gap-1.5';
+      const allActiveClass = 'py-1.5 px-2.5 rounded-xl text-xs font-bold transition-all bg-sky-500 text-white shadow-md flex items-center justify-center';
+      const allInactiveClass = 'py-1.5 px-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-900/80 transition-all flex items-center justify-center';
+
+      if (tab === 'deepdive') {
+        bTop10.style.display = 'none';
+        bDeep.style.display = 'block';
+        if (btnTop10) btnTop10.className = inactiveClass;
+        if (btnDeep) btnDeep.className = activeClass;
+        if (btnAll) btnAll.className = allInactiveClass;
+      } else if (tab === 'all') {
+        bTop10.style.display = 'block';
+        bDeep.style.display = 'block';
+        if (btnTop10) btnTop10.className = inactiveClass;
+        if (btnDeep) btnDeep.className = inactiveClass;
+        if (btnAll) btnAll.className = allActiveClass;
+      } else { // 'top10'
+        bTop10.style.display = 'block';
+        bDeep.style.display = 'none';
+        if (btnTop10) btnTop10.className = activeClass;
+        if (btnDeep) btnDeep.className = inactiveClass;
+        if (btnAll) btnAll.className = allInactiveClass;
+      }
+    };
+
     window.setDynamicCategory = function(cat) {
       state.newsCategoryFilter = (cat === 'all' || cat === 'Все') ? 'all' : cat;
       
-      // Show or hide Programming Analytics Hub
-      const hub = document.getElementById('programming-analytics-hub');
-      if (hub) {
-        const isProg = cat === 'IT & Аналитика' || cat.toLowerCase().includes('аналитик') || cat === 'all';
-        if (isProg) {
-          hub.style.display = 'block';
+      // ONLY show aside and language bar when specifically viewing IT / Programming category!
+      // NEVER show on "Все" (all) or other categories.
+      const isIT = state.newsCategoryFilter !== 'all' && 
+                   state.newsCategoryFilter !== 'Все' && 
+                   (state.newsCategoryFilter === 'IT & Аналитика' || 
+                    state.newsCategoryFilter.toLowerCase().includes('аналитик') || 
+                    state.newsCategoryFilter.toLowerCase().includes('программир') || 
+                    state.newsCategoryFilter.toLowerCase().includes('dev') ||
+                    state.newsCategoryFilter.toLowerCase().includes('it'));
+      
+      const aside = document.getElementById('programming-analytics-aside');
+      const langBar = document.getElementById('language-selection-bar');
+      const mainCol = document.getElementById('news-main-column');
+
+      if (aside) {
+        aside.style.display = isIT ? 'block' : 'none';
+      }
+      if (langBar) {
+        langBar.style.display = isIT ? 'flex' : 'none';
+      }
+      if (mainCol) {
+        if (isIT) {
+          mainCol.className = 'lg:col-span-7 xl:col-span-8 space-y-6';
         } else {
-          hub.style.display = 'none';
+          mainCol.className = 'lg:col-span-12 space-y-6';
         }
+      }
+
+      // If switching away from IT, reset language filter
+      if (!isIT && state.selectedLanguage && state.selectedLanguage !== 'all') {
+        state.selectedLanguage = 'all';
+        const dropdown = document.getElementById('language-select-dropdown');
+        if (dropdown) dropdown.value = 'all';
       }
 
       renderCategoryPills();
@@ -1961,6 +2088,10 @@
           if (target === 'mojo' && !fullText.includes('mojo')) return false;
           if (target === 'zig' && !fullText.includes('zig')) return false;
           if (target === 'java' && !fullText.includes('java') && !fullText.includes('spring')) return false;
+          if (target === 'c#' && !fullText.includes('c#') && !fullText.includes('csharp') && !fullText.includes('.net') && !fullText.includes('dotnet') && !fullText.includes('unity')) return false;
+          if ((target === 'c' || target === 'c ') && !fullText.includes(' c ') && !fullText.includes('ядро') && !fullText.includes('linux') && !fullText.includes('kernel') && !fullText.includes('embedded')) return false;
+          if (target === 'php' && !fullText.includes('php') && !fullText.includes('laravel') && !fullText.includes('symfony') && !fullText.includes('wordpress')) return false;
+          if (target === 'kotlin' && !fullText.includes('kotlin') && !fullText.includes('swift') && !fullText.includes('android') && !fullText.includes('ios')) return false;
         }
 
         return true;
