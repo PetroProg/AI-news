@@ -81,8 +81,6 @@ def infer_category_from_source(source_name: str) -> str:
         return "Linux & Infrastructure"
     if any(k in s for k in ["csgo", "game", "игры"]):
         return "Gaming"
-    if any(k in s for k in ["security", "sec", "безопас"]):
-        return "Cybersecurity"
     if "ai" in s or "нейро" in s:
         return "AI"
     return "Technology"

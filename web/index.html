@@ -1821,8 +1821,6 @@
         'языки программирования': 'IT & Аналитика',
         'linux': 'Linux & Инфраструктура',
         'linux & infrastructure': 'Linux & Инфраструктура',
-        'cybersecurity': 'Безопасность',
-        'security': 'Безопасность',
         'gaming': 'Игры & Киберспорт',
         'ai': 'Искусственный интеллект',
         'ai & нейросети': 'Искусственный интеллект',
@@ -1836,7 +1834,6 @@
       if (map[lower]) return map[lower];
       if (lower.includes('gaming') || lower.includes('игры') || lower.includes('sport') || lower.includes('csgo') || lower.includes('navi') || lower.includes('vitality') || lower.includes('starladder')) return 'Игры & Киберспорт';
       if (lower.includes('linux') || lower.includes('opennet')) return 'Linux & Инфраструктура';
-      if (lower.includes('security') || lower.includes('безопас')) return 'Безопасность';
       if (lower.includes('ai') || lower.includes('нейро') || lower.includes('интеллект')) return 'Искусственный интеллект';
       if (lower.includes('аналитик') || lower.includes('dev') || lower.includes('программир') || lower.includes('разработ')) return 'IT & Аналитика';
       return 'Общие технологии';
@@ -2097,6 +2094,19 @@
     };
 
     function isArticleEligibleForDisplay(item, targetCategory, targetLang) {
+      // Completely exclude security / cybersecurity articles
+      const rawCat = (item.category || '').toLowerCase();
+      const itemCat = (item._displayCategory || normalizeCategory(item.category)).toLowerCase();
+      const rawTitle = (item.title || '').toLowerCase();
+      if (itemCat.includes('безопас') || itemCat.includes('cybersec') || itemCat.includes('security') ||
+          rawCat.includes('безопас') || rawCat.includes('cybersec') || rawCat.includes('security') ||
+          rawTitle.includes('уязвим') || rawTitle.includes('cve-')) {
+        return false;
+      }
+      if (targetCategory && (targetCategory.toLowerCase().includes('безопас') || targetCategory.toLowerCase().includes('security') || targetCategory.toLowerCase().includes('cybersec'))) {
+        return false;
+      }
+
       const score = item.importance_score ? Number(item.importance_score) : 5.0;
       const isAll = (!targetCategory || targetCategory === 'all' || targetCategory === 'Все');
 
@@ -2105,7 +2115,6 @@
         return score >= 8.0;
       }
 
-      const itemCat = (item._displayCategory || normalizeCategory(item.category)).toLowerCase();
       const targetCatLower = targetCategory.toLowerCase();
 
       // 2. Must match target category
@@ -2157,6 +2166,10 @@
       const distinctCats = Array.from(new Set(state.articles.map(a => a._displayCategory)));
 
       distinctCats.forEach(cat => {
+        const lowerCat = cat.toLowerCase();
+        if (lowerCat.includes('безопас') || lowerCat.includes('security') || lowerCat.includes('cybersec')) {
+          return;
+        }
         const langParam = (state.newsCategoryFilter && state.newsCategoryFilter.toLowerCase() === cat.toLowerCase())
           ? state.selectedLanguage
           : 'all';
@@ -2221,6 +2234,14 @@
       // In "Все" tab: gather and render the express digest aside (6.0 <= score < 8.0)
       if (isAll) {
         const digestArticles = state.articles.filter(item => {
+          const rawCat = (item.category || '').toLowerCase();
+          const itemCat = (item._displayCategory || normalizeCategory(item.category)).toLowerCase();
+          const rawTitle = (item.title || '').toLowerCase();
+          if (itemCat.includes('безопас') || itemCat.includes('cybersec') || itemCat.includes('security') ||
+              rawCat.includes('безопас') || rawCat.includes('cybersec') || rawCat.includes('security') ||
+              rawTitle.includes('уязвим') || rawTitle.includes('cve-')) {
+            return false;
+          }
           const score = item.importance_score ? Number(item.importance_score) : 5.0;
           return score >= 6.0 && score < 8.0;
         });
