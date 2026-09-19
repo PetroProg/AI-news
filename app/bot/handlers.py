@@ -1,42 +1,31 @@
-import logging
-import httpx
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from aiogram import Bot, Router, F
-from aiogram.filters import CommandStart, Command, Filter
+import logging
+import httpx
+from aiogram import Router, F, Bot
+from aiogram.filters import CommandStart, Command
 from aiogram.types import Message
 from sqlalchemy import select, func
 
 from app.config import settings
 from app.database.session import async_session_maker
-from app.database.models import Article, Report, ReportType, ArticleStatus
+from app.database.models import Article, ArticleStatus, Report, ReportType
 from app.services.report import ReportBuilderService
 from app.bot.keyboards import get_main_keyboard
 from app.bot.utils import send_wake_on_lan, send_remote_sleep, split_message
 
-logger = logging.getLogger("news_ai.bot")
-router = Router()
-
-
-class IsAdminFilter(Filter):
-    """Filter ensuring commands can only be executed by the authorized admin."""
-    async def __call__(self, message: Message) -> bool:
-        if not message.from_user:
-            return False
-        return message.from_user.id == settings.TELEGRAM_ADMIN_CHAT_ID
-
-
-# Apply AdminFilter to all messages handled by this router
-router.message.filter(IsAdminFilter())
+logger = logging.getLogger("news_ai.bot.handlers")
+router = Router(name="main_handlers")
 
 
 @router.message(CommandStart())
 async def cmd_start(message: Message):
-    """Handles /start command: sends welcome message and main keyboard."""
+    """Handles the /start command, registers user/shows main menu."""
     welcome_text = (
-        "👋 **Привет! Я твой персональный AI News Assistant.**\n\n"
-        "Я отслеживаю RSS-ленты и Telegram-каналы, фильтрую шум, удаляю дубликаты "
-        "и с помощью локальной нейросети готовлю для тебя утренние и вечерние выжимки.\n\n"
+        "👋 **Привет! Я твой персональный AI-агрегатор новостей.**\n\n"
+        "Я собираю важные статьи и посты из RSS-лент и Telegram-каналов, "
+        "фильтрую дубликаты и с помощью локальной нейросети (Llama-3/Mistral) "
+        "готовлю ёмкие и структурированные выжимки.\n\n"
         "Используй кнопки меню ниже для управления."
     )
     await message.answer(welcome_text, parse_mode="Markdown", reply_markup=get_main_keyboard())
@@ -185,12 +174,14 @@ async def cmd_run_pipeline(message: Message, bot: Bot):
     except Exception as exc:
         logger.error("Manual pipeline run failed: %s", exc, exc_info=True)
         await status_msg.edit_text(f"❌ Ошибка выполнения пайплайна: `{exc}`", parse_mode="Markdown")
+
+
 @router.message(Command("sleep_pc"))
 @router.message(F.text.in_(["💤 Усыпить ПК", "💤 Спать ПК"]))
 async def cmd_sleep_pc(message: Message):
     """Sends a remote sleep command via SSH to suspend the workstation."""
     status_msg = await message.answer("⏳ Отправляю сигнал перехода в спящий режим на ПК...")
-    success = await send_remote_sleep()
+    success = await send_remote_sleep(force=True)
     if success:
         await status_msg.edit_text("💤 *Компьютер переведён в спящий режим.*", parse_mode="Markdown")
     else:
