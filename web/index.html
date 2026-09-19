@@ -1833,7 +1833,13 @@
       };
 
       const lower = c.toLowerCase();
-      return map[lower] || c;
+      if (map[lower]) return map[lower];
+      if (lower.includes('gaming') || lower.includes('игры') || lower.includes('sport') || lower.includes('csgo') || lower.includes('navi') || lower.includes('vitality') || lower.includes('starladder')) return 'Игры & Киберспорт';
+      if (lower.includes('linux') || lower.includes('opennet')) return 'Linux & Инфраструктура';
+      if (lower.includes('security') || lower.includes('безопас')) return 'Безопасность';
+      if (lower.includes('ai') || lower.includes('нейро') || lower.includes('интеллект')) return 'Искусственный интеллект';
+      if (lower.includes('аналитик') || lower.includes('dev') || lower.includes('программир') || lower.includes('разработ')) return 'IT & Аналитика';
+      return 'Общие технологии';
     }
 
     function getCategoryEmoji(catName) {
@@ -1904,6 +1910,7 @@
       });
 
       renderNews();
+      renderCategoryPills();
     };
 
     window.switchAsideTab = function(tab) {
@@ -2089,22 +2096,77 @@
       renderNews();
     };
 
+    function isArticleEligibleForDisplay(item, targetCategory, targetLang) {
+      const score = item.importance_score ? Number(item.importance_score) : 5.0;
+      const isAll = (!targetCategory || targetCategory === 'all' || targetCategory === 'Все');
+
+      // 1. "Все" category: only score >= 8.0 in the main feed
+      if (isAll) {
+        return score >= 8.0;
+      }
+
+      const itemCat = (item._displayCategory || normalizeCategory(item.category)).toLowerCase();
+      const targetCatLower = targetCategory.toLowerCase();
+
+      // 2. Must match target category
+      if (itemCat !== targetCatLower) {
+        return false;
+      }
+
+      // 3. Strict Quality Filter for IT & Analytics:
+      const isProgCategory = targetCatLower.includes('аналитик') || 
+                             targetCatLower.includes('программир') || 
+                             targetCatLower.includes('dev');
+      if (isProgCategory) {
+        if (score < 7.0) return false;
+        const hasSummary = Boolean((item.summaries && item.summaries[state.lang]) || item.summary);
+        if (!hasSummary) return false;
+
+        // Language Sub-Filter
+        if (targetLang && targetLang !== 'all') {
+          const fullText = ((item.title || '') + ' ' + (item.summary || '') + ' ' + (item.why_it_matters || '') + ' ' + (item.source || '')).toLowerCase();
+          const target = targetLang.toLowerCase();
+          
+          if (target === 'python' && !fullText.includes('python') && !fullText.includes('питон') && !fullText.includes('fastapi') && !fullText.includes('django')) return false;
+          if (target === 'rust' && !fullText.includes('rust') && !fullText.includes('раст') && !fullText.includes('cargo') && !fullText.includes('crates')) return false;
+          if (target === 'go' && !fullText.includes('golang') && !fullText.includes(' go ') && !fullText.includes(' go,') && !fullText.includes('kubernetes') && !fullText.includes('docker')) return false;
+          if (target === 'c++' && !fullText.includes('c++') && !fullText.includes('cpp') && !fullText.includes('си++')) return false;
+          if (target === 'typescript' && !fullText.includes('typescript') && !fullText.includes('javascript') && !fullText.includes('ts') && !fullText.includes('js') && !fullText.includes('react') && !fullText.includes('node')) return false;
+          if (target === 'mojo' && !fullText.includes('mojo')) return false;
+          if (target === 'zig' && !fullText.includes('zig')) return false;
+          if (target === 'java' && !fullText.includes('java') && !fullText.includes('spring')) return false;
+          if (target === 'c#' && !fullText.includes('c#') && !fullText.includes('csharp') && !fullText.includes('.net') && !fullText.includes('dotnet') && !fullText.includes('unity')) return false;
+          if ((target === 'c' || target === 'c ') && !fullText.includes(' c ') && !fullText.includes('ядро') && !fullText.includes('linux') && !fullText.includes('kernel') && !fullText.includes('embedded')) return false;
+          if (target === 'php' && !fullText.includes('php') && !fullText.includes('laravel') && !fullText.includes('symfony') && !fullText.includes('wordpress')) return false;
+          if (target === 'kotlin' && !fullText.includes('kotlin') && !fullText.includes('swift') && !fullText.includes('android') && !fullText.includes('ios')) return false;
+        }
+      }
+
+      return true;
+    }
+
     function renderCategoryPills() {
       const container = document.getElementById('category-pills-container');
       if (!container) return;
 
-      const catCounts = {};
-      let topAllCount = 0;
-
       state.articles.forEach(a => {
-        const c = a._displayCategory || normalizeCategory(a.category);
-        a._displayCategory = c;
-        catCounts[c] = (catCounts[c] || 0) + 1;
-        const score = a.importance_score ? Number(a.importance_score) : 5.0;
-        if (score >= 8.0) {
-          topAllCount++;
+        a._displayCategory = normalizeCategory(a.category);
+      });
+
+      const catCounts = {};
+      const distinctCats = Array.from(new Set(state.articles.map(a => a._displayCategory)));
+
+      distinctCats.forEach(cat => {
+        const langParam = (state.newsCategoryFilter && state.newsCategoryFilter.toLowerCase() === cat.toLowerCase())
+          ? state.selectedLanguage
+          : 'all';
+        const visibleCount = state.articles.filter(a => isArticleEligibleForDisplay(a, cat, langParam)).length;
+        if (visibleCount > 0) {
+          catCounts[cat] = visibleCount;
         }
       });
+
+      const topAllCount = state.articles.filter(a => isArticleEligibleForDisplay(a, 'all')).length;
 
       const sortedCategories = Object.keys(catCounts).sort((a, b) => catCounts[b] - catCounts[a]);
       const categories = ['Все', ...sortedCategories];
@@ -2121,10 +2183,10 @@
           : 'bg-slate-900/60 hover:bg-slate-800 text-slate-300 hover:text-white border-slate-800/80 font-medium';
 
         return `
-          <button type="button" onclick="setDynamicCategory('${isAll ? 'all' : cat.replace(/'/g, "\\'")}')" class="news-cat-pill px-4 py-2 rounded-2xl text-xs flex items-center gap-2 transition-all shrink-0 border ${activeClass}">
+          <button type="button" data-category="${isAll ? 'all' : cat}" onclick="setDynamicCategory('${isAll ? 'all' : cat.replace(/'/g, "\\'")}')" class="news-cat-pill px-4 py-2 rounded-2xl text-xs flex items-center gap-2 transition-all shrink-0 border ${activeClass}">
             <span>${emoji}</span>
             <span>${cat}</span>
-            <span class="text-[10px] opacity-75 bg-black/30 px-1.5 py-0.5 rounded-md font-mono">${count}</span>
+            <span class="news-cat-pill-count text-[10px] opacity-75 bg-black/30 px-1.5 py-0.5 rounded-md font-mono">${count}</span>
           </button>
         `;
       }).join('');
@@ -2165,53 +2227,15 @@
         renderAllDigestAside(digestArticles);
       }
 
-      const filtered = state.articles.filter(item => {
-        const itemCat = (item._displayCategory || normalizeCategory(item.category)).toLowerCase();
-        const score = item.importance_score ? Number(item.importance_score) : 5.0;
+      const filtered = state.articles.filter(item => 
+        isArticleEligibleForDisplay(item, state.newsCategoryFilter, state.selectedLanguage)
+      );
 
-        // In "Все" (All) category: ONLY news with score >= 8.0 in the main feed
-        if (isAll) {
-          if (score < 8.0) return false;
-          return true;
-        }
-
-        // Strict Quality Filter ONLY when viewing IT & Analytics category:
-        const isViewingProgCategory = state.newsCategoryFilter && (
-          state.newsCategoryFilter.toLowerCase().includes('аналитик') || 
-          state.newsCategoryFilter.toLowerCase().includes('программир') || 
-          state.newsCategoryFilter.toLowerCase().includes('dev')
-        );
-        if (isViewingProgCategory) {
-          if (score < 7.0) return false;
-          if (!item.summary && (!item.summaries || !item.summaries[state.lang])) return false;
-        }
-
-        // Category Filter
-        if (state.newsCategoryFilter && state.newsCategoryFilter !== 'all' && state.newsCategoryFilter !== 'Все') {
-          if (itemCat !== state.newsCategoryFilter.toLowerCase()) return false;
-        }
-
-        // Language Sub-Filter
-        if (state.selectedLanguage && state.selectedLanguage !== 'all') {
-          const fullText = ((item.title || '') + ' ' + (item.summary || '') + ' ' + (item.why_it_matters || '') + ' ' + (item.source || '')).toLowerCase();
-          const target = state.selectedLanguage.toLowerCase();
-          
-          if (target === 'python' && !fullText.includes('python') && !fullText.includes('питон') && !fullText.includes('fastapi') && !fullText.includes('django')) return false;
-          if (target === 'rust' && !fullText.includes('rust') && !fullText.includes('раст') && !fullText.includes('cargo') && !fullText.includes('crates')) return false;
-          if (target === 'go' && !fullText.includes('golang') && !fullText.includes(' go ') && !fullText.includes(' go,') && !fullText.includes('kubernetes') && !fullText.includes('docker')) return false;
-          if (target === 'c++' && !fullText.includes('c++') && !fullText.includes('cpp') && !fullText.includes('си++')) return false;
-          if (target === 'typescript' && !fullText.includes('typescript') && !fullText.includes('javascript') && !fullText.includes('ts') && !fullText.includes('js') && !fullText.includes('react') && !fullText.includes('node')) return false;
-          if (target === 'mojo' && !fullText.includes('mojo')) return false;
-          if (target === 'zig' && !fullText.includes('zig')) return false;
-          if (target === 'java' && !fullText.includes('java') && !fullText.includes('spring')) return false;
-          if (target === 'c#' && !fullText.includes('c#') && !fullText.includes('csharp') && !fullText.includes('.net') && !fullText.includes('dotnet') && !fullText.includes('unity')) return false;
-          if ((target === 'c' || target === 'c ') && !fullText.includes(' c ') && !fullText.includes('ядро') && !fullText.includes('linux') && !fullText.includes('kernel') && !fullText.includes('embedded')) return false;
-          if (target === 'php' && !fullText.includes('php') && !fullText.includes('laravel') && !fullText.includes('symfony') && !fullText.includes('wordpress')) return false;
-          if (target === 'kotlin' && !fullText.includes('kotlin') && !fullText.includes('swift') && !fullText.includes('android') && !fullText.includes('ios')) return false;
-        }
-
-        return true;
-      });
+      // Synchronize active category pill count badge directly with displayed cards
+      const activePillBadge = document.querySelector('.news-cat-pill.border-sky-400 .news-cat-pill-count');
+      if (activePillBadge) {
+        activePillBadge.textContent = filtered.length;
+      }
 
       if (filtered.length === 0) {
         const msg = isAll
