@@ -24,6 +24,16 @@ class PipelineOrchestrator:
     def __init__(self, bot: Bot | None = None):
         self.bot = bot
 
+    async def is_pc_already_online(self) -> bool:
+        """Checks if the GPU node / Ollama is already reachable before sending WoL."""
+        url = f"{settings.OLLAMA_BASE_URL}/api/tags"
+        try:
+            async with httpx.AsyncClient(timeout=2.5) as client:
+                resp = await client.get(url)
+                return resp.status_code == 200
+        except Exception:
+            return False
+
     async def wait_for_gpu_node(self, timeout_seconds: int = 30) -> bool:
         """Pings Ollama on the remote PC via Tailscale until it responds or times out."""
         logger.info("Checking AI GPU worker availability at %s...", settings.OLLAMA_BASE_URL)
@@ -50,15 +60,19 @@ class PipelineOrchestrator:
         logger.info("  STARTING AUTONOMOUS PIPELINE: %s", report_type.value.upper())
         logger.info("==================================================")
 
-        # 1. Wake up remote PC via Wake-on-LAN
-        try:
-            send_wake_on_lan()
-            logger.info("Sent WoL magic packet to %s", settings.WOL_MAC_ADDRESS)
-        except Exception as exc:
-            logger.error("Failed to send WoL packet: %s", exc)
+        # 1. Check if the PC was already online before sending Wake-on-LAN
+        was_already_online = await self.is_pc_already_online()
+        if was_already_online:
+            logger.info("AI GPU Worker PC was ALREADY ONLINE before pipeline started. Will NOT put to sleep at the end.")
+        else:
+            try:
+                send_wake_on_lan()
+                logger.info("Sent WoL magic packet to %s", settings.WOL_MAC_ADDRESS)
+            except Exception as exc:
+                logger.error("Failed to send WoL packet: %s", exc)
 
-        # 2. Give the PC a few seconds to wake and check reachability
-        await self.wait_for_gpu_node(timeout_seconds=25)
+            # 2. Give the PC a few seconds to wake and check reachability
+            await self.wait_for_gpu_node(timeout_seconds=25)
 
         async with async_session_maker() as session:
             # 3. Collection Phase (RSS + Telegram)
@@ -138,11 +152,27 @@ class PipelineOrchestrator:
             elif not report:
                 logger.info("No articles met threshold for scheduled digest. Nothing sent.")
 
-        # 8. Put GPU worker PC back to sleep
-        try:
-            logger.info("Putting AI GPU worker back to sleep...")
-            await send_remote_sleep()
-        except Exception as exc:
-            logger.error("Failed to put GPU PC to sleep: %s", exc)
+        # 8. Put GPU worker PC back to sleep (with Smart Sleep Guard)
+        if was_already_online:
+            logger.info("Skipping sleep: PC was already online before pipeline started (user was already at computer).")
+        else:
+            try:
+                logger.info("Putting AI GPU worker back to sleep (checking user activity first)...")
+                slept = await send_remote_sleep(force=False, max_idle_minutes=10)
+                if not slept:
+                    logger.info("PC sleep was cancelled due to detected user activity.")
+                    if self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
+                        try:
+                            await self.bot.send_message(
+                                chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
+                                text="ℹ️ *Компьютер оставлен включённым*: обнаружена активность пользователя (мышь/клавиатура).",
+                                parse_mode="Markdown"
+                            )
+                        except Exception:
+                            pass
+                else:
+                    logger.info("GPU worker PC successfully put to sleep.")
+            except Exception as exc:
+                logger.error("Failed to put GPU PC to sleep: %s", exc)
 
         logger.info("Autonomous pipeline finished.")
