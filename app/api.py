@@ -4,7 +4,7 @@ import re
 from fastapi import FastAPI, Depends
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -106,8 +106,11 @@ async def get_news_feed(
     stmt = (
         select(Article)
         .options(selectinload(Article.summary), selectinload(Article.category), selectinload(Article.source))
-        .where(Article.status.in_([ArticleStatus.SUMMARIZED, ArticleStatus.PROCESSED]))
-        .order_by(Article.published_at.desc())
+        .where(Article.status.in_([ArticleStatus.SUMMARIZED, ArticleStatus.REPORTED, ArticleStatus.PROCESSED]))
+        .order_by(
+            case((Article.status.in_([ArticleStatus.SUMMARIZED, ArticleStatus.REPORTED]), 0), else_=1),
+            Article.published_at.desc()
+        )
         .limit(limit)
     )
     res = await session.execute(stmt)
@@ -148,7 +151,7 @@ async def get_stats(session: AsyncSession = Depends(get_db_session)) -> Dict[str
     total_sources = await session.scalar(select(func.count(Source.id)))
     total_articles = await session.scalar(select(func.count(Article.id)))
     summarized_articles = await session.scalar(
-        select(func.count(Article.id)).where(Article.status == ArticleStatus.SUMMARIZED)
+        select(func.count(Article.id)).where(Article.status.in_([ArticleStatus.SUMMARIZED, ArticleStatus.REPORTED]))
     )
 
     return {

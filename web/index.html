@@ -359,12 +359,40 @@
       <!-- ======================================================= -->
       <div id="news-layout-wrapper" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        <!-- Center Main Column (News Feed) - Full width by default on 'All' tab -->
-        <div id="news-main-column" class="lg:col-span-12 space-y-6">
+        <!-- Center Main Column (News Feed) -->
+        <div id="news-main-column" class="lg:col-span-7 xl:col-span-8 space-y-6">
           <div id="news-container" class="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
             <!-- Injected dynamically by JavaScript -->
           </div>
         </div>
+
+        <!-- Aside Sidebar: Express Digest 6.0–8.0 (Shown ONLY on "Все" tab) -->
+        <aside id="all-digest-aside" class="lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto pr-1">
+          <div class="glass-panel p-5 rounded-3xl border border-amber-500/25 bg-gradient-to-b from-slate-900/90 via-slate-950/90 to-slate-900/80 shadow-2xl relative overflow-hidden">
+            <div class="absolute -right-8 -top-8 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+            <div class="flex items-center justify-between border-b border-slate-800/80 pb-3 mb-3 relative z-10">
+              <div>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1 w-fit mb-1">
+                  <span>⚡</span> <span>Экспресс-дайджест</span>
+                </span>
+                <h3 class="text-sm font-black text-white font-heading flex items-center gap-1.5">
+                  <span>В двух словах</span>
+                  <span class="text-slate-400 font-normal text-xs">(оценка 6.0 – 8.0)</span>
+                </h3>
+              </div>
+              <span id="all-digest-count-badge" class="text-[10px] font-mono font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20">0 событий</span>
+            </div>
+            
+            <p class="text-[11px] text-slate-400 mb-3 leading-relaxed">
+              Краткая суть важных событий дня в одной емкой фразе:
+            </p>
+
+            <div id="all-digest-items" class="space-y-2.5 max-h-[calc(100vh-14rem)] overflow-y-auto pr-1 scrollbar-thin">
+              <!-- Injected dynamically by JavaScript -->
+            </div>
+          </div>
+        </aside>
 
         <!-- Aside Sidebar: Programming Analytics & Deep Dive (Shown ONLY on IT category) -->
         <aside id="programming-analytics-aside" style="display: none;" class="lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto pr-1">
@@ -1913,31 +1941,137 @@
       }
     };
 
+    function getUltraShortSummary(article) {
+      if (article.key_points && Array.isArray(article.key_points) && article.key_points.length > 0) {
+        const pt = String(article.key_points[0]).replace(/^[•\-\*\s\d\.\)]+/, '').trim();
+        if (pt.length >= 8 && pt.length <= 120) {
+          return pt;
+        }
+      }
+
+      const rawSummary = (article.summaries && article.summaries[state.lang]) || 
+                         article.summary || 
+                         article.short_summary || 
+                         '';
+      
+      if (rawSummary) {
+        const cleaned = cleanText(rawSummary).replace(/^[•\-\*\s\d\.\)]+/, '').trim();
+        const firstSentence = cleaned.split(/[.!?]\s+/)[0].trim();
+        if (firstSentence.length >= 10 && firstSentence.length <= 110) {
+          return firstSentence;
+        }
+        const words = cleaned.split(/\s+/);
+        if (words.length > 12) {
+          return words.slice(0, 12).join(' ') + '...';
+        }
+        if (cleaned.length > 0) {
+          return cleaned.slice(0, 90) + (cleaned.length > 90 ? '...' : '');
+        }
+      }
+
+      if (article.why_it_matters) {
+        const wClean = cleanText(article.why_it_matters).replace(/^[•\-\*\s\d\.\)]+/, '').trim();
+        const wWords = wClean.split(/\s+/);
+        if (wWords.length <= 12) return wClean;
+        return wWords.slice(0, 12).join(' ') + '...';
+      }
+
+      return cleanText((article.titles && article.titles[state.lang]) || article.title || 'Ключевое событие');
+    }
+
+    function renderAllDigestAside(digestArticles) {
+      const container = document.getElementById('all-digest-items');
+      const badge = document.getElementById('all-digest-count-badge');
+      if (!container) return;
+
+      if (badge) {
+        badge.textContent = `${digestArticles.length} событий`;
+      }
+
+      if (digestArticles.length === 0) {
+        container.innerHTML = `
+          <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 text-center text-slate-400 text-xs">
+            <span class="text-xl block mb-1">⚡</span>
+            <span>Событий с оценкой 6.0–8.0 пока нет</span>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = digestArticles.map((article) => {
+        const title = cleanText((article.titles && article.titles[state.lang]) || article.title || 'Новость');
+        const sourceUrl = article.sourceUrl || article.url || article.original_url || '#';
+        const sourceName = article.sourceName || article.source || 'Источник';
+        const category = article._displayCategory || normalizeCategory(article.category || 'Технологии');
+        const score = article.importance_score ? Number(article.importance_score).toFixed(1) : '6.5';
+        const shortSummary = getUltraShortSummary(article);
+        const timeStr = article.published_at 
+          ? new Date(article.published_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) 
+          : '';
+
+        return `
+          <div class="p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-amber-500/40 transition-all hover:bg-slate-900/60 group space-y-1.5">
+            <div class="flex items-center justify-between gap-1.5 flex-wrap">
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-900/80 text-sky-300 border border-sky-500/30 flex items-center gap-1">
+                <span>${getCategoryEmoji(category)}</span>
+                <span class="truncate max-w-[110px]">${category}</span>
+              </span>
+              <div class="flex items-center gap-1.5 ml-auto">
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  ★ ${score}
+                </span>
+                ${timeStr ? `<span class="text-[10px] text-slate-400 font-mono">${timeStr}</span>` : ''}
+              </div>
+            </div>
+
+            <a href="${sourceUrl}" target="_blank" rel="noopener noreferrer" class="text-xs font-semibold text-white group-hover:text-amber-300 transition-colors block leading-snug line-clamp-2">
+              ${title}
+            </a>
+
+            <div class="p-2 rounded-xl bg-slate-900/80 border border-slate-800/90 text-[11px] text-slate-300 leading-snug">
+              <span class="text-amber-400 font-bold mr-1">⚡ В двух словах:</span>
+              <span>${shortSummary}</span>
+            </div>
+
+            <div class="flex items-center justify-between text-[10px] pt-1 border-t border-slate-800/50">
+              <span class="text-slate-400 truncate max-w-[140px]">${sourceName}</span>
+              <a href="${sourceUrl}" target="_blank" rel="noopener noreferrer" class="text-sky-400 hover:text-sky-300 flex items-center gap-1 font-medium">
+                <span>Источник</span>
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
+              </a>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
     window.setDynamicCategory = function(cat) {
       state.newsCategoryFilter = (cat === 'all' || cat === 'Все') ? 'all' : cat;
+      const isAll = (state.newsCategoryFilter === 'all' || state.newsCategoryFilter === 'Все' || !state.newsCategoryFilter);
       
-      // ONLY show aside and language bar when specifically viewing IT / Programming category!
-      // NEVER show on "Все" (all) or other categories.
-      const isIT = state.newsCategoryFilter !== 'all' && 
-                   state.newsCategoryFilter !== 'Все' && 
+      const isIT = !isAll && 
                    (state.newsCategoryFilter === 'IT & Аналитика' || 
                     state.newsCategoryFilter.toLowerCase().includes('аналитик') || 
                     state.newsCategoryFilter.toLowerCase().includes('программир') || 
                     state.newsCategoryFilter.toLowerCase().includes('dev') ||
                     state.newsCategoryFilter.toLowerCase().includes('it'));
       
-      const aside = document.getElementById('programming-analytics-aside');
+      const itAside = document.getElementById('programming-analytics-aside');
+      const digestAside = document.getElementById('all-digest-aside');
       const langBar = document.getElementById('language-selection-bar');
       const mainCol = document.getElementById('news-main-column');
 
-      if (aside) {
-        aside.style.display = isIT ? 'block' : 'none';
+      if (itAside) {
+        itAside.style.display = isIT ? 'block' : 'none';
+      }
+      if (digestAside) {
+        digestAside.style.display = isAll ? 'block' : 'none';
       }
       if (langBar) {
         langBar.style.display = isIT ? 'flex' : 'none';
       }
       if (mainCol) {
-        if (isIT) {
+        if (isIT || isAll) {
           mainCol.className = 'lg:col-span-7 xl:col-span-8 space-y-6';
         } else {
           mainCol.className = 'lg:col-span-12 space-y-6';
@@ -1959,13 +2093,17 @@
       const container = document.getElementById('category-pills-container');
       if (!container) return;
 
-      const totalCount = state.articles.length;
       const catCounts = {};
+      let topAllCount = 0;
 
       state.articles.forEach(a => {
         const c = a._displayCategory || normalizeCategory(a.category);
         a._displayCategory = c;
         catCounts[c] = (catCounts[c] || 0) + 1;
+        const score = a.importance_score ? Number(a.importance_score) : 5.0;
+        if (score >= 8.0) {
+          topAllCount++;
+        }
       });
 
       const sortedCategories = Object.keys(catCounts).sort((a, b) => catCounts[b] - catCounts[a]);
@@ -1973,7 +2111,7 @@
 
       container.innerHTML = categories.map(cat => {
         const isAll = (cat === 'Все');
-        const count = isAll ? totalCount : (catCounts[cat] || 0);
+        const count = isAll ? topAllCount : (catCounts[cat] || 0);
         const isActive = (isAll && (state.newsCategoryFilter === 'all' || !state.newsCategoryFilter || state.newsCategoryFilter === 'Все')) ||
                          (!isAll && state.newsCategoryFilter && state.newsCategoryFilter.toLowerCase() === cat.toLowerCase());
         const emoji = isAll ? '📂' : getCategoryEmoji(cat);
@@ -1994,7 +2132,7 @@
 
     async function loadLiveNews() {
       try {
-        const response = await fetch('/api/news?limit=100');
+        const response = await fetch('/api/news?limit=250');
         if (response.ok) {
           const liveArticles = await response.json();
           if (liveArticles && liveArticles.length > 0) {
@@ -2016,13 +2154,33 @@
       if (!container) return;
       container.innerHTML = '';
 
+      const isAll = (state.newsCategoryFilter === 'all' || state.newsCategoryFilter === 'Все' || !state.newsCategoryFilter);
+
+      // In "Все" tab: gather and render the express digest aside (6.0 <= score < 8.0)
+      if (isAll) {
+        const digestArticles = state.articles.filter(item => {
+          const score = item.importance_score ? Number(item.importance_score) : 5.0;
+          return score >= 6.0 && score < 8.0;
+        });
+        renderAllDigestAside(digestArticles);
+      }
+
       const filtered = state.articles.filter(item => {
         const itemCat = (item._displayCategory || normalizeCategory(item.category)).toLowerCase();
-        const isProgCategory = itemCat.includes('аналитик') || itemCat.includes('программир') || itemCat.includes('dev');
         const score = item.importance_score ? Number(item.importance_score) : 5.0;
 
+        // In "Все" (All) category: ONLY news with score >= 8.0 in the main feed
+        if (isAll) {
+          if (score < 8.0) return false;
+          return true;
+        }
+
         // Strict Quality Filter ONLY when viewing IT & Analytics category:
-        const isViewingProgCategory = state.newsCategoryFilter && (state.newsCategoryFilter.toLowerCase().includes('аналитик') || state.newsCategoryFilter.toLowerCase().includes('программир') || state.newsCategoryFilter.toLowerCase().includes('dev'));
+        const isViewingProgCategory = state.newsCategoryFilter && (
+          state.newsCategoryFilter.toLowerCase().includes('аналитик') || 
+          state.newsCategoryFilter.toLowerCase().includes('программир') || 
+          state.newsCategoryFilter.toLowerCase().includes('dev')
+        );
         if (isViewingProgCategory) {
           if (score < 7.0) return false;
           if (!item.summary && (!item.summaries || !item.summaries[state.lang])) return false;
@@ -2056,10 +2214,14 @@
       });
 
       if (filtered.length === 0) {
+        const msg = isAll
+          ? 'В категории «Все» отображаются главные события с наивысшей важностью (оценка ≥ 8.0). Менее критичные события (6.0–8.0) собраны в экспресс-дайджесте справа.'
+          : 'В этой выборке нет новостей (для IT & Аналитики действует строгий фильтр: оценка ≥ 7.0)';
+
         container.innerHTML = `
           <div class="col-span-full py-12 text-center text-slate-400 glass-panel rounded-3xl p-6 border border-slate-800">
             <span class="text-3xl block mb-2">🔍</span>
-            <p class="text-sm font-semibold text-slate-300">В этой выборке нет новостей (для IT & Аналитики действует строгий фильтр: оценка ≥ 7.0)</p>
+            <p class="text-sm font-semibold text-slate-300">${msg}</p>
             <button type="button" onclick="filterByLanguage('all'); setDynamicCategory('all');" class="mt-3 px-4 py-2 rounded-xl bg-sky-500/20 text-sky-300 border border-sky-500/30 text-xs font-semibold hover:bg-sky-500/30 transition-all">
               Показать все новости
             </button>
@@ -2667,12 +2829,7 @@
     // News Category Filters
     document.querySelectorAll('.news-cat-pill').forEach(pill => {
       pill.onclick = () => {
-        document.querySelectorAll('.news-cat-pill').forEach(p => {
-          p.className = 'news-cat-pill px-4 py-2 rounded-2xl text-xs font-semibold transition-all shrink-0 bg-slate-800/80 text-slate-300 hover:text-white';
-        });
-        pill.className = 'news-cat-pill px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 bg-sky-500 text-white';
-        state.newsCategoryFilter = pill.dataset.category;
-        renderNews();
+        setDynamicCategory(pill.dataset.category || 'all');
       };
     });
 
