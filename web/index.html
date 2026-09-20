@@ -2627,11 +2627,20 @@
       );
 
       // Sort: Priority keywords first (only for high importance score >= 7.0), then score descending, then date descending
+      // Sort: CS:GO Finals or Priority keywords first, then score descending, then date descending
+      const finalKeywords = ["финал", "гранд-финал", "гранд финал", "победитель", "чемпион", "кубок", "grand final"];
       filtered.sort((a, b) => {
         const aScore = a.importance_score ? Number(a.importance_score) : 5.0;
         const bScore = b.importance_score ? Number(b.importance_score) : 5.0;
-        const aPriority = (aScore >= 7.0) && (a.is_priority || ['simple', 's1mple', 'navi', 'bcgame', 'bc.game', 'fut'].some(kw => ((a.title || '') + ' ' + (a.summary || '') + ' ' + (a.why_it_matters || '')).toLowerCase().includes(kw)));
-        const bPriority = (bScore >= 7.0) && (b.is_priority || ['simple', 's1mple', 'navi', 'bcgame', 'bc.game', 'fut'].some(kw => ((b.title || '') + ' ' + (b.summary || '') + ' ' + (b.why_it_matters || '')).toLowerCase().includes(kw)));
+        const aText = ((a.title || '') + ' ' + (a.summary || '') + ' ' + (a.why_it_matters || '')).toLowerCase();
+        const bText = ((b.title || '') + ' ' + (b.summary || '') + ' ' + (b.why_it_matters || '')).toLowerCase();
+        const aIsFinal = finalKeywords.some(kw => aText.includes(kw));
+        const bIsFinal = finalKeywords.some(kw => bText.includes(kw));
+        if (aIsFinal && !bIsFinal) return -1;
+        if (!aIsFinal && bIsFinal) return 1;
+
+        const aPriority = (aScore >= 7.0) && (a.is_priority || ['simple', 's1mple', 'navi', 'bcgame', 'bc.game', 'fut'].some(kw => aText.includes(kw)));
+        const bPriority = (bScore >= 7.0) && (b.is_priority || ['simple', 's1mple', 'navi', 'bcgame', 'bc.game', 'fut'].some(kw => bText.includes(kw)));
         if (aPriority && !bPriority) return -1;
         if (!aPriority && bPriority) return 1;
         if (bScore !== aScore) return bScore - aScore;
@@ -2672,6 +2681,9 @@
         const summary = cleanText((article.summaries && article.summaries[state.lang]) || article.summary || '');
         const whyItMatters = cleanText(article.why_it_matters || '');
         const image = getArticleImage(article, index);
+        const videoSrc = article.video_url || (article.raw_content && (article.raw_content.match(/<video[^>]+src=["']([^"']+)["']/) || [])[1]) || '';
+        const hasVideo = Boolean(videoSrc);
+
         const timeStr = article.published_at 
           ? new Date(article.published_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) 
           : 'Сегодня';
@@ -2701,7 +2713,38 @@
         const card = document.createElement('div');
         card.className = `glass-panel glass-panel-hover rounded-3xl overflow-hidden border ${borderClass} flex flex-col group transition-all duration-300 hover:shadow-2xl hover:shadow-sky-500/5 hover:-translate-y-1`;
 
-        card.innerHTML = `
+        const mediaMarkup = hasVideo ? `
+          <div class="relative w-full aspect-video overflow-hidden bg-black group/video">
+            <video 
+              src="${videoSrc}" 
+              poster="${image}" 
+              class="w-full h-full object-cover rounded-t-3xl" 
+              controls 
+              preload="metadata" 
+              playsinline>
+            </video>
+            
+            <div class="absolute top-3 left-3 flex items-center gap-2 flex-wrap pointer-events-none z-10">
+              <span class="px-3 py-1 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-slate-950/80 backdrop-blur-md text-sky-300 border border-sky-500/30 shadow-lg flex items-center gap-1.5">
+                <span>${getCategoryEmoji(category)}</span>
+                <span>${category}</span>
+              </span>
+              <span class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-rose-600/90 backdrop-blur-md text-white border border-rose-500/50 shadow-lg flex items-center gap-1">
+                <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                <span>ВИДЕО</span>
+              </span>
+              ${priorityBadge}
+              ${scoreBadge}
+            </div>
+
+            <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs text-slate-300 pointer-events-none z-10">
+              <span class="font-semibold text-white flex items-center gap-1.5 bg-slate-900/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-slate-700/50">
+                ${sourceName}
+              </span>
+              <span class="text-slate-400 text-[11px] bg-slate-900/80 backdrop-blur-md px-2 py-1 rounded-lg border border-slate-800">${timeStr}</span>
+            </div>
+          </div>
+        ` : `
           <div class="relative w-full aspect-video overflow-hidden bg-slate-950 cursor-pointer group/img card-media-preview" title="Нажмите, чтобы приблизить фото">
             <img src="${image}" alt="${title}" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80'" class="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-500 opacity-90 group-hover/img:opacity-100 cursor-pointer">
             <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent pointer-events-none"></div>
@@ -2731,6 +2774,10 @@
               <span class="text-slate-400 text-[11px] bg-slate-900/80 backdrop-blur-md px-2 py-1 rounded-lg border border-slate-800">${timeStr}</span>
             </div>
           </div>
+        `;
+
+        card.innerHTML = `
+          ${mediaMarkup}
 
           <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
             <div>
