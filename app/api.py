@@ -10,6 +10,7 @@ except ImportError:
 from bs4 import BeautifulSoup
 from fastapi import FastAPI, Depends, HTTPException
 from app.services.cleanup import delete_single_article, cleanup_old_articles
+from app.processing.deduplicator import ContentDeduplicator
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -352,7 +353,48 @@ async def get_news_feed(
             "priority_keywords": matched_kws,
         })
 
-    return news_items
+    # Dynamic feed-level deduplication safeguard
+    deduped_items = []
+    seen_media_hashes = []
+    seen_title_stems = []
+    media_dir = BASE_DIR / "media"
+
+    for item in news_items:
+        img = item.get("image_url") or ""
+        item_img_hash = None
+        if img.startswith("/media/"):
+            img_path = media_dir / img.replace("/media/", "")
+            item_img_hash = ContentDeduplicator.compute_image_dhash(img_path)
+
+        stems = ContentDeduplicator.tokenize_title(item.get("title") or "")
+
+        is_dup = False
+
+        # 1. Check image hash with earlier items (cross-source duplicate)
+        if item_img_hash:
+            for prev_src, prev_hash, _ in seen_media_hashes:
+                if prev_src != item["source"]:
+                    if ContentDeduplicator.hamming_distance(item_img_hash, prev_hash) <= 6:
+                        is_dup = True
+                        break
+
+        # 2. Check title similarity with earlier items
+        if not is_dup and stems:
+            for prev_src, prev_stems in seen_title_stems:
+                if prev_src != item["source"]:
+                    jaccard, overlap, _ = ContentDeduplicator.calculate_similarity(stems, prev_stems)
+                    if jaccard >= 0.45 or overlap >= 0.70:
+                        is_dup = True
+                        break
+
+        if not is_dup:
+            deduped_items.append(item)
+            if item_img_hash:
+                seen_media_hashes.append((item["source"], item_img_hash, item.get("id")))
+            if stems:
+                seen_title_stems.append((item["source"], stems))
+
+    return deduped_items
 
 
 @app.get("/api/stats")
