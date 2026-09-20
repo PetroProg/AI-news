@@ -38,7 +38,7 @@ class SummarizerService:
 
     async def get_or_create_category(self, name: str) -> Category:
         """Find or create a topic category."""
-        clean_name = name.strip() or "General Tech"
+        clean_name = name.strip() or "IT"
         slug = clean_name.lower().replace(" ", "-").replace("&", "and")
 
         stmt = select(Category).where(Category.slug == slug)
@@ -98,14 +98,16 @@ class SummarizerService:
             is_gaming = any(k in combined_source for k in ["csgo", "cs3", "clashroyalepin", "hltv", "game", "киберспорт"]) or \
                         any(k in title_lower for k in GAMING_INDICATORS)
 
-            if is_gaming:
-                chosen_category = "Игры & Киберспорт"
+            if is_gaming or (analysis.category and analysis.category.lower() in ["игры & киберспорт", "игры и киберспорт", "gaming", "cs2"]):
+                chosen_category = "CS2"
+            elif analysis.category and analysis.category.lower() in ["it & аналитика", "it-аналитик", "development", "общие технологии", "general tech", "technology"]:
+                chosen_category = "IT"
             else:
-                chosen_category = analysis.category
-                # Safety check: never allow gaming articles in IT & Analytics
-                if "аналитик" in chosen_category.lower() or "dev" in chosen_category.lower():
+                chosen_category = analysis.category or "IT"
+                # Safety check: never allow gaming articles in IT
+                if ("it" in chosen_category.lower() or "аналитик" in chosen_category.lower() or "dev" in chosen_category.lower()):
                     if any(k in title_lower for k in GAMING_INDICATORS):
-                        chosen_category = "Игры & Киберспорт"
+                        chosen_category = "CS2"
 
             category = await self.get_or_create_category(chosen_category)
             article.category_id = category.id

@@ -89,7 +89,6 @@ class PipelineOrchestrator:
                 ("Python Software Foundation", "https://blog.python.org/feeds/posts/default"),
                 ("The Go Blog", "https://go.dev/blog/feed.atom"),
                 ("Official Rust Blog", "https://blog.rust-lang.org/feed.xml"),
-                ("Hacker News Frontpage", "https://news.ycombinator.com/rss"),
                 ("OpenNET Linux News", "https://www.opennet.ru/opennews/opennews_all.rss"),
                 ("HLTV.org News", "https://www.hltv.org/rss/news"),
             ]

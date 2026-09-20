@@ -28,11 +28,6 @@ RSS_FEEDS = [
         "url": "https://www.opennet.ru/opennews/opennews_all.rss",
         "lang": "ru",
     },
-    {
-        "name": "Hacker News Frontpage",
-        "url": "https://news.ycombinator.com/rss",
-        "lang": "en",
-    },
 ]
 
 TELEGRAM_CHANNELS = [
