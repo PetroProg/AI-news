@@ -1,12 +1,13 @@
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import List, Tuple
+from pathlib import Path
+from typing import Any, Dict, List, Tuple
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.models import Article, ArticleStatus
 from app.processing.cleaner import ContentCleaner
-from app.processing.deduplicator import ContentDeduplicator
+from app.processing.deduplicator import ContentDeduplicator, extract_article_media
 
 logger = logging.getLogger("news_ai.services.processing")
 
@@ -41,15 +42,41 @@ class ProcessingService:
 
         cutoff_time = datetime.now(timezone.utc) - timedelta(hours=self.DEDUPLICATION_WINDOW_HOURS)
         ref_stmt = (
-            select(Article.id, Article.title, Article.content_hash)
+            select(
+                Article.id,
+                Article.title,
+                Article.content_hash,
+                Article.raw_content,
+                Article.source_id,
+                Article.published_at,
+            )
             .where(
                 Article.published_at >= cutoff_time,
                 Article.status.in_([ArticleStatus.PROCESSED, ArticleStatus.SUMMARIZED, ArticleStatus.REPORTED]),
             )
         )
         ref_res = await self.session.execute(ref_stmt)
+        ref_rows = ref_res.all()
 
-        reference_articles: List[Tuple[int, str, str]] = list(ref_res.all())
+        media_dir = Path("media")
+        reference_articles: List[Dict[str, Any]] = []
+        for row in ref_rows:
+            ref_id, ref_title, ref_hash, ref_raw, ref_src, ref_pub = row
+            img_hash = None
+            if ref_raw:
+                imgs, _ = extract_article_media(ref_raw)
+                if imgs:
+                    local_p = media_dir / imgs[0].replace("/media/", "")
+                    img_hash = ContentDeduplicator.compute_image_dhash(local_p)
+
+            reference_articles.append({
+                "id": ref_id,
+                "title": ref_title,
+                "content_hash": ref_hash,
+                "image_hash": img_hash,
+                "source_id": ref_src,
+                "published_at": ref_pub,
+            })
 
         unique_count = 0
         duplicate_count = 0
@@ -61,9 +88,19 @@ class ProcessingService:
             content_hash = ContentDeduplicator.compute_content_hash(article.cleaned_content)
             article.content_hash = content_hash
 
+            candidate_img_hash = None
+            if article.raw_content:
+                c_imgs, _ = extract_article_media(article.raw_content)
+                if c_imgs:
+                    local_p = media_dir / c_imgs[0].replace("/media/", "")
+                    candidate_img_hash = ContentDeduplicator.compute_image_dhash(local_p)
+
             duplicate_id = ContentDeduplicator.find_duplicate(
                 candidate_title=article.title,
                 candidate_hash=content_hash,
+                candidate_image_hash=candidate_img_hash,
+                candidate_source_id=article.source_id,
+                candidate_published_at=article.published_at,
                 existing_articles=reference_articles,
             )
 
@@ -71,14 +108,21 @@ class ProcessingService:
                 article.status = ArticleStatus.DUPLICATE
                 article.duplicate_of_id = duplicate_id
                 duplicate_count += 1
-                logger.debug(
-                    "Article '%s' marked as DUPLICATE of article ID %d",
-                    article.title[:40], duplicate_id
+                logger.info(
+                    "Article ID %d '%s' marked as DUPLICATE of article ID %d",
+                    article.id, article.title[:40], duplicate_id
                 )
             else:
                 article.status = ArticleStatus.PROCESSED
                 unique_count += 1
-                reference_articles.append((article.id, article.title, content_hash))
+                reference_articles.append({
+                    "id": article.id,
+                    "title": article.title,
+                    "content_hash": content_hash,
+                    "image_hash": candidate_img_hash,
+                    "source_id": article.source_id,
+                    "published_at": article.published_at,
+                })
 
         await self.session.commit()
 
