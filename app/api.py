@@ -8,7 +8,8 @@ try:
 except ImportError:
     CurlAsyncSession = None
 from bs4 import BeautifulSoup
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
+from app.services.cleanup import delete_single_article, cleanup_old_articles
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -365,3 +366,24 @@ async def get_stats(session: AsyncSession = Depends(get_db_session)) -> Dict[str
         "summarized_count": summarized_articles or 0,
         "status": "online",
     }
+
+@app.delete("/api/news/{article_id}")
+async def delete_news_article(
+    article_id: int,
+    session: AsyncSession = Depends(get_db_session),
+) -> Dict[str, Any]:
+    """Удалить новость из базы данных по ID."""
+    deleted = await delete_single_article(article_id, session)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Новость не найдена в базе данных")
+    return {"success": True, "deleted_id": article_id, "message": "Новость успешно удалена из базы данных"}
+
+
+@app.post("/api/news/cleanup")
+async def trigger_news_cleanup(
+    days: int = 7,
+) -> Dict[str, Any]:
+    """Ручной запуск автоматической очистки новостей старше указанного количества дней (по умолчанию 7)."""
+    count = await cleanup_old_articles(days=days)
+    return {"success": True, "deleted_count": count, "days": days}
+
