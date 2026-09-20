@@ -230,12 +230,16 @@ async def get_news_feed(
         else:
             cat_name = infer_category_from_source(source_name)
 
-        # Priority Keywords Detection
-        matched_kws = [kw for kw in PRIORITY_KEYWORDS if kw in (title_lower + " " + content_lower)]
-        is_priority = len(matched_kws) > 0
+        # Priority Keywords Detection & Meme / Sarcasm Guard
+        text_for_check = title_lower + " " + content_lower
+        is_meme_or_ad = any(stop in text_for_check for stop in ["тир-2", "тир 2", "cs.money", "розыгрыш", "бесплатно", "скины", "скин ", "рулетк", "щитпост", "удивительном мире"])
+        matched_kws = [kw for kw in PRIORITY_KEYWORDS if kw in text_for_check]
+        is_priority = len(matched_kws) > 0 and not is_meme_or_ad
 
         score = float(art.importance_score or 5.0)
-        if is_priority and score < 8.0:
+        if is_meme_or_ad and score > 4.0:
+            score = 3.0
+        elif is_priority and score >= 6.0 and score < 8.5:
             score = 8.5
 
         news_items.append({
