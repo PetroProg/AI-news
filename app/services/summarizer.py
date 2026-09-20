@@ -11,12 +11,16 @@ logger = logging.getLogger("news_ai.services.summarizer")
 
 PRIORITY_KEYWORDS = ["simple", "s1mple", "navi", "bcgame", "bc.game", "fut"]
 CS_FINAL_KEYWORDS = [
-    "финал", "гранд-финал", "гранд финал", "победитель финала", "победители финала",
-    "выиграл финал", "выиграла финал", "победил в финале", "победила в финале",
-    "стал чемпионом", "стали чемпионами", "чемпионы турнира", "чемпион турнира",
+    "победитель финала", "победители финала", "победитель гранд-финала", "победители гранд-финала",
+    "победил в финале", "победили в финале", "победил в гранд-финале", "победили в гранд-финале",
     "победитель турнира", "победители турнира", "выиграл турнир", "выиграли турнир",
+    "выиграл финал", "выиграли финал", "выиграл гранд-финал", "выиграли гранд-финал",
+    "забрал финал", "забрали финал", "забрал гранд-финал", "забрали гранд-финал",
+    "стал чемпионом", "стали чемпионами", "чемпионы турнира", "чемпион турнира",
     "забрал кубок", "забрали кубок", "поднял кубок", "подняли кубок",
-    "grand final", "grand-final", "tournament winner", "champions", "champion"
+    "забрал трофей", "забрали трофей", "поднял трофей", "подняли трофей",
+    "чемпионы starladder", "чемпион starladder", "чемпионы major", "чемпион major",
+    "гранд-финал", "гранд финал", "grand final", "tournament winner", "crowned champions"
 ]
 GAMING_INDICATORS = [
     "csgo", "cs3", "clashroyalepin", "hltv", "game", "игры", "киберспорт",
@@ -115,7 +119,9 @@ class SummarizerService:
                 logger.info("Article ID %d detected as meme/ad/sarcasm. Reduced score to %.1f", article.id, score)
 
             has_priority = any(kw in text_for_check for kw in PRIORITY_KEYWORDS)
-            is_final_or_winner = is_gaming and any(kw in text_for_check for kw in CS_FINAL_KEYWORDS)
+            is_digest = any(d in text_for_check for d in ["#дайджест", "дайджест", "утренний дайджест", "новости дня", "главное за день", "итоги недели", "итоги дня", "ура, воскресенье"])
+            is_round_only = any(r in text_for_check for r in ["финальный раунд", "финальном раунде", "финального раунда", "финальные раунды"])
+            is_final_or_winner = is_gaming and not is_digest and not is_round_only and any(kw in text_for_check for kw in CS_FINAL_KEYWORDS)
 
             if is_final_or_winner and not is_meme_or_ad:
                 score = max(score, 9.0)

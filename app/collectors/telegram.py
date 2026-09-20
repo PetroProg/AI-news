@@ -88,7 +88,7 @@ class TelegramCollector(BaseCollector):
                             if not file_size and hasattr(message, 'document') and message.document:
                                 file_size = getattr(message.document, 'size', 0)
 
-                            if file_size <= 50 * 1024 * 1024:
+                            if file_size <= 100 * 1024 * 1024:  # Support up to 100 MB for 1080p highlights
                                 if not video_path.exists() or video_path.stat().st_size == 0:
                                     await client.download_media(message, file=str(video_path))
 
