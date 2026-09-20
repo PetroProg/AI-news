@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from datetime import datetime, timezone
 from typing import List, Optional
 from telethon import TelegramClient
@@ -64,10 +65,26 @@ class TelegramCollector(BaseCollector):
                     if hasattr(entity, 'title'):
                         author = entity.title
 
+                    raw_content = text
+                    # Check and download photo if attached to message
+                    if message.photo:
+                        media_dir = Path("/app/media")
+                        media_dir.mkdir(parents=True, exist_ok=True)
+                        photo_filename = f"tg_{self.channel_username}_{message.id}.jpg"
+                        photo_path = media_dir / photo_filename
+                        try:
+                            if not photo_path.exists() or photo_path.stat().st_size == 0:
+                                await client.download_media(message, file=str(photo_path))
+                            if photo_path.exists() and photo_path.stat().st_size > 0:
+                                raw_content = f'<img src="/media/{photo_filename}" alt="{title}" />\n' + raw_content
+                                logger.info("Downloaded photo for Telegram post %s -> %s", external_id, photo_filename)
+                        except Exception as dl_err:
+                            logger.warning("Failed to download photo for post %s: %s", external_id, dl_err)
+
                     collected_items.append(
                         CollectedItem(
                             title=title,
-                            raw_content=text,
+                            raw_content=raw_content,
                             original_url=msg_url,
                             external_id=external_id,
                             author=author,

@@ -5,6 +5,7 @@ import re
 import httpx
 from fastapi import FastAPI, Depends
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,6 +26,9 @@ app.add_middleware(
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 WEB_DIR = BASE_DIR / "web"
+MEDIA_DIR = BASE_DIR / "media"
+MEDIA_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/media", StaticFiles(directory=str(MEDIA_DIR)), name="media")
 
 DIAGRAM_KEYWORDS = [
     "benchmark", "chart", "diagram", "graph", "perf", "comparison", "speedup",
@@ -71,9 +75,9 @@ def extract_article_images(raw_content: str) -> list[str]:
     """Extract candidate image URLs from HTML or Markdown."""
     if not raw_content:
         return []
-    html_imgs = re.findall(r'<img[^>]+src=["\'](https?://[^"\']+)["\']', raw_content, re.IGNORECASE)
-    md_imgs = re.findall(r'!\[[^\]]*\]\((https?://[^\s\)]+)\)', raw_content)
-    direct_imgs = re.findall(r'https?://[^\s"\'<>]+\.(?:jpg|jpeg|png|webp|svg)', raw_content, re.IGNORECASE)
+    html_imgs = re.findall(r'<img[^>]+src=["\'](https?://[^"\']+|/media/[^"\']+)["\']', raw_content, re.IGNORECASE)
+    md_imgs = re.findall(r'!\[[^\]]*\]\((https?://[^\s\)]+|/media/[^\s\)]+)\)', raw_content)
+    direct_imgs = re.findall(r'(?:https?://[^\s"\'<>]|/media/[^\s"\'<>])+\.(?:jpg|jpeg|png|webp|svg)', raw_content, re.IGNORECASE)
     
     candidates = []
     seen = set()
