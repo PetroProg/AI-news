@@ -2,11 +2,19 @@ import logging
 from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.ai.client import OllamaClient
 from app.database.models import Article, ArticleStatus, Category, Summary
 
 logger = logging.getLogger("news_ai.services.summarizer")
+
+PRIORITY_KEYWORDS = ["simple", "s1mple", "navi", "bcgame", "bc.game", "fut"]
+GAMING_INDICATORS = [
+    "csgo", "cs3", "clashroyalepin", "hltv", "game", "игры", "киберспорт",
+    "cs2", "cs:go", "starladder", "vitality", "navi", "s1mple", "m0nesy",
+    "donk", "zywoo", "clash royale", "bcgame", "fut", "blast", "esl"
+]
 
 
 class SummarizerService:
@@ -40,6 +48,7 @@ class SummarizerService:
         """
         stmt = (
             select(Article)
+            .options(selectinload(Article.source))
             .where(Article.status == ArticleStatus.PROCESSED)
             .order_by(Article.published_at.desc())
             .limit(limit)
@@ -55,21 +64,48 @@ class SummarizerService:
         summarized_count = 0
 
         for article in articles:
-            logger.info("Analyzing article ID %d: '%s'...", article.id, article.title[:35])
+            source_name = article.source.name if article.source else ""
+            source_url = article.source.url if article.source else ""
+            combined_source = (source_name + " " + source_url).lower()
+
+            logger.info("Analyzing article ID %d: '%s' (Source: %s)...", article.id, article.title[:35], source_name)
 
             analysis = await self.ai_client.analyze_article(
                 title=article.title,
                 text=article.cleaned_content or article.raw_content,
+                source_name=source_name,
             )
 
             if not analysis:
                 logger.warning("AI analysis returned None for article ID %d, skipping.", article.id)
                 continue
 
-            category = await self.get_or_create_category(analysis.category)
+            # Deterministic Category Assignment
+            title_lower = (article.title or "").lower()
+            content_lower = (article.cleaned_content or article.raw_content or "").lower()
+            is_gaming = any(k in combined_source for k in ["csgo", "cs3", "clashroyalepin", "hltv", "game", "киберспорт"]) or \
+                        any(k in title_lower for k in GAMING_INDICATORS)
+
+            if is_gaming:
+                chosen_category = "Игры & Киберспорт"
+            else:
+                chosen_category = analysis.category
+                # Safety check: never allow gaming articles in IT & Analytics
+                if "аналитик" in chosen_category.lower() or "dev" in chosen_category.lower():
+                    if any(k in title_lower for k in GAMING_INDICATORS):
+                        chosen_category = "Игры & Киберспорт"
+
+            category = await self.get_or_create_category(chosen_category)
             article.category_id = category.id
 
-            article.importance_score = analysis.importance_score
+            # Priority keyword boost
+            score = float(analysis.importance_score)
+            has_priority = any(kw in (title_lower + " " + content_lower) for kw in PRIORITY_KEYWORDS)
+            if has_priority:
+                score = min(10.0, max(score, 8.5))
+                logger.info("Article ID %d matched priority keywords! Boosted score to %.1f", article.id, score)
+
+            article.importance_score = score
 
             summary_record = Summary(
                 article_id=article.id,
@@ -84,7 +120,7 @@ class SummarizerService:
             summarized_count += 1
 
             await self.session.commit()
-            logger.info("Saved summary for article ID %d (Score: %.1f)", article.id, analysis.importance_score)
+            logger.info("Saved summary for article ID %d (Cat: %s, Score: %.1f)", article.id, chosen_category, score)
 
         logger.info("Batch completed: %d articles successfully summarized.", summarized_count)
         return summarized_count

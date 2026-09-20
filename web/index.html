@@ -696,6 +696,56 @@
 
         </aside>
 
+        <!-- Aside Sidebar: Esports & HLTV Ranking (Shown ONLY on Gaming category) -->
+        <aside id="esports-hltv-aside" style="display: none;" class="lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto pr-1">
+          <div class="glass-panel p-5 rounded-3xl border border-amber-500/25 bg-gradient-to-b from-slate-900/90 via-slate-950/90 to-slate-900/80 shadow-2xl relative overflow-hidden">
+            <div class="absolute -right-8 -top-8 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+            <div class="flex items-center justify-between border-b border-slate-800/80 pb-3 mb-3 relative z-10">
+              <div>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1 w-fit mb-1">
+                  <span>🏆</span> <span>HLTV World Ranking</span>
+                </span>
+                <h3 class="text-sm font-black text-white font-heading">
+                  Топ-20 команд CS2
+                </h3>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span id="hltv-updated-date" class="text-[10px] font-mono text-slate-400 bg-slate-900/80 px-2 py-1 rounded-lg border border-slate-800">Обновляется...</span>
+                <button type="button" onclick="loadHLTVRanking(true)" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 transition-colors border border-slate-700" title="Обновить с HLTV">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <p class="text-[11px] text-slate-400 mb-2 leading-relaxed">
+              Рейтинг обновляется автоматически. Кликните по команде для фильтрации новостей:
+            </p>
+
+            <!-- Priority Quick Filter Chips -->
+            <div class="mb-3 p-2.5 rounded-2xl bg-slate-950/70 border border-amber-500/20 space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1">
+                  <span>⭐</span> <span>Приоритетные темы:</span>
+                </span>
+                <button type="button" onclick="filterEsportsByTag('all')" class="text-[10px] text-slate-400 hover:text-white underline">Все новости</button>
+              </div>
+              <div class="flex flex-wrap gap-1.5">
+                <button type="button" onclick="filterEsportsByTag('s1mple')" class="esports-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30">s1mple</button>
+                <button type="button" onclick="filterEsportsByTag('navi')" class="esports-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30">NaVi</button>
+                <button type="button" onclick="filterEsportsByTag('bcgame')" class="esports-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30">BC.Game</button>
+                <button type="button" onclick="filterEsportsByTag('fut')" class="esports-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30">FUT</button>
+              </div>
+            </div>
+
+            <!-- Dynamic Teams List -->
+            <div id="esports-teams-list" class="space-y-1.5 max-h-[520px] overflow-y-auto pr-1 scrollbar-thin">
+              <div class="text-xs text-slate-400 p-4 text-center">Загрузка рейтинга HLTV...</div>
+            </div>
+
+          </div>
+        </aside>
+
       </div>
 
     </section>
@@ -1805,10 +1855,23 @@
         .trim();
     }
 
-    function normalizeCategory(rawCat) {
-      if (!rawCat) return 'Технологии';
+    function normalizeCategory(rawCat, item) {
+      if (item) {
+        const s = ((item.source || '') + ' ' + (item.source_url || '') + ' ' + (item.url || '')).toLowerCase();
+        const t = (item.title || '').toLowerCase();
+        if (s.includes('csgo') || s.includes('cs3') || s.includes('clashroyalepin') || s.includes('clashroyale') || s.includes('hltv') ||
+            t.includes('cs2') || t.includes('cs:go') || t.includes('starladder') || t.includes('vitality') || t.includes('navi') || t.includes('s1mple') || t.includes('m0nesy') || t.includes('donk') || t.includes('clash royale') || t.includes('bcgame') || t.includes('fut')) {
+          return 'Игры & Киберспорт';
+        }
+      }
+      if (!rawCat) return 'Общие технологии';
       let c = cleanText(rawCat);
       c = c.replace(/^Категория\s*[\(:]?/i, '').replace(/[\)]+$/g, '').trim();
+
+      const lower = c.toLowerCase();
+      if (lower.includes('gaming') || lower.includes('игры') || lower.includes('sport') || lower.includes('киберспорт') || lower.includes('csgo') || lower.includes('navi') || lower.includes('vitality') || lower.includes('starladder')) {
+        return 'Игры & Киберспорт';
+      }
 
       const map = {
         'it & аналитика': 'IT & Аналитика',
@@ -1830,9 +1893,7 @@
         'technology': 'Общие технологии'
       };
 
-      const lower = c.toLowerCase();
       if (map[lower]) return map[lower];
-      if (lower.includes('gaming') || lower.includes('игры') || lower.includes('sport') || lower.includes('csgo') || lower.includes('navi') || lower.includes('vitality') || lower.includes('starladder')) return 'Игры & Киберспорт';
       if (lower.includes('linux') || lower.includes('opennet')) return 'Linux & Инфраструктура';
       if (lower.includes('ai') || lower.includes('нейро') || lower.includes('интеллект')) return 'Искусственный интеллект';
       if (lower.includes('аналитик') || lower.includes('dev') || lower.includes('программир') || lower.includes('разработ')) return 'IT & Аналитика';
@@ -2049,6 +2110,98 @@
       }).join('');
     }
 
+    // HLTV Ranking State & Handlers
+    let hltvRankings = [];
+    let selectedEsportsTag = 'all';
+
+    async function loadHLTVRanking(force = false) {
+      const statusEl = document.getElementById('hltv-updated-date');
+      const container = document.getElementById('esports-teams-list');
+      if (!container) return;
+
+      if (statusEl && force) statusEl.textContent = 'Обновление...';
+
+      try {
+        const resp = await fetch('/api/hltv/ranking');
+        if (!resp.ok) throw new Error('API error ' + resp.status);
+        const data = await resp.json();
+        hltvRankings = data.teams || [];
+
+        if (statusEl) {
+          statusEl.textContent = data.date ? `HLTV: ${data.date}` : (data.updated_at || 'Актуально');
+        }
+
+        renderHLTVRankings();
+      } catch (err) {
+        console.error('Failed to load HLTV ranking:', err);
+        if (statusEl) statusEl.textContent = 'Срез: Сентябрь 2026';
+      }
+    }
+
+    function renderHLTVRankings() {
+      const container = document.getElementById('esports-teams-list');
+      if (!container) return;
+
+      if (!hltvRankings || hltvRankings.length === 0) {
+        container.innerHTML = `<div class="text-xs text-slate-400 p-4 text-center">Загрузка рейтинга HLTV...</div>`;
+        return;
+      }
+
+      const maxPoints = Math.max(...hltvRankings.map(t => Number(t.points) || 1), 1000);
+
+      container.innerHTML = hltvRankings.map((team, idx) => {
+        const rank = team.rank || (idx + 1);
+        const points = team.points || 0;
+        const pct = Math.min(100, Math.round((points / maxPoints) * 100));
+
+        let rankBadge = `<span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold font-mono bg-slate-800 text-slate-300 border border-slate-700">#${rank}</span>`;
+        if (rank === 1) {
+          rankBadge = `<span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold font-mono bg-amber-500 text-slate-950 border border-amber-300 shadow-sm shadow-amber-500/50">🥇</span>`;
+        } else if (rank === 2) {
+          rankBadge = `<span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold font-mono bg-slate-300 text-slate-900 border border-white shadow-sm">🥈</span>`;
+        } else if (rank === 3) {
+          rankBadge = `<span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold font-mono bg-amber-700 text-amber-100 border border-amber-600 shadow-sm">🥉</span>`;
+        }
+
+        const isSelected = selectedEsportsTag && selectedEsportsTag.toLowerCase() === team.name.toLowerCase();
+        const cardClass = isSelected
+          ? 'bg-sky-500/25 border-sky-400 shadow-md shadow-sky-500/20'
+          : 'bg-slate-950/60 border-slate-800/80 hover:border-amber-500/50 hover:bg-slate-900/60';
+
+        return `
+          <div onclick="filterEsportsByTeam('${team.name.replace(/'/g, "\\'")}')" 
+               class="p-2.5 rounded-2xl border transition-all cursor-pointer group ${cardClass}">
+            <div class="flex items-center justify-between gap-2 mb-1">
+              <div class="flex items-center gap-2 min-w-0">
+                ${rankBadge}
+                <span class="text-xs font-bold text-white group-hover:text-amber-300 truncate">${team.name}</span>
+              </div>
+              <span class="text-[11px] font-mono font-bold text-amber-400 shrink-0">${points} pts</span>
+            </div>
+            <div class="w-full bg-slate-800/80 h-1.5 rounded-full overflow-hidden">
+              <div class="h-full rounded-full transition-all duration-500 ${rank <= 3 ? 'bg-gradient-to-r from-amber-400 to-amber-500' : 'bg-sky-400'}" style="width: ${pct}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.filterEsportsByTeam = function(teamName) {
+      if (selectedEsportsTag && selectedEsportsTag.toLowerCase() === teamName.toLowerCase()) {
+        selectedEsportsTag = 'all';
+      } else {
+        selectedEsportsTag = teamName;
+      }
+      renderHLTVRankings();
+      renderNews();
+    };
+
+    window.filterEsportsByTag = function(tag) {
+      selectedEsportsTag = tag;
+      renderHLTVRankings();
+      renderNews();
+    };
+
     window.setDynamicCategory = function(cat) {
       state.newsCategoryFilter = (cat === 'all' || cat === 'Все') ? 'all' : cat;
       const isAll = (state.newsCategoryFilter === 'all' || state.newsCategoryFilter === 'Все' || !state.newsCategoryFilter);
@@ -2057,11 +2210,18 @@
                    (state.newsCategoryFilter === 'IT & Аналитика' || 
                     state.newsCategoryFilter.toLowerCase().includes('аналитик') || 
                     state.newsCategoryFilter.toLowerCase().includes('программир') || 
-                    state.newsCategoryFilter.toLowerCase().includes('dev') ||
-                    state.newsCategoryFilter.toLowerCase().includes('it'));
+                    state.newsCategoryFilter.toLowerCase().includes('dev'));
+
+      const isGaming = !isAll && 
+                       (state.newsCategoryFilter === 'Игры & Киберспорт' || 
+                        state.newsCategoryFilter.toLowerCase().includes('игры') || 
+                        state.newsCategoryFilter.toLowerCase().includes('киберспорт') || 
+                        state.newsCategoryFilter.toLowerCase().includes('gaming') || 
+                        state.newsCategoryFilter.toLowerCase().includes('cs'));
       
       const itAside = document.getElementById('programming-analytics-aside');
       const digestAside = document.getElementById('all-digest-aside');
+      const esportsAside = document.getElementById('esports-hltv-aside');
       const langBar = document.getElementById('language-selection-bar');
       const mainCol = document.getElementById('news-main-column');
 
@@ -2071,15 +2231,22 @@
       if (digestAside) {
         digestAside.style.display = isAll ? 'block' : 'none';
       }
+      if (esportsAside) {
+        esportsAside.style.display = isGaming ? 'block' : 'none';
+      }
       if (langBar) {
         langBar.style.display = isIT ? 'flex' : 'none';
       }
       if (mainCol) {
-        if (isIT || isAll) {
+        if (isIT || isAll || isGaming) {
           mainCol.className = 'lg:col-span-7 xl:col-span-8 space-y-6';
         } else {
           mainCol.className = 'lg:col-span-12 space-y-6';
         }
+      }
+
+      if (isGaming) {
+        loadHLTVRanking();
       }
 
       // If switching away from IT, reset language filter
@@ -2087,6 +2254,9 @@
         state.selectedLanguage = 'all';
         const dropdown = document.getElementById('language-select-dropdown');
         if (dropdown) dropdown.value = 'all';
+      }
+      if (!isGaming && selectedEsportsTag !== 'all') {
+        selectedEsportsTag = 'all';
       }
 
       renderCategoryPills();
@@ -2096,7 +2266,7 @@
     function isArticleEligibleForDisplay(item, targetCategory, targetLang) {
       // Completely exclude security / cybersecurity articles
       const rawCat = (item.category || '').toLowerCase();
-      const itemCat = (item._displayCategory || normalizeCategory(item.category)).toLowerCase();
+      const itemCat = (item._displayCategory || normalizeCategory(item.category, item)).toLowerCase();
       const rawTitle = (item.title || '').toLowerCase();
       if (itemCat.includes('безопас') || itemCat.includes('cybersec') || itemCat.includes('security') ||
           rawCat.includes('безопас') || rawCat.includes('cybersec') || rawCat.includes('security') ||
@@ -2122,11 +2292,44 @@
         return false;
       }
 
-      // 3. Strict Quality Filter for IT & Analytics:
+      // 3. Strict Source Filter for Games & Esports:
+      // Only allow: t.me/newcsgo, t.me/cs3news, t.me/ClashRoyalePin, https://www.hltv.org/
+      const isGamingCategory = targetCatLower.includes('игры') || targetCatLower.includes('киберспорт') || targetCatLower.includes('gaming');
+      if (isGamingCategory) {
+        const sourceCombined = ((item.source || '') + ' ' + (item.source_url || '') + ' ' + (item.url || '')).toLowerCase();
+        const isAllowedChannel = ['newcsgo', 'cs3news', 'clashroyalepin', 'clashroyale', 'hltv'].some(s => sourceCombined.includes(s));
+        if (!isAllowedChannel) {
+          return false;
+        }
+
+        // Sub-filter by team or priority tag
+        if (selectedEsportsTag && selectedEsportsTag !== 'all') {
+          const fullText = ((item.title || '') + ' ' + (item.summary || '') + ' ' + (item.why_it_matters || '') + ' ' + (item.source || '')).toLowerCase();
+          const tag = selectedEsportsTag.toLowerCase();
+          if (tag === 's1mple' || tag === 'simple') {
+            if (!fullText.includes('s1mple') && !fullText.includes('simple')) return false;
+          } else if (tag === 'bcgame') {
+            if (!fullText.includes('bcgame') && !fullText.includes('bc.game')) return false;
+          } else if (tag === 'navi') {
+            if (!fullText.includes('navi') && !fullText.includes('natus vincere') && !fullText.includes('нави')) return false;
+          } else if (tag === 'fut') {
+            if (!fullText.includes('fut')) return false;
+          } else {
+            if (!fullText.includes(tag)) return false;
+          }
+        }
+      }
+
+      // 4. Strict Quality Filter for IT & Analytics:
       const isProgCategory = targetCatLower.includes('аналитик') || 
                              targetCatLower.includes('программир') || 
                              targetCatLower.includes('dev');
       if (isProgCategory) {
+        // Exclude any gaming item that somehow reached here
+        const isGamingItem = ['csgo', 'cs3', 'clashroyalepin', 'clashroyale', 'hltv'].some(s => ((item.source || '') + ' ' + (item.url || '')).toLowerCase().includes(s)) ||
+                             ['cs2', 'cs:go', 'vitality', 'starladder', 'navi', 's1mple'].some(k => (item.title || '').toLowerCase().includes(k));
+        if (isGamingItem) return false;
+
         if (score < 7.0) return false;
         const hasSummary = Boolean((item.summaries && item.summaries[state.lang]) || item.summary);
         if (!hasSummary) return false;
@@ -2159,7 +2362,7 @@
       if (!container) return;
 
       state.articles.forEach(a => {
-        a._displayCategory = normalizeCategory(a.category);
+        a._displayCategory = normalizeCategory(a.category, a);
       });
 
       const catCounts = {};
@@ -2213,7 +2416,7 @@
           if (liveArticles && liveArticles.length > 0) {
             state.articles = liveArticles;
             state.articles.forEach(a => {
-              a._displayCategory = normalizeCategory(a.category);
+              a._displayCategory = normalizeCategory(a.category, a);
             });
             renderCategoryPills();
             renderNews();
@@ -2235,7 +2438,7 @@
       if (isAll) {
         const digestArticles = state.articles.filter(item => {
           const rawCat = (item.category || '').toLowerCase();
-          const itemCat = (item._displayCategory || normalizeCategory(item.category)).toLowerCase();
+          const itemCat = (item._displayCategory || normalizeCategory(item.category, item)).toLowerCase();
           const rawTitle = (item.title || '').toLowerCase();
           if (itemCat.includes('безопас') || itemCat.includes('cybersec') || itemCat.includes('security') ||
               rawCat.includes('безопас') || rawCat.includes('cybersec') || rawCat.includes('security') ||
@@ -2251,6 +2454,20 @@
       const filtered = state.articles.filter(item => 
         isArticleEligibleForDisplay(item, state.newsCategoryFilter, state.selectedLanguage)
       );
+
+      // Sort: Priority keywords first, then score descending, then date descending
+      filtered.sort((a, b) => {
+        const aPriority = a.is_priority || ['simple', 's1mple', 'navi', 'bcgame', 'bc.game', 'fut'].some(kw => ((a.title || '') + ' ' + (a.summary || '') + ' ' + (a.why_it_matters || '')).toLowerCase().includes(kw));
+        const bPriority = b.is_priority || ['simple', 's1mple', 'navi', 'bcgame', 'bc.game', 'fut'].some(kw => ((b.title || '') + ' ' + (b.summary || '') + ' ' + (b.why_it_matters || '')).toLowerCase().includes(kw));
+        if (aPriority && !bPriority) return -1;
+        if (!aPriority && bPriority) return 1;
+        const aScore = a.importance_score ? Number(a.importance_score) : 5.0;
+        const bScore = b.importance_score ? Number(b.importance_score) : 5.0;
+        if (bScore !== aScore) return bScore - aScore;
+        const aDate = a.published_at ? new Date(a.published_at).getTime() : 0;
+        const bDate = b.published_at ? new Date(b.published_at).getTime() : 0;
+        return bDate - aDate;
+      });
 
       // Synchronize active category pill count badge directly with displayed cards
       const activePillBadge = document.querySelector('.news-cat-pill.border-sky-400 .news-cat-pill-count');
@@ -2279,7 +2496,7 @@
         const title = cleanText((article.titles && article.titles[state.lang]) || article.title || 'Новость');
         const sourceUrl = article.sourceUrl || article.url || article.original_url || '#';
         const sourceName = article.sourceName || article.source || 'Инфо-поток';
-        const category = article._displayCategory || normalizeCategory(article.category || 'Технологии');
+        const category = article._displayCategory || normalizeCategory(article.category || 'Технологии', article);
         const score = article.importance_score ? Number(article.importance_score).toFixed(1) : '5.0';
         const summary = cleanText((article.summaries && article.summaries[state.lang]) || article.summary || '');
         const whyItMatters = cleanText(article.why_it_matters || '');
@@ -2287,6 +2504,15 @@
         const timeStr = article.published_at 
           ? new Date(article.published_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) 
           : 'Сегодня';
+
+        const isPriority = article.is_priority || 
+          ['simple', 's1mple', 'navi', 'bcgame', 'bc.game', 'fut'].some(kw => 
+            ((article.title || '') + ' ' + (article.summary || '') + ' ' + (article.why_it_matters || '')).toLowerCase().includes(kw)
+          );
+
+        const priorityBadge = isPriority
+          ? `<span class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-amber-500/30 backdrop-blur-md text-amber-300 border border-amber-400/60 shadow-lg shadow-amber-500/25 flex items-center gap-1 animate-pulse">⭐ Приоритет</span>`
+          : '';
 
         const isHighQuality = Number(score) >= 7.0;
         const scoreBadge = isHighQuality
@@ -2297,8 +2523,12 @@
           ? `<span class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-purple-500/25 backdrop-blur-md text-purple-300 border border-purple-500/40 shadow-lg flex items-center gap-1 animate-pulse">📊 Диаграмма / График</span>`
           : '';
 
+        const borderClass = isPriority
+          ? 'border-amber-500/40 hover:border-amber-400/60 shadow-amber-500/10'
+          : 'border-slate-800/80 hover:border-sky-500/30';
+
         const card = document.createElement('div');
-        card.className = 'glass-panel glass-panel-hover rounded-3xl overflow-hidden border border-slate-800/80 hover:border-sky-500/30 flex flex-col group transition-all duration-300 hover:shadow-2xl hover:shadow-sky-500/5 hover:-translate-y-1';
+        card.className = `glass-panel glass-panel-hover rounded-3xl overflow-hidden border ${borderClass} flex flex-col group transition-all duration-300 hover:shadow-2xl hover:shadow-sky-500/5 hover:-translate-y-1`;
 
         card.innerHTML = `
           <div class="relative w-full aspect-video overflow-hidden bg-slate-950">
@@ -2310,6 +2540,7 @@
                 <span>${getCategoryEmoji(category)}</span>
                 <span>${category}</span>
               </span>
+              ${priorityBadge}
               ${scoreBadge}
               ${diagramBadge}
             </div>
