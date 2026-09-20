@@ -98,10 +98,16 @@ class SummarizerService:
             category = await self.get_or_create_category(chosen_category)
             article.category_id = category.id
 
-            # Priority keyword boost
+            # Priority keyword boost & meme guard
             score = float(analysis.importance_score)
-            has_priority = any(kw in (title_lower + " " + content_lower) for kw in PRIORITY_KEYWORDS)
-            if has_priority:
+            text_for_check = title_lower + " " + content_lower
+            is_meme_or_ad = any(stop in text_for_check for stop in ["тир-2", "тир 2", "cs.money", "розыгрыш", "бесплатно", "скины", "скин ", "рулетк", "щитпост", "удивительном мире"])
+            if is_meme_or_ad and score > 4.0:
+                score = 3.0
+                logger.info("Article ID %d detected as meme/ad/sarcasm. Reduced score to %.1f", article.id, score)
+
+            has_priority = any(kw in text_for_check for kw in PRIORITY_KEYWORDS)
+            if has_priority and not is_meme_or_ad and score >= 5.5:
                 score = min(10.0, max(score, 8.5))
                 logger.info("Article ID %d matched priority keywords! Boosted score to %.1f", article.id, score)
 

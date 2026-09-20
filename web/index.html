@@ -2292,10 +2292,13 @@
         return false;
       }
 
-      // 3. Strict Source Filter for Games & Esports:
+      // 3. Strict Source Filter & Minimum Quality for Games & Esports:
       // Only allow: t.me/newcsgo, t.me/cs3news, t.me/ClashRoyalePin, https://www.hltv.org/
       const isGamingCategory = targetCatLower.includes('игры') || targetCatLower.includes('киберспорт') || targetCatLower.includes('gaming');
       if (isGamingCategory) {
+        // Enforce minimum score of 7.0 (filter out low-effort posts, memes, and sarcasm)
+        if (score < 7.0) return false;
+
         const sourceCombined = ((item.source || '') + ' ' + (item.source_url || '') + ' ' + (item.url || '')).toLowerCase();
         const isAllowedChannel = ['newcsgo', 'cs3news', 'clashroyalepin', 'clashroyale', 'hltv'].some(s => sourceCombined.includes(s));
         if (!isAllowedChannel) {
@@ -2455,14 +2458,14 @@
         isArticleEligibleForDisplay(item, state.newsCategoryFilter, state.selectedLanguage)
       );
 
-      // Sort: Priority keywords first, then score descending, then date descending
+      // Sort: Priority keywords first (only for high importance score >= 7.0), then score descending, then date descending
       filtered.sort((a, b) => {
-        const aPriority = a.is_priority || ['simple', 's1mple', 'navi', 'bcgame', 'bc.game', 'fut'].some(kw => ((a.title || '') + ' ' + (a.summary || '') + ' ' + (a.why_it_matters || '')).toLowerCase().includes(kw));
-        const bPriority = b.is_priority || ['simple', 's1mple', 'navi', 'bcgame', 'bc.game', 'fut'].some(kw => ((b.title || '') + ' ' + (b.summary || '') + ' ' + (b.why_it_matters || '')).toLowerCase().includes(kw));
-        if (aPriority && !bPriority) return -1;
-        if (!aPriority && bPriority) return 1;
         const aScore = a.importance_score ? Number(a.importance_score) : 5.0;
         const bScore = b.importance_score ? Number(b.importance_score) : 5.0;
+        const aPriority = (aScore >= 7.0) && (a.is_priority || ['simple', 's1mple', 'navi', 'bcgame', 'bc.game', 'fut'].some(kw => ((a.title || '') + ' ' + (a.summary || '') + ' ' + (a.why_it_matters || '')).toLowerCase().includes(kw)));
+        const bPriority = (bScore >= 7.0) && (b.is_priority || ['simple', 's1mple', 'navi', 'bcgame', 'bc.game', 'fut'].some(kw => ((b.title || '') + ' ' + (b.summary || '') + ' ' + (b.why_it_matters || '')).toLowerCase().includes(kw)));
+        if (aPriority && !bPriority) return -1;
+        if (!aPriority && bPriority) return 1;
         if (bScore !== aScore) return bScore - aScore;
         const aDate = a.published_at ? new Date(a.published_at).getTime() : 0;
         const bDate = b.published_at ? new Date(b.published_at).getTime() : 0;
