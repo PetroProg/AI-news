@@ -33,35 +33,42 @@ class OllamaClient:
         self.model = model or settings.OLLAMA_MODEL
         self.timeout = timeout or 180.0
 
-    async def analyze_article(self, title: str, text: str) -> Optional[ArticleAnalysisResult]:
+    async def analyze_article(
+        self,
+        title: str,
+        text: str,
+        source_name: Optional[str] = None,
+    ) -> Optional[ArticleAnalysisResult]:
         """Analyze article and return structured JSON."""
         system_prompt = (
-            "Ты — ведущий IT-аналитик и эксперт по языкам программирования.\n"
+            "Ты — ведущий AI-аналитик новостей технологий, разработки и киберспорта.\n"
             "Проанализируй текст новости и верни СТРОГО валидный JSON без markdown:\n\n"
-            "Правила классификации и оценки:\n"
+            "Правила классификации:\n"
             "1. Доступные категории: 'IT & Аналитика', 'AI & Нейросети', 'Linux & Инфраструктура', 'Игры & Киберспорт', 'Общие технологии'.\n"
-            "2. В категорию 'IT & Аналитика' относи ИСКЛЮЧИТЕЛЬНО новости о языках программирования (Python, Rust, Go, C++, TypeScript/JS, Java, C#, Zig, Mojo), их компиляторах, рантаймах, синтаксисе, стандартных библиотеках и бенчмарках.\n"
-            "3. Оценка важности (importance_score от 1.0 до 10.0):\n"
-            "   - 8.0 - 10.0: Ключевой мажорный релиз языка (например, Python no-GIL, Go 1.24, Rust 2024 edition), архитектурный прорыв, критическая уязвимость рантайма.\n"
-            "   - 7.0 - 7.9: Новые стандарты синтаксиса, заметные оптимизации производительности, важные инструменты экосистемы.\n"
-            "   - 4.0 - 6.5: Обычные минорные патчи, мелкие багфиксы.\n"
-            "   - Для категории 'IT & Аналитика' ставь 7.0 и выше только реально полезным и значимым событиям.\n"
-            "4. Формат резюме:\n"
-            "   - short_summary: 1-2 емких предложения с технической сутью релиза.\n"
-            "   - why_it_matters: Почему это важно для разработчиков и экосистемы.\n"
-            "   - key_points: 2-3 конкретных факта (синтаксис, бенчмарки, совместимость).\n\n"
+            "2. В категорию 'Игры & Киберспорт' относи ВСЕ новости о CS2, CS:GO, киберспорте, турнирах (StarLadder, Major, BLAST, ESL), матчах, командах (NaVi, Vitality, Spirit, FaZe, FUT, MOUZ, Falcons, G2), игроках (s1mple, m0NESY, ZywOo, donk) и мобильных играх (Clash Royale). Игры и киберспорт СТРОГО ЗАПРЕЩЕНО относить к 'IT & Аналитика'!\n"
+            "3. В категорию 'IT & Аналитика' относи ИСКЛЮЧИТЕЛЬНО новости о языках программирования (Python, Rust, Go, C++, TypeScript/JS, Java, C#, Zig, Mojo), их компиляторах, рантаймах, синтаксисе, стандартных библиотеках и бенчмарках.\n"
+            "4. В категорию 'AI & Нейросети' относи новости об LLM, нейросетях, моделях и ИИ-инструментах.\n"
+            "5. В категорию 'Linux & Инфраструктура' относи релизы ядра Linux, дистрибутивов, DevOps, Kubernetes, серверного ПО.\n\n"
+            "Правила оценки важности (importance_score от 1.0 до 10.0):\n"
+            "- Приоритет в киберспорте: если новость упоминает s1mple, simple, NaVi, BC.Game, FUT или финал крупного турнира, ставь оценку 8.0 - 9.5.\n"
+            "- Для 'IT & Аналитика': 8.0 - 10.0 ставь ключевым релизам языков (Python no-GIL, Go 1.24, Rust edition). Обычным минорным патчам ставь 5.0 - 6.5.\n\n"
+            "Требования к саммари:\n"
+            "- short_summary: 1-2 емких предложения с ключевой сутью на русском языке.\n"
+            "- why_it_matters: Почему это важно (для разработчиков, игроков или индустрии).\n"
+            "- key_points: 2-3 конкретных факта.\n\n"
             "Формат JSON:\n"
             "{\n"
-            '  "short_summary": "Краткая суть новости (по-русски)",\n'
-            '  "why_it_matters": "Почему это важно разработчикам (по-русски)",\n'
+            '  "short_summary": "Суть события (по-русски)",\n'
+            '  "why_it_matters": "Значение новости для аудитории",\n'
             '  "key_points": ["Факт 1", "Факт 2"],\n'
             '  "importance_score": 7.5,\n'
-            '  "category": "IT & Аналитика"\n'
+            '  "category": "Игры & Киберспорт"\n'
             "}"
         )
 
         truncated_text = text[:600]
-        user_prompt = f"Заголовок: {title}\nТекст: {truncated_text}"
+        source_prefix = f"Источник: {source_name}\n" if source_name else ""
+        user_prompt = f"{source_prefix}Заголовок: {title}\nТекст: {truncated_text}"
 
         payload: Dict[str, Any] = {
             "model": self.model,
@@ -89,7 +96,7 @@ class OllamaClient:
 
             parsed = json.loads(raw_text)
             result = ArticleAnalysisResult(**parsed)
-            logger.info("Successfully analyzed '%s' (Score: %.1f)", title[:30], result.importance_score)
+            logger.info("Successfully analyzed '%s' (Score: %.1f, Cat: %s)", title[:30], result.importance_score, result.category)
             return result
 
         except httpx.TimeoutException:

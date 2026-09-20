@@ -91,6 +91,7 @@ class PipelineOrchestrator:
                 ("Official Rust Blog", "https://blog.rust-lang.org/feed.xml"),
                 ("Hacker News Frontpage", "https://news.ycombinator.com/rss"),
                 ("OpenNET Linux News", "https://www.opennet.ru/opennews/opennews_all.rss"),
+                ("HLTV.org News", "https://www.hltv.org/rss/news"),
             ]
             for name, feed_url in rss_sources:
                 try:
@@ -107,7 +108,9 @@ class PipelineOrchestrator:
                 "golang_tg",
                 "rust_tg",
                 "habr_com",
-                "newcsgo"
+                "newcsgo",
+                "cs3news",
+                "ClashRoyalePin"
             ]
             for ch in tg_channels:
                 try:
