@@ -154,14 +154,14 @@ def infer_category_from_source(source_name: str) -> str:
     """Infer topic category from source name if AI category is not assigned yet."""
     s = source_name.lower()
     if any(k in s for k in ["csgo", "cs3", "clashroyalepin", "clashroyale", "hltv", "game", "игры", "киберспорт"]):
-        return "Игры & Киберспорт"
-    if any(k in s for k in ["python", "rust", "golang", "go", "c++", "tproger"]):
-        return "IT & Аналитика"
+        return "CS2"
+    if any(k in s for k in ["python", "rust", "golang", "go", "c++", "tproger", "habr", "proglib", "dev"]):
+        return "IT"
     if any(k in s for k in ["linux", "opennet"]):
         return "Linux & Infrastructure"
     if "ai" in s or "нейро" in s:
         return "AI"
-    return "Technology"
+    return "IT"
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -299,12 +299,16 @@ async def get_news_feed(
                     any(k in title_lower for k in GAMING_INDICATORS)
 
         if is_gaming:
-            cat_name = "Игры & Киберспорт"
+            cat_name = "CS2"
         elif raw_cat:
             cat_name = raw_cat
             # Safety check: if assigned to IT but contains gaming keywords, correct to gaming
-            if ("аналитик" in raw_cat.lower() or "dev" in raw_cat.lower()) and any(k in title_lower for k in GAMING_INDICATORS):
-                cat_name = "Игры & Киберспорт"
+            if ("аналитик" in raw_cat.lower() or "dev" in raw_cat.lower() or "it" in raw_cat.lower()) and any(k in title_lower for k in GAMING_INDICATORS):
+                cat_name = "CS2"
+            elif cat_name.lower() in ["игры & киберспорт", "игры и киберспорт", "gaming", "cs2"]:
+                cat_name = "CS2"
+            elif cat_name.lower() in ["it & аналитика", "it-аналитик", "development", "общие технологии", "general tech", "technology", "it"]:
+                cat_name = "IT"
         else:
             cat_name = infer_category_from_source(source_name)
 

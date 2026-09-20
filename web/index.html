@@ -1913,50 +1913,52 @@
         const t = (item.title || '').toLowerCase();
         if (s.includes('csgo') || s.includes('cs3') || s.includes('clashroyalepin') || s.includes('clashroyale') || s.includes('hltv') ||
             t.includes('cs2') || t.includes('cs:go') || t.includes('starladder') || t.includes('vitality') || t.includes('navi') || t.includes('s1mple') || t.includes('m0nesy') || t.includes('donk') || t.includes('clash royale') || t.includes('bcgame') || t.includes('fut')) {
-          return 'Игры & Киберспорт';
+          return 'CS2';
         }
       }
-      if (!rawCat) return 'Общие технологии';
+      if (!rawCat) return 'IT';
       let c = cleanText(rawCat);
       c = c.replace(/^Категория\s*[\(:]?/i, '').replace(/[\)]+$/g, '').trim();
 
       const lower = c.toLowerCase();
-      if (lower.includes('gaming') || lower.includes('игры') || lower.includes('sport') || lower.includes('киберспорт') || lower.includes('csgo') || lower.includes('navi') || lower.includes('vitality') || lower.includes('starladder')) {
-        return 'Игры & Киберспорт';
+      if (lower.includes('gaming') || lower.includes('игры') || lower.includes('sport') || lower.includes('киберспорт') || lower.includes('csgo') || lower.includes('navi') || lower.includes('vitality') || lower.includes('starladder') || lower.includes('cs2')) {
+        return 'CS2';
       }
 
       const map = {
-        'it & аналитика': 'IT & Аналитика',
-        'it-аналитик': 'IT & Аналитика',
-        'it аналитик': 'IT & Аналитика',
-        'development': 'IT & Аналитика',
-        'dev': 'IT & Аналитика',
-        'programming': 'IT & Аналитика',
-        'разработка': 'IT & Аналитика',
-        'языки программирования': 'IT & Аналитика',
+        'it': 'IT',
+        'it & аналитика': 'IT',
+        'it-аналитик': 'IT',
+        'it аналитик': 'IT',
+        'development': 'IT',
+        'dev': 'IT',
+        'programming': 'IT',
+        'разработка': 'IT',
+        'языки программирования': 'IT',
         'linux': 'Linux & Инфраструктура',
         'linux & infrastructure': 'Linux & Инфраструктура',
-        'gaming': 'Игры & Киберспорт',
+        'gaming': 'CS2',
+        'cs2': 'CS2',
+        'игры & киберспорт': 'CS2',
+        'игры и киберспорт': 'CS2',
         'ai': 'Искусственный интеллект',
         'ai & нейросети': 'Искусственный интеллект',
         'science': 'Наука',
-        'lifestyle': 'Тренды & Стиль',
-        'general tech': 'Общие технологии',
-        'technology': 'Общие технологии'
+        'lifestyle': 'Тренды & Стиль'
       };
 
       if (map[lower]) return map[lower];
       if (lower.includes('linux') || lower.includes('opennet')) return 'Linux & Инфраструктура';
       if (lower.includes('ai') || lower.includes('нейро') || lower.includes('интеллект')) return 'Искусственный интеллект';
-      if (lower.includes('аналитик') || lower.includes('dev') || lower.includes('программир') || lower.includes('разработ')) return 'IT & Аналитика';
-      return 'Общие технологии';
+      if (lower.includes('аналитик') || lower.includes('dev') || lower.includes('программир') || lower.includes('разработ') || lower.includes('it')) return 'IT';
+      return 'IT';
     }
 
     function getCategoryEmoji(catName) {
       const c = (catName || '').toUpperCase();
+      if (c.includes('CS') || c.includes('GAME') || c.includes('ИГР') || c.includes('КИБЕРСПОРТ')) return '🎮';
       if (c.includes('АНАЛИТИК') || c.includes('DEV') || c.includes('ПРОГРАММ') || c.includes('IT')) return '💻';
       if (c.includes('LINUX') || c.includes('ИНФРАСТРУКТУРА') || c.includes('СЕРВЕР')) return '🐧';
-      if (c.includes('CS') || c.includes('GAME') || c.includes('ИГР') || c.includes('КИБЕРСПОРТ')) return '🎮';
       if (c.includes('AI') || c.includes('ИИ') || c.includes('ИНТЕЛЛЕКТ') || c.includes('НЕЙРО')) return '🤖';
       if (c.includes('БЕЗОПАС') || c.includes('SEC') || c.includes('УЯЗВИМ')) return '🛡️';
       if (c.includes('СЕТЬ') || c.includes('VPN')) return '🌐';
@@ -2277,13 +2279,15 @@
       const isAll = (state.newsCategoryFilter === 'all' || state.newsCategoryFilter === 'Все' || !state.newsCategoryFilter);
       
       const isIT = !isAll && 
-                   (state.newsCategoryFilter === 'IT & Аналитика' || 
+                   (state.newsCategoryFilter === 'IT' || 
+                    state.newsCategoryFilter === 'IT & Аналитика' || 
                     state.newsCategoryFilter.toLowerCase().includes('аналитик') || 
                     state.newsCategoryFilter.toLowerCase().includes('программир') || 
                     state.newsCategoryFilter.toLowerCase().includes('dev'));
 
       const isGaming = !isAll && 
-                       (state.newsCategoryFilter === 'Игры & Киберспорт' || 
+                       (state.newsCategoryFilter === 'CS2' || 
+                        state.newsCategoryFilter === 'Игры & Киберспорт' || 
                         state.newsCategoryFilter.toLowerCase().includes('игры') || 
                         state.newsCategoryFilter.toLowerCase().includes('киберспорт') || 
                         state.newsCategoryFilter.toLowerCase().includes('gaming') || 
@@ -2334,16 +2338,17 @@
     };
 
     function isArticleEligibleForDisplay(item, targetCategory, targetLang) {
-      // Completely exclude security / cybersecurity articles
+      // Completely exclude security / cybersecurity articles and unwanted general tech
       const rawCat = (item.category || '').toLowerCase();
       const itemCat = (item._displayCategory || normalizeCategory(item.category, item)).toLowerCase();
       const rawTitle = (item.title || '').toLowerCase();
       if (itemCat.includes('безопас') || itemCat.includes('cybersec') || itemCat.includes('security') ||
           rawCat.includes('безопас') || rawCat.includes('cybersec') || rawCat.includes('security') ||
-          rawTitle.includes('уязвим') || rawTitle.includes('cve-')) {
+          rawTitle.includes('уязвим') || rawTitle.includes('cve-') ||
+          itemCat.includes('общие') || itemCat.includes('технологии') || itemCat.includes('general tech') || itemCat.includes('technology')) {
         return false;
       }
-      if (targetCategory && (targetCategory.toLowerCase().includes('безопас') || targetCategory.toLowerCase().includes('security') || targetCategory.toLowerCase().includes('cybersec'))) {
+      if (targetCategory && (targetCategory.toLowerCase().includes('безопас') || targetCategory.toLowerCase().includes('security') || targetCategory.toLowerCase().includes('cybersec') || targetCategory.toLowerCase().includes('общие') || targetCategory.toLowerCase().includes('general tech'))) {
         return false;
       }
 
@@ -2362,9 +2367,9 @@
         return false;
       }
 
-      // 3. Strict Source Filter & Minimum Quality for Games & Esports:
+      // 3. Strict Source Filter & Minimum Quality for Games & CS2:
       // Only allow: t.me/newcsgo, t.me/cs3news, t.me/ClashRoyalePin, https://www.hltv.org/
-      const isGamingCategory = targetCatLower.includes('игры') || targetCatLower.includes('киберспорт') || targetCatLower.includes('gaming');
+      const isGamingCategory = targetCatLower === 'cs2' || targetCatLower.includes('игры') || targetCatLower.includes('киберспорт') || targetCatLower.includes('gaming');
       if (isGamingCategory) {
         // Enforce minimum score of 7.0 (filter out low-effort posts, memes, and sarcasm)
         if (score < 7.0) return false;
@@ -2393,8 +2398,9 @@
         }
       }
 
-      // 4. Strict Quality Filter for IT & Analytics:
-      const isProgCategory = targetCatLower.includes('аналитик') || 
+      // 4. Strict Quality Filter for IT:
+      const isProgCategory = targetCatLower === 'it' ||
+                             targetCatLower.includes('аналитик') || 
                              targetCatLower.includes('программир') || 
                              targetCatLower.includes('dev');
       if (isProgCategory) {
@@ -2443,7 +2449,8 @@
 
       distinctCats.forEach(cat => {
         const lowerCat = cat.toLowerCase();
-        if (lowerCat.includes('безопас') || lowerCat.includes('security') || lowerCat.includes('cybersec')) {
+        if (lowerCat.includes('безопас') || lowerCat.includes('security') || lowerCat.includes('cybersec') ||
+            lowerCat.includes('общие') || lowerCat.includes('general tech') || lowerCat.includes('technology')) {
           return;
         }
         const langParam = (state.newsCategoryFilter && state.newsCategoryFilter.toLowerCase() === cat.toLowerCase())
