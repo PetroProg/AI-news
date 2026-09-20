@@ -703,8 +703,8 @@
 
             <div class="flex items-center justify-between border-b border-slate-800/80 pb-3 mb-3 relative z-10">
               <div>
-                <a href="https://www.hltv.org/ranking/teams" target="_blank" rel="noopener noreferrer" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 hover:text-amber-200 border border-amber-500/30 flex items-center gap-1.5 w-fit mb-1 transition-all group" title="Открыть официальный рейтинг на HLTV.org">
-                  <span>🏆</span> <span>HLTV World Ranking</span>
+                <a href="https://www.hltv.org/valve-ranking/teams/2026/september/20" target="_blank" rel="noopener noreferrer" class="hltv-official-link px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 hover:text-amber-200 border border-amber-500/30 flex items-center gap-1.5 w-fit mb-1 transition-all group" title="Открыть официальный рейтинг Valve на HLTV.org">
+                  <span>🏆</span> <span>HLTV Valve Ranking</span>
                   <svg class="w-2.5 h-2.5 opacity-70 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
                 </a>
                 <h3 class="text-sm font-black text-white font-heading">
@@ -721,8 +721,8 @@
 
             <div class="flex items-center justify-between text-[11px] text-slate-400 mb-2 leading-relaxed">
               <span>Кликните по команде для фильтрации:</span>
-              <a href="https://www.hltv.org/ranking/teams" target="_blank" rel="noopener noreferrer" class="text-[11px] font-semibold text-amber-400 hover:text-amber-300 inline-flex items-center gap-1 hover:underline shrink-0 ml-2" title="Официальный сайт с рейтингом">
-                <span>hltv.org ↗</span>
+              <a href="https://www.hltv.org/valve-ranking/teams/2026/september/20" target="_blank" rel="noopener noreferrer" class="hltv-official-link text-[11px] font-semibold text-amber-400 hover:text-amber-300 inline-flex items-center gap-1 hover:underline shrink-0 ml-2" title="Официальный сайт Valve Ranking на HLTV">
+                <span>hltv.org/valve-ranking ↗</span>
               </a>
             </div>
 
@@ -753,8 +753,8 @@
                 <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                 <span>Официальный источник:</span>
               </span>
-              <a href="https://www.hltv.org/ranking/teams" target="_blank" rel="noopener noreferrer" class="font-bold text-amber-400 hover:text-amber-300 inline-flex items-center gap-1 hover:underline transition-colors" title="Перейти к рейтингу на официальном сайте HLTV">
-                <span>Рейтинг на HLTV.org</span>
+              <a href="https://www.hltv.org/valve-ranking/teams/2026/september/20" target="_blank" rel="noopener noreferrer" class="hltv-official-link font-bold text-amber-400 hover:text-amber-300 inline-flex items-center gap-1 hover:underline transition-colors" title="Перейти к рейтингу Valve на официальном сайте HLTV">
+                <span>Valve Ranking на HLTV.org</span>
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
               </a>
             </div>
@@ -2176,19 +2176,23 @@
       if (statusEl && force) statusEl.textContent = 'Обновление...';
 
       try {
-        const resp = await fetch('/api/hltv/ranking');
+        const resp = await fetch('/api/hltv/ranking' + (force ? '?force=true' : ''));
         if (!resp.ok) throw new Error('API error ' + resp.status);
         const data = await resp.json();
         hltvRankings = data.teams || [];
 
         if (statusEl) {
-          statusEl.textContent = data.date ? `HLTV: ${data.date}` : (data.updated_at || 'Актуально');
+          statusEl.textContent = data.date ? `Valve: ${data.date}` : (data.updated_at || 'Актуально');
+        }
+
+        if (data.url) {
+          document.querySelectorAll('.hltv-official-link').forEach(el => el.href = data.url);
         }
 
         renderHLTVRankings();
       } catch (err) {
         console.error('Failed to load HLTV ranking:', err);
-        if (statusEl) statusEl.textContent = 'Срез: Сентябрь 2026';
+        if (statusEl) statusEl.textContent = 'Срез: 20 Сентября 2026';
       }
     }
 
@@ -2197,11 +2201,11 @@
       if (!container) return;
 
       if (!hltvRankings || hltvRankings.length === 0) {
-        container.innerHTML = `<div class="text-xs text-slate-400 p-4 text-center">Загрузка рейтинга HLTV...</div>`;
+        container.innerHTML = `<div class="text-xs text-slate-400 p-4 text-center">Загрузка рейтинга Valve...</div>`;
         return;
       }
 
-      const maxPoints = Math.max(...hltvRankings.map(t => Number(t.points) || 1), 1000);
+      const maxPoints = Math.max(...hltvRankings.map(t => Number(t.points) || 1), 2100);
 
       container.innerHTML = hltvRankings.map((team, idx) => {
         const rank = team.rank || (idx + 1);
@@ -2217,6 +2221,14 @@
           rankBadge = `<span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold font-mono bg-amber-700 text-amber-100 border border-amber-600 shadow-sm">🥉</span>`;
         }
 
+        const logoHtml = team.logo
+          ? `<img src="${team.logo}" alt="${team.name}" class="w-4 h-4 object-contain shrink-0" onerror="this.style.display='none'" />`
+          : '';
+
+        const regionHtml = team.region
+          ? `<span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700/80 shrink-0">${team.region}</span>`
+          : '';
+
         const isSelected = selectedEsportsTag && selectedEsportsTag.toLowerCase() === team.name.toLowerCase();
         const cardClass = isSelected
           ? 'bg-sky-500/25 border-sky-400 shadow-md shadow-sky-500/20'
@@ -2225,10 +2237,12 @@
         return `
           <div onclick="filterEsportsByTeam('${team.name.replace(/'/g, "\\'")}')" 
                class="p-2.5 rounded-2xl border transition-all cursor-pointer group ${cardClass}">
-            <div class="flex items-center justify-between gap-2 mb-1">
+            <div class="flex items-center justify-between gap-2 mb-1.5">
               <div class="flex items-center gap-2 min-w-0">
                 ${rankBadge}
+                ${logoHtml}
                 <span class="text-xs font-bold text-white group-hover:text-amber-300 truncate">${team.name}</span>
+                ${regionHtml}
               </div>
               <span class="text-[11px] font-mono font-bold text-amber-400 shrink-0">${points} pts</span>
             </div>
