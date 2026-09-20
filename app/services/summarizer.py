@@ -10,6 +10,14 @@ from app.database.models import Article, ArticleStatus, Category, Summary
 logger = logging.getLogger("news_ai.services.summarizer")
 
 PRIORITY_KEYWORDS = ["simple", "s1mple", "navi", "bcgame", "bc.game", "fut"]
+CS_FINAL_KEYWORDS = [
+    "финал", "гранд-финал", "гранд финал", "победитель финала", "победители финала",
+    "выиграл финал", "выиграла финал", "победил в финале", "победила в финале",
+    "стал чемпионом", "стали чемпионами", "чемпионы турнира", "чемпион турнира",
+    "победитель турнира", "победители турнира", "выиграл турнир", "выиграли турнир",
+    "забрал кубок", "забрали кубок", "поднял кубок", "подняли кубок",
+    "grand final", "grand-final", "tournament winner", "champions", "champion"
+]
 GAMING_INDICATORS = [
     "csgo", "cs3", "clashroyalepin", "hltv", "game", "игры", "киберспорт",
     "cs2", "cs:go", "starladder", "vitality", "navi", "s1mple", "m0nesy",
@@ -107,7 +115,12 @@ class SummarizerService:
                 logger.info("Article ID %d detected as meme/ad/sarcasm. Reduced score to %.1f", article.id, score)
 
             has_priority = any(kw in text_for_check for kw in PRIORITY_KEYWORDS)
-            if has_priority and not is_meme_or_ad and score >= 5.5:
+            is_final_or_winner = is_gaming and any(kw in text_for_check for kw in CS_FINAL_KEYWORDS)
+
+            if is_final_or_winner and not is_meme_or_ad:
+                score = max(score, 9.0)
+                logger.info("Article ID %d matched CS:GO finals/winner! Set score to %.1f", article.id, score)
+            elif has_priority and not is_meme_or_ad and score >= 5.5:
                 score = min(10.0, max(score, 8.5))
                 logger.info("Article ID %d matched priority keywords! Boosted score to %.1f", article.id, score)
 

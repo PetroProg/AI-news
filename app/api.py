@@ -42,6 +42,14 @@ DIAGRAM_KEYWORDS = [
 ]
 
 PRIORITY_KEYWORDS = ["simple", "s1mple", "navi", "bcgame", "bc.game", "fut"]
+CS_FINAL_KEYWORDS = [
+    "финал", "гранд-финал", "гранд финал", "победитель финала", "победители финала",
+    "выиграл финал", "выиграла финал", "победил в финале", "победила в финале",
+    "стал чемпионом", "стали чемпионами", "чемпионы турнира", "чемпион турнира",
+    "победитель турнира", "победители турнира", "выиграл турнир", "выиграли турнир",
+    "забрал кубок", "забрали кубок", "поднял кубок", "подняли кубок",
+    "grand final", "grand-final", "tournament winner", "champions", "champion"
+]
 GAMING_INDICATORS = [
     "csgo", "cs3", "clashroyalepin", "hltv", "game", "игры", "киберспорт",
     "cs2", "cs:go", "starladder", "vitality", "navi", "s1mple", "m0nesy",
@@ -76,17 +84,28 @@ FALLBACK_HLTV_RANKINGS = [
 ]
 
 
-def extract_article_images(raw_content: str) -> list[str]:
-    """Extract candidate image URLs from HTML or Markdown."""
+def extract_article_media(raw_content: str) -> tuple[list[str], str | None]:
+    """Extract candidate image URLs and primary video URL from HTML or Markdown."""
     if not raw_content:
-        return []
+        return [], None
+
+    # Video extraction
+    html_videos = re.findall(r'<video[^>]+src=["\'](https?://[^"\']+|/media/[^"\']+)["\']', raw_content, re.IGNORECASE)
+    direct_videos = re.findall(r'(?:https?://[^\s"\'<>]|/media/[^\s"\'<>])+\.(?:mp4|webm|mov)', raw_content, re.IGNORECASE)
+    primary_video = None
+    all_videos = html_videos + direct_videos
+    if all_videos:
+        primary_video = all_videos[0].replace('\\"', '').replace('\\/', '/').strip()
+
+    # Image extraction (including video poster attribute)
+    posters = re.findall(r'<video[^>]+poster=["\'](https?://[^"\']+|/media/[^"\']+)["\']', raw_content, re.IGNORECASE)
     html_imgs = re.findall(r'<img[^>]+src=["\'](https?://[^"\']+|/media/[^"\']+)["\']', raw_content, re.IGNORECASE)
     md_imgs = re.findall(r'!\[[^\]]*\]\((https?://[^\s\)]+|/media/[^\s\)]+)\)', raw_content)
     direct_imgs = re.findall(r'(?:https?://[^\s"\'<>]|/media/[^\s"\'<>])+\.(?:jpg|jpeg|png|webp|svg)', raw_content, re.IGNORECASE)
-    
+
     candidates = []
     seen = set()
-    for u in html_imgs + md_imgs + direct_imgs:
+    for u in posters + html_imgs + md_imgs + direct_imgs:
         clean_u = u.replace('\\"', '').replace('\\/', '/').strip()
         if clean_u in seen:
             continue
@@ -95,7 +114,14 @@ def extract_article_images(raw_content: str) -> list[str]:
         if any(bad in lower_u for bad in ["pixel", "avatar", "gravatar", "1x1", "icon", "badge", "emoji", "tracker"]):
             continue
         candidates.append(clean_u)
-    return candidates
+
+    return candidates, primary_video
+
+
+def extract_article_images(raw_content: str) -> list[str]:
+    """Backwards-compatible wrapper."""
+    imgs, _ = extract_article_media(raw_content)
+    return imgs
 
 
 def detect_diagram_image(raw_content: str, images: list[str]) -> tuple[str | None, bool]:
@@ -252,7 +278,7 @@ async def get_news_feed(
     news_items = []
     for art in articles:
         raw_text = art.raw_content or ""
-        imgs = extract_article_images(raw_text)
+        imgs, primary_video = extract_article_media(raw_text)
         primary_img, is_diagram = detect_diagram_image(raw_text, imgs)
 
         source_name = art.source.name if art.source else "Web"
@@ -277,15 +303,21 @@ async def get_news_feed(
         else:
             cat_name = infer_category_from_source(source_name)
 
-        # Priority Keywords Detection & Meme / Sarcasm Guard
+        # Priority Keywords Detection & CS:GO Final Winner & Meme / Sarcasm Guard
         text_for_check = title_lower + " " + content_lower
         is_meme_or_ad = any(stop in text_for_check for stop in ["тир-2", "тир 2", "cs.money", "розыгрыш", "бесплатно", "скины", "скин ", "рулетк", "щитпост", "удивительном мире"])
         matched_kws = [kw for kw in PRIORITY_KEYWORDS if kw in text_for_check]
-        is_priority = len(matched_kws) > 0 and not is_meme_or_ad
+        is_final_or_winner = is_gaming and any(kw in text_for_check for kw in CS_FINAL_KEYWORDS)
+        if is_final_or_winner and "финал" not in matched_kws:
+            matched_kws.append("финал")
+
+        is_priority = (len(matched_kws) > 0 or is_final_or_winner) and not is_meme_or_ad
 
         score = float(art.importance_score or 5.0)
         if is_meme_or_ad and score > 4.0:
             score = 3.0
+        elif is_final_or_winner and not is_meme_or_ad:
+            score = max(score, 9.0)
         elif is_priority and score >= 6.0 and score < 8.5:
             score = 8.5
 
@@ -303,6 +335,7 @@ async def get_news_feed(
             "key_points": art.summary.key_points if art.summary else [],
             "model_used": art.summary.model_used if art.summary else None,
             "image_url": primary_img,
+            "video_url": primary_video,
             "has_diagram": is_diagram,
             "is_priority": is_priority,
             "priority_keywords": matched_kws,

@@ -66,10 +66,50 @@ class TelegramCollector(BaseCollector):
                         author = entity.title
 
                     raw_content = text
+                    media_dir = Path("/app/media")
+                    media_dir.mkdir(parents=True, exist_ok=True)
+
+                    # Check and download video / animation if attached
+                    is_video = bool(message.video) or (
+                        bool(message.document) and getattr(message.document, 'mime_type', '').startswith('video/')
+                    )
+                    if is_video:
+                        video_filename = f"tg_{self.channel_username}_{message.id}.mp4"
+                        video_path = media_dir / video_filename
+                        thumb_filename = f"tg_{self.channel_username}_{message.id}_thumb.jpg"
+                        thumb_path = media_dir / thumb_filename
+                        try:
+                            # 1. Download video thumbnail
+                            if not thumb_path.exists() or thumb_path.stat().st_size == 0:
+                                await client.download_media(message, file=str(thumb_path), thumb=-1)
+
+                            # 2. Download video file if reasonable size (<= 50 MB)
+                            file_size = getattr(message.file, 'size', 0) if hasattr(message, 'file') and message.file else 0
+                            if not file_size and hasattr(message, 'document') and message.document:
+                                file_size = getattr(message.document, 'size', 0)
+
+                            if file_size <= 50 * 1024 * 1024:
+                                if not video_path.exists() or video_path.stat().st_size == 0:
+                                    await client.download_media(message, file=str(video_path))
+
+                            has_video_file = video_path.exists() and video_path.stat().st_size > 0
+                            has_thumb_file = thumb_path.exists() and thumb_path.stat().st_size > 0
+
+                            video_tags = []
+                            if has_video_file:
+                                poster_attr = f' poster="/media/{thumb_filename}"' if has_thumb_file else ''
+                                video_tags.append(f'<video src="/media/{video_filename}"{poster_attr} controls preload="metadata"></video>')
+                            if has_thumb_file:
+                                video_tags.append(f'<img src="/media/{thumb_filename}" alt="{title}" />')
+
+                            if video_tags:
+                                raw_content = "\n".join(video_tags) + "\n" + raw_content
+                                logger.info("Downloaded video media for Telegram post %s -> video=%s, thumb=%s", external_id, has_video_file, has_thumb_file)
+                        except Exception as dl_err:
+                            logger.warning("Failed to download video media for post %s: %s", external_id, dl_err)
+
                     # Check and download photo if attached to message
-                    if message.photo:
-                        media_dir = Path("/app/media")
-                        media_dir.mkdir(parents=True, exist_ok=True)
+                    elif message.photo:
                         photo_filename = f"tg_{self.channel_username}_{message.id}.jpg"
                         photo_path = media_dir / photo_filename
                         try:
