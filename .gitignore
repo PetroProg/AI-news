@@ -38,3 +38,7 @@ logs/
 # OS
 .DS_Store
 Thumbs.db
+# Media files
+media/*
+!media/.gitkeep
+media/
