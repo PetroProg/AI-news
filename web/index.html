@@ -703,28 +703,24 @@
 
             <div class="flex items-center justify-between border-b border-slate-800/80 pb-3 mb-3 relative z-10">
               <div>
-                <a href="https://www.hltv.org/valve-ranking/teams/2026/september/20" target="_blank" rel="noopener noreferrer" class="hltv-official-link px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 hover:text-amber-200 border border-amber-500/30 flex items-center gap-1.5 w-fit mb-1 transition-all group" title="Открыть официальный рейтинг Valve на HLTV.org">
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1.5 w-fit mb-1">
                   <span>🏆</span> <span>HLTV Valve Ranking</span>
-                  <svg class="w-2.5 h-2.5 opacity-70 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
-                </a>
+                </span>
                 <h3 class="text-sm font-black text-white font-heading">
                   Топ-20 команд CS2
                 </h3>
               </div>
               <div class="flex items-center gap-1.5">
                 <span id="hltv-updated-date" class="text-[10px] font-mono text-slate-400 bg-slate-900/80 px-2 py-1 rounded-lg border border-slate-800">Обновляется...</span>
-                <button type="button" onclick="loadHLTVRanking(true)" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 transition-colors border border-slate-700" title="Обновить с HLTV">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+                <button id="hltv-refresh-btn" type="button" onclick="loadHLTVRanking(true)" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 transition-colors border border-slate-700" title="Обновить с HLTV">
+                  <svg id="hltv-refresh-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
                 </button>
               </div>
             </div>
 
-            <div class="flex items-center justify-between text-[11px] text-slate-400 mb-2 leading-relaxed">
-              <span>Кликните по команде для фильтрации:</span>
-              <a href="https://www.hltv.org/valve-ranking/teams/2026/september/20" target="_blank" rel="noopener noreferrer" class="hltv-official-link text-[11px] font-semibold text-amber-400 hover:text-amber-300 inline-flex items-center gap-1 hover:underline shrink-0 ml-2" title="Официальный сайт Valve Ranking на HLTV">
-                <span>hltv.org/valve-ranking ↗</span>
-              </a>
-            </div>
+            <p class="text-[11px] text-slate-400 mb-2 leading-relaxed">
+              Кликните по команде для фильтрации новостей:
+            </p>
 
             <!-- Priority Quick Filter Chips -->
             <div class="mb-3 p-2.5 rounded-2xl bg-slate-950/70 border border-amber-500/20 space-y-1.5">
@@ -2171,8 +2167,10 @@
     async function loadHLTVRanking(force = false) {
       const statusEl = document.getElementById('hltv-updated-date');
       const container = document.getElementById('esports-teams-list');
+      const refreshIcon = document.getElementById('hltv-refresh-icon');
       if (!container) return;
 
+      if (refreshIcon && force) refreshIcon.classList.add('animate-spin');
       if (statusEl && force) statusEl.textContent = 'Обновление...';
 
       try {
@@ -2193,6 +2191,8 @@
       } catch (err) {
         console.error('Failed to load HLTV ranking:', err);
         if (statusEl) statusEl.textContent = 'Срез: 20 Сентября 2026';
+      } finally {
+        if (refreshIcon) refreshIcon.classList.remove('animate-spin');
       }
     }
 
