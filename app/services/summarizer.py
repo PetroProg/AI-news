@@ -60,7 +60,7 @@ class SummarizerService:
         """
         stmt = (
             select(Article)
-            .options(selectinload(Article.source))
+            .options(selectinload(Article.source), selectinload(Article.summary))
             .where(Article.status == ArticleStatus.PROCESSED)
             .order_by(Article.published_at.desc())
             .limit(limit)
@@ -134,20 +134,37 @@ class SummarizerService:
 
             article.importance_score = score
 
-            summary_record = Summary(
-                article_id=article.id,
-                short_summary=analysis.short_summary,
-                why_it_matters=analysis.why_it_matters,
-                key_points=analysis.key_points,
-                model_used=self.ai_client.model,
-            )
-            self.session.add(summary_record)
+            try:
+                # Upsert check to prevent UniqueViolationError on retries
+                target_summary = article.summary
+                if not target_summary:
+                    stmt_sum = select(Summary).where(Summary.article_id == article.id)
+                    res_sum = await self.session.execute(stmt_sum)
+                    target_summary = res_sum.scalar_one_or_none()
 
-            article.status = ArticleStatus.SUMMARIZED
-            summarized_count += 1
+                if target_summary:
+                    target_summary.short_summary = analysis.short_summary
+                    target_summary.why_it_matters = analysis.why_it_matters
+                    target_summary.key_points = analysis.key_points
+                    target_summary.model_used = self.ai_client.model
+                    logger.info("Updated existing summary for article ID %d", article.id)
+                else:
+                    summary_record = Summary(
+                        article_id=article.id,
+                        short_summary=analysis.short_summary,
+                        why_it_matters=analysis.why_it_matters,
+                        key_points=analysis.key_points,
+                        model_used=self.ai_client.model,
+                    )
+                    self.session.add(summary_record)
 
-            await self.session.commit()
-            logger.info("Saved summary for article ID %d (Cat: %s, Score: %.1f)", article.id, chosen_category, score)
+                article.status = ArticleStatus.SUMMARIZED
+                summarized_count += 1
+                await self.session.commit()
+                logger.info("Saved summary for article ID %d (Cat: %s, Score: %.1f)", article.id, chosen_category, score)
+            except Exception as save_exc:
+                await self.session.rollback()
+                logger.error("Failed to commit summary for article ID %d: %s", article.id, save_exc)
 
         logger.info("Batch completed: %d articles successfully summarized.", summarized_count)
         return summarized_count

@@ -34,7 +34,7 @@ class PipelineOrchestrator:
         except Exception:
             return False
 
-    async def wait_for_gpu_node(self, timeout_seconds: int = 30) -> bool:
+    async def wait_for_gpu_node(self, timeout_seconds: int = 90) -> bool:
         """Pings Ollama on the remote PC via Tailscale until it responds or times out."""
         logger.info("Checking AI GPU worker availability at %s...", settings.OLLAMA_BASE_URL)
         url = f"{settings.OLLAMA_BASE_URL}/api/tags"
@@ -67,12 +67,9 @@ class PipelineOrchestrator:
         else:
             try:
                 send_wake_on_lan()
-                logger.info("Sent WoL magic packet to %s", settings.WOL_MAC_ADDRESS)
+                logger.info("Sent WoL magic packet to %s (booting in parallel with collection)", settings.WOL_MAC_ADDRESS)
             except Exception as exc:
                 logger.error("Failed to send WoL packet: %s", exc)
-
-            # 2. Give the PC a few seconds to wake and check reachability
-            await self.wait_for_gpu_node(timeout_seconds=25)
 
         async with async_session_maker() as session:
             # 3. Collection Phase (RSS + Telegram)
@@ -123,8 +120,24 @@ class PipelineOrchestrator:
             await processing.process_collected_articles()
 
             # 5. AI Summarization Phase (batch of top unsummarized articles)
-            summarizer = SummarizerService(session=session)
-            await summarizer.summarize_pending_articles(limit=10)
+            gpu_timeout = 10 if was_already_online else 90
+            logger.info("Verifying AI GPU worker reachability (timeout: %ds)...", gpu_timeout)
+            gpu_online = await self.wait_for_gpu_node(timeout_seconds=gpu_timeout)
+
+            if gpu_online:
+                summarizer = SummarizerService(session=session)
+                await summarizer.summarize_pending_articles(limit=10)
+            else:
+                logger.warning("AI GPU worker did not respond within %ds. Skipping summarization for this run.", gpu_timeout)
+                if self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
+                    try:
+                        await self.bot.send_message(
+                            chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
+                            text=f"⚠️ *Предупреждение*: GPU-нода Ollama не ответила за {gpu_timeout} сек. Саммаризация пропущена.",
+                            parse_mode="Markdown"
+                        )
+                    except Exception:
+                        pass
 
             # 6. Report Compilation Phase
             builder = ReportBuilderService(session=session)
