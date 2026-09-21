@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 from fastapi import FastAPI, Depends, HTTPException
 from app.services.cleanup import delete_single_article, cleanup_old_articles
 from app.processing.deduplicator import ContentDeduplicator
+from app.processing.cleaner import ContentCleaner
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -335,14 +336,14 @@ async def get_news_feed(
 
         news_items.append({
             "id": art.id,
-            "title": art.title,
+            "title": ContentCleaner.clean_title(art.title),
             "url": art.original_url or "#",
             "source": source_name,
             "source_url": source_url,
             "category": cat_name,
             "published_at": art.published_at.isoformat() if art.published_at else None,
             "importance_score": score,
-            "summary": art.summary.short_summary if art.summary else (art.cleaned_content[:200] + "..." if art.cleaned_content else "Краткое резюме формируется."),
+            "summary": ContentCleaner.clean(art.summary.short_summary) if art.summary else (art.cleaned_content[:200] + "..." if art.cleaned_content else "Краткое резюме формируется."),
             "why_it_matters": art.summary.why_it_matters if art.summary else None,
             "key_points": art.summary.key_points if art.summary else [],
             "model_used": art.summary.model_used if art.summary else None,

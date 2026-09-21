@@ -82,6 +82,7 @@ class ProcessingService:
         duplicate_count = 0
 
         for article in pending_articles:
+            article.title = ContentCleaner.clean_title(article.title)
             cleaned = ContentCleaner.clean(article.raw_content)
             article.cleaned_content = cleaned or article.title
 
