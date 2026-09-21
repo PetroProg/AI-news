@@ -105,7 +105,8 @@ class PipelineOrchestrator:
                 "habr_com",
                 "newcsgo",
                 "cs3news",
-                "ClashRoyalePin"
+                "ClashRoyalePin",
+                "NovynaUKR"
             ]
             for ch in tg_channels:
                 try:

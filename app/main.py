@@ -33,6 +33,7 @@ RSS_FEEDS = [
 TELEGRAM_CHANNELS = [
     {"username": "newcsgo", "lang": "ru", "limit": 10},
     {"username": "habr_com", "lang": "ru", "limit": 10},
+    {"username": "NovynaUKR", "lang": "ru", "limit": 15},
 ]
 
 

@@ -10,6 +10,11 @@ from app.database.models import Article, ArticleStatus, Category, Summary
 
 logger = logging.getLogger("news_ai.services.summarizer")
 
+UKRAINE_PRIORITY_KEYWORDS = [
+    "дніпро", "днепр", "дніпров", "оон", "нато", "nato", "тцк", "блекаут", "блэкаут",
+    "збито", "сбито", "підсумки атаки", "итоги атаки", "повітряні сили", "воздушные силы", "генштаб"
+]
+
 PRIORITY_KEYWORDS = ["simple", "s1mple", "navi", "bcgame", "bc.game", "fut"]
 CS_FINAL_KEYWORDS = [
     "победитель финала", "победители финала", "победитель гранд-финала", "победители гранд-финала",
@@ -99,7 +104,12 @@ class SummarizerService:
             is_gaming = any(k in combined_source for k in ["csgo", "cs3", "clashroyalepin", "hltv", "game", "киберспорт"]) or \
                         any(k in title_lower for k in GAMING_INDICATORS)
 
-            if is_gaming or (analysis.category and analysis.category.lower() in ["игры & киберспорт", "игры и киберспорт", "gaming", "cs2"]):
+            is_ukraine = ("novynaukr" in combined_source) or \
+                         (analysis.category and "украин" in analysis.category.lower())
+
+            if is_ukraine:
+                chosen_category = "Украина"
+            elif is_gaming or (analysis.category and analysis.category.lower() in ["игры & киберспорт", "игры и киберспорт", "gaming", "cs2"]):
                 chosen_category = "CS2"
             elif analysis.category and analysis.category.lower() in ["it & аналитика", "it-аналитик", "development", "общие технологии", "general tech", "technology"]:
                 chosen_category = "IT"
@@ -121,7 +131,18 @@ class SummarizerService:
                 score = 3.0
                 logger.info("Article ID %d detected as meme/ad/sarcasm. Reduced score to %.1f", article.id, score)
 
-            has_priority = any(kw in text_for_check for kw in PRIORITY_KEYWORDS)
+            is_ukr_micro_alert = False
+            if chosen_category == "Украина":
+                is_ukr_micro_alert = any(ping in text_for_check for ping in [
+                    "курсом на", "курс на", "напрямку", "в напрямку", "в сторону", "в направлении",
+                    "летить дрон", "летит дрон", "тривога в", "тревога в", "загроза балістики", "угроза баллистики",
+                    "чисто в", "відбій", "отбой", "пуски шахедів", "пуски шахедов"
+                ]) and len(text_for_check) < 300
+                if is_ukr_micro_alert:
+                    score = min(score, 5.0)
+
+            has_ukr_priority = chosen_category == "Украина" and not is_ukr_micro_alert and any(kw in text_for_check for kw in UKRAINE_PRIORITY_KEYWORDS)
+            has_priority = (any(kw in text_for_check for kw in PRIORITY_KEYWORDS) or has_ukr_priority) and not is_ukr_micro_alert
             is_digest = any(d in text_for_check for d in ["#дайджест", "дайджест", "утренний дайджест", "новости дня", "главное за день", "итоги недели", "итоги дня", "ура, воскресенье"])
             is_round_only = any(r in text_for_check for r in ["финальный раунд", "финальном раунде", "финального раунда", "финальные раунды"])
             is_final_or_winner = is_gaming and not is_digest and not is_round_only and any(kw in text_for_check for kw in CS_FINAL_KEYWORDS)
@@ -136,7 +157,8 @@ class SummarizerService:
             # If LLM returned a Russian title and original had Latin, update title
             if analysis.russian_title and len(analysis.russian_title.strip()) > 3:
                 has_latin = any(c.isascii() and c.isalpha() for c in (article.title or ""))
-                if has_latin:
+                has_ukrainian = any(c in "ієїґІЄЇҐ" for c in (article.title or ""))
+                if has_latin or has_ukrainian:
                     article.title = ContentCleaner.clean_title(analysis.russian_title)
             else:
                 article.title = ContentCleaner.clean_title(article.title)
