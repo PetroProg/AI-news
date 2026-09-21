@@ -194,3 +194,94 @@
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
+
+    /* ===================================================== */
+    /* MOBILE ACCORDION & RESPONSIVE UX                      */
+    /* ===================================================== */
+
+    .news-card-mobile-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 0.875rem;
+      gap: 0.5rem;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      background: rgba(15, 23, 42, 0.45);
+      transition: background-color 0.2s ease;
+    }
+
+    .news-card-mobile-header:active {
+      background: rgba(30, 41, 59, 0.75);
+    }
+
+    .news-card-expand-icon {
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Mobile Screen Rules (< 768px) */
+    @media (max-width: 767px) {
+      .news-card-mobile-header {
+        display: flex !important;
+      }
+      
+      .news-card-body {
+        display: none !important;
+      }
+
+      .news-card.is-expanded .news-card-mobile-header {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(15, 23, 42, 0.85);
+      }
+
+      .news-card.is-expanded .news-card-expand-icon {
+        transform: rotate(180deg);
+        color: #38bdf8;
+      }
+
+      .news-card.is-expanded .news-card-body {
+        display: flex !important;
+        flex-direction: column !important;
+        animation: fadeInNewsBody 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      /* Compact aside team list max height on small screens */
+      .mobile-aside-scroll {
+        max-height: 280px !important;
+      }
+    }
+
+    /* Desktop Screen Rules (>= 768px) */
+    @media (min-width: 768px) {
+      .news-card-mobile-header {
+        display: none !important;
+      }
+      
+      .news-card-body {
+        display: flex !important;
+        flex-direction: column !important;
+      }
+    }
+
+    @keyframes fadeInNewsBody {
+      from {
+        opacity: 0;
+        transform: translateY(-6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Mobile Collapsible Aside Widgets */
+    @media (max-width: 1023px) {
+      .aside-collapsible.is-collapsed .aside-collapsible-body {
+        display: none !important;
+      }
+      .aside-collapsible.is-collapsed .aside-collapse-arrow {
+        transform: rotate(-90deg);
+      }
+    }
+

@@ -1038,9 +1038,9 @@
       }
       if (mainCol) {
         if (isIT || isAll || isGaming) {
-          mainCol.className = 'lg:col-span-7 xl:col-span-8 space-y-6';
+          mainCol.className = 'order-2 lg:order-1 lg:col-span-7 xl:col-span-8 space-y-6 w-full';
         } else {
-          mainCol.className = 'lg:col-span-12 space-y-6';
+          mainCol.className = 'order-2 lg:order-1 lg:col-span-12 space-y-6 w-full';
         }
       }
 
@@ -1368,12 +1368,23 @@
       }
     }
 
+    function toggleMobileAside(asideId) {
+      const aside = document.getElementById(asideId);
+      if (!aside) return;
+      aside.classList.toggle('is-collapsed');
+      const btnText = aside.querySelector('.aside-toggle-text');
+      if (btnText) {
+        btnText.textContent = aside.classList.contains('is-collapsed') ? 'Развернуть' : 'Свернуть';
+      }
+    }
+
     window.openMediaZoom = openMediaZoom;
     window.openImageZoom = openImageZoom;
     window.openVideoZoom = openVideoZoom;
     window.closeImageZoom = closeImageZoom;
     window.loadHLTVRanking = loadHLTVRanking;
     window.toggleZoomScale = toggleZoomScale;
+    window.toggleMobileAside = toggleMobileAside;
 
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
@@ -1494,14 +1505,36 @@
           : 'border-slate-800/80 hover:border-sky-500/30';
 
         const card = document.createElement('div');
-        card.className = `glass-panel glass-panel-hover rounded-3xl overflow-hidden border ${borderClass} flex flex-col group transition-all duration-300 hover:shadow-2xl hover:shadow-sky-500/5 hover:-translate-y-1`;
+        card.className = `news-card glass-panel glass-panel-hover rounded-2xl md:rounded-3xl overflow-hidden border ${borderClass} flex flex-col group transition-all duration-300 hover:shadow-2xl hover:shadow-sky-500/5 md:hover:-translate-y-1`;
+
+        const mobilePriorityBadge = isPriority ? `<span class="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/30 text-amber-300 shrink-0">⭐</span>` : '';
+        const mobileScoreBadge = isHighQuality 
+          ? `<span class="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/25 text-amber-300 shrink-0 font-mono">🔥${score}</span>` 
+          : `<span class="px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-slate-800 text-slate-400 shrink-0 font-mono">${score}</span>`;
+
+        const mobileHeaderMarkup = `
+          <div class="news-card-mobile-header">
+            <div class="flex items-center gap-2 min-w-0 flex-1">
+              <span class="text-xs shrink-0">${getCategoryEmoji(category)}</span>
+              <span class="text-[10px] font-mono text-slate-400 shrink-0">${timeStr}</span>
+              ${mobilePriorityBadge}
+              ${mobileScoreBadge}
+              <span class="text-xs font-semibold text-white truncate flex-1 leading-snug">${title}</span>
+            </div>
+            <div class="news-card-expand-icon text-slate-400 shrink-0 p-0.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+              </svg>
+            </div>
+          </div>
+        `;
 
         const mediaMarkup = hasVideo ? `
           <div class="relative w-full aspect-video overflow-hidden bg-black group/video">
             <video 
               src="${videoSrc}" 
               poster="${image}" 
-              class="w-full h-full object-cover rounded-t-3xl" 
+              class="w-full h-full object-cover rounded-t-2xl md:rounded-t-3xl" 
               controls 
               preload="metadata" 
               playsinline>
@@ -1568,33 +1601,37 @@
         `;
 
         card.innerHTML = `
-          ${mediaMarkup}
+          ${mobileHeaderMarkup}
 
-          <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
-            <div>
-              <h3 class="text-base sm:text-lg font-bold text-white font-heading group-hover:text-sky-300 transition-colors leading-snug">
-                ${title}
-              </h3>
-              
-              <div class="mt-3 p-3.5 rounded-2xl bg-slate-950/50 border border-slate-800/70 text-xs text-slate-300 leading-relaxed">
-                <span class="text-[11px] font-bold text-sky-400 uppercase tracking-wider block mb-1 flex items-center gap-1">
-                  <span>🤖</span> <span>Резюме нейросети:</span>
-                </span>
-                <p class="text-slate-300 leading-relaxed">${formatShortSummary(summary)}</p>
+          <div class="news-card-body">
+            ${mediaMarkup}
+
+            <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-4">
+              <div>
+                <h3 class="text-base sm:text-lg font-bold text-white font-heading group-hover:text-sky-300 transition-colors leading-snug">
+                  ${title}
+                </h3>
+                
+                <div class="mt-3 p-3.5 rounded-2xl bg-slate-950/50 border border-slate-800/70 text-xs text-slate-300 leading-relaxed">
+                  <span class="text-[11px] font-bold text-sky-400 uppercase tracking-wider block mb-1 flex items-center gap-1">
+                    <span>🤖</span> <span>Резюме нейросети:</span>
+                  </span>
+                  <p class="text-slate-300 leading-relaxed">${formatShortSummary(summary)}</p>
+                </div>
               </div>
-            </div>
 
-            <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
-              <span class="text-[11px] text-slate-500 hidden sm:inline">News AI Engine</span>
-              <div class="flex items-center gap-2 ml-auto sm:ml-0">
-                <button type="button" class="btn-delete-article px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/25 border border-rose-500/30 hover:border-rose-500/60 text-rose-400 hover:text-rose-200 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer" data-id="${article.id}" title="Удалить эту новость из базы данных">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
-                  <span>Удалить</span>
-                </button>
-                <a href="${sourceUrl}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all">
-                  <span>Читать в источнике</span>
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
-                </a>
+              <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                <span class="text-[11px] text-slate-500 hidden sm:inline">News AI Engine</span>
+                <div class="flex items-center gap-2 ml-auto sm:ml-0">
+                  <button type="button" class="btn-delete-article px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/25 border border-rose-500/30 hover:border-rose-500/60 text-rose-400 hover:text-rose-200 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer" data-id="${article.id}" title="Удалить эту новость из базы данных">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+                    <span>Удалить</span>
+                  </button>
+                  <a href="${sourceUrl}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all">
+                    <span>Читать в источнике</span>
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
+                  </a>
+                </div>
               </div>
             </div>
           </div>
@@ -1660,6 +1697,14 @@
             openVideoZoom(videoSrc, title, image);
           });
         });
+
+        const mobileHeader = card.querySelector('.news-card-mobile-header');
+        if (mobileHeader) {
+          mobileHeader.addEventListener('click', (e) => {
+            e.preventDefault();
+            card.classList.toggle('is-expanded');
+          });
+        }
 
         container.appendChild(card);
       });

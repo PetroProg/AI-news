@@ -159,17 +159,17 @@
       <!-- ======================================================= -->
       <!-- MAIN RESPONSIVE LAYOUT: NEWS (CENTER) + ASIDE SIDEBAR   -->
       <!-- ======================================================= -->
-      <div id="news-layout-wrapper" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div id="news-layout-wrapper" class="flex flex-col lg:grid lg:grid-cols-12 gap-6 items-start">
         
         <!-- Center Main Column (News Feed) -->
-        <div id="news-main-column" class="lg:col-span-7 xl:col-span-8 space-y-6">
-          <div id="news-container" class="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+        <div id="news-main-column" class="order-2 lg:order-1 lg:col-span-7 xl:col-span-8 space-y-6 w-full">
+          <div id="news-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <!-- Injected dynamically by JavaScript -->
           </div>
         </div>
 
         <!-- Aside Sidebar: Express Digest 6.0–8.0 (Shown ONLY on "Все" tab) -->
-        <aside id="all-digest-aside" class="lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto pr-1">
+        <aside id="all-digest-aside" class="order-1 lg:order-2 lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto pr-1 w-full aside-collapsible">
           <div class="glass-panel p-5 rounded-3xl border border-amber-500/25 bg-gradient-to-b from-slate-900/90 via-slate-950/90 to-slate-900/80 shadow-2xl relative overflow-hidden">
             <div class="absolute -right-8 -top-8 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
 
@@ -183,21 +183,29 @@
                   <span class="text-slate-400 font-normal text-xs">(оценка 6.0 – 8.0)</span>
                 </h3>
               </div>
-              <span id="all-digest-count-badge" class="text-[10px] font-mono font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20">0 событий</span>
+              <div class="flex items-center gap-2">
+                <span id="all-digest-count-badge" class="text-[10px] font-mono font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20">0 событий</span>
+                <button type="button" onclick="toggleMobileAside('all-digest-aside')" class="lg:hidden px-2 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center gap-1 transition-all" title="Свернуть / Развернуть">
+                  <span class="aside-toggle-text text-[10px]">Свернуть</span>
+                  <svg class="w-3.5 h-3.5 aside-collapse-arrow transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+                </button>
+              </div>
             </div>
             
-            <p class="text-[11px] text-slate-400 mb-3 leading-relaxed">
-              Краткая суть важных событий дня в одной емкой фразе:
-            </p>
+            <div class="aside-collapsible-body space-y-3">
+              <p class="text-[11px] text-slate-400 mb-3 leading-relaxed">
+                Краткая суть важных событий дня в одной емкой фразе:
+              </p>
 
-            <div id="all-digest-items" class="space-y-2.5 max-h-[calc(100vh-14rem)] overflow-y-auto pr-1 scrollbar-thin">
-              <!-- Injected dynamically by JavaScript -->
+              <div id="all-digest-items" class="space-y-2.5 max-h-[300px] sm:max-h-[380px] lg:max-h-[calc(100vh-14rem)] overflow-y-auto pr-1 scrollbar-thin">
+                <!-- Injected dynamically by JavaScript -->
+              </div>
             </div>
           </div>
         </aside>
 
         <!-- Aside Sidebar: Programming Analytics & Deep Dive (Shown ONLY on IT category) -->
-        <aside id="programming-analytics-aside" style="display: none;" class="lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto pr-1">
+        <aside id="programming-analytics-aside" style="display: none;" class="order-1 lg:order-2 lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto pr-1 w-full aside-collapsible">
           
           <!-- ASIDE NAVIGATION SWITCHER TABS -->
           <div class="glass-panel p-1.5 rounded-2xl border border-slate-800 bg-slate-950/90 flex items-center gap-1.5 shadow-lg sticky top-0 z-20 backdrop-blur-md">
@@ -225,14 +233,21 @@
                   Топ-10 языков программирования
                 </h3>
               </div>
-              <span class="text-[10px] font-mono text-slate-400 bg-slate-900/80 px-2 py-1 rounded-lg border border-slate-800">TIOBE / Octo</span>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-mono text-slate-400 bg-slate-900/80 px-2 py-1 rounded-lg border border-slate-800">TIOBE / Octo</span>
+                <button type="button" onclick="toggleMobileAside('programming-analytics-aside')" class="lg:hidden px-2 py-1 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 text-xs font-semibold flex items-center gap-1 transition-all" title="Свернуть / Развернуть">
+                  <span class="aside-toggle-text text-[10px]">Свернуть</span>
+                  <svg class="w-3.5 h-3.5 aside-collapse-arrow transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+                </button>
+              </div>
             </div>
             
-            <p class="text-[11px] text-slate-400 mb-3 leading-relaxed">
-              Популярность и назначение. <span class="text-sky-400 font-semibold">Кликните по языку</span> для быстрой фильтрации новостей:
-            </p>
+            <div class="aside-collapsible-body space-y-3">
+              <p class="text-[11px] text-slate-400 mb-1 leading-relaxed">
+                Популярность и назначение. <span class="text-sky-400 font-semibold">Кликните по языку</span> для быстрой фильтрации новостей:
+              </p>
 
-            <div class="space-y-2 max-h-[520px] overflow-y-auto pr-1 scrollbar-thin">
+              <div class="space-y-2 max-h-[300px] sm:max-h-[380px] lg:max-h-[520px] overflow-y-auto pr-1 scrollbar-thin">
               
               <!-- 1. Python -->
               <div onclick="filterByLanguage('python')" class="aside-lang-card p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-amber-500/50 cursor-pointer transition-all hover:bg-slate-900/60 group" data-lang="python">
@@ -395,6 +410,7 @@
               </div>
 
             </div>
+            </div>
           </div>
 
           <!-- ASIDE BLOCK 2: DEEP DIVE (RISING STARS) -->
@@ -499,7 +515,7 @@
         </aside>
 
         <!-- Aside Sidebar: Esports & HLTV Ranking (Shown ONLY on Gaming category) -->
-        <aside id="esports-hltv-aside" style="display: none;" class="lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto pr-1">
+        <aside id="esports-hltv-aside" style="display: none;" class="order-1 lg:order-2 lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto pr-1 w-full aside-collapsible">
           <div class="glass-panel p-5 rounded-3xl border border-amber-500/25 bg-gradient-to-b from-slate-900/90 via-slate-950/90 to-slate-900/80 shadow-2xl relative overflow-hidden">
             <div class="absolute -right-8 -top-8 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
 
@@ -517,44 +533,50 @@
                 <button id="hltv-refresh-btn" type="button" onclick="loadHLTVRanking(true)" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 transition-colors border border-slate-700" title="Обновить с HLTV">
                   <svg id="hltv-refresh-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
                 </button>
+                <button type="button" onclick="toggleMobileAside('esports-hltv-aside')" class="lg:hidden px-2 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center gap-1 transition-all" title="Свернуть / Развернуть">
+                  <span class="aside-toggle-text text-[10px]">Свернуть</span>
+                  <svg class="w-3.5 h-3.5 aside-collapse-arrow transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+                </button>
               </div>
             </div>
 
-            <p class="text-[11px] text-slate-400 mb-2 leading-relaxed">
-              Кликните по команде для фильтрации новостей:
-            </p>
+            <div class="aside-collapsible-body space-y-3">
+              <p class="text-[11px] text-slate-400 mb-2 leading-relaxed">
+                Кликните по команде для фильтрации новостей:
+              </p>
 
-            <!-- Priority Quick Filter Chips -->
-            <div class="mb-3 p-2.5 rounded-2xl bg-slate-950/70 border border-amber-500/20 space-y-1.5">
-              <div class="flex items-center justify-between">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1">
-                  <span>⭐</span> <span>Приоритетные темы:</span>
+              <!-- Priority Quick Filter Chips -->
+              <div class="mb-3 p-2.5 rounded-2xl bg-slate-950/70 border border-amber-500/20 space-y-1.5">
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1">
+                    <span>⭐</span> <span>Приоритетные темы:</span>
+                  </span>
+                  <button type="button" onclick="filterEsportsByTag('all')" class="text-[10px] text-slate-400 hover:text-white underline">Все новости</button>
+                </div>
+                <div class="flex flex-wrap gap-1.5">
+                  <button type="button" onclick="filterEsportsByTag('s1mple')" class="esports-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30">s1mple</button>
+                  <button type="button" onclick="filterEsportsByTag('navi')" class="esports-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30">NaVi</button>
+                  <button type="button" onclick="filterEsportsByTag('bcgame')" class="esports-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30">BC.Game</button>
+                  <button type="button" onclick="filterEsportsByTag('fut')" class="esports-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30">FUT</button>
+                </div>
+              </div>
+
+              <!-- Dynamic Teams List -->
+              <div id="esports-teams-list" class="space-y-1.5 max-h-[300px] sm:max-h-[380px] lg:max-h-[520px] overflow-y-auto pr-1 scrollbar-thin">
+                <div class="text-xs text-slate-400 p-4 text-center">Загрузка рейтинга HLTV...</div>
+              </div>
+
+              <!-- Official HLTV link bar -->
+              <div class="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+                <span class="text-slate-400 flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>Официальный источник:</span>
                 </span>
-                <button type="button" onclick="filterEsportsByTag('all')" class="text-[10px] text-slate-400 hover:text-white underline">Все новости</button>
+                <a href="https://www.hltv.org/valve-ranking/teams/2026/september/20" target="_blank" rel="noopener noreferrer" class="hltv-official-link font-bold text-amber-400 hover:text-amber-300 inline-flex items-center gap-1 hover:underline transition-colors" title="Перейти к рейтингу Valve на официальном сайте HLTV">
+                  <span>Valve Ranking на HLTV.org</span>
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
+                </a>
               </div>
-              <div class="flex flex-wrap gap-1.5">
-                <button type="button" onclick="filterEsportsByTag('s1mple')" class="esports-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30">s1mple</button>
-                <button type="button" onclick="filterEsportsByTag('navi')" class="esports-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30">NaVi</button>
-                <button type="button" onclick="filterEsportsByTag('bcgame')" class="esports-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30">BC.Game</button>
-                <button type="button" onclick="filterEsportsByTag('fut')" class="esports-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30">FUT</button>
-              </div>
-            </div>
-
-            <!-- Dynamic Teams List -->
-            <div id="esports-teams-list" class="space-y-1.5 max-h-[520px] overflow-y-auto pr-1 scrollbar-thin">
-              <div class="text-xs text-slate-400 p-4 text-center">Загрузка рейтинга HLTV...</div>
-            </div>
-
-            <!-- Official HLTV link bar -->
-            <div class="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
-              <span class="text-slate-400 flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Официальный источник:</span>
-              </span>
-              <a href="https://www.hltv.org/valve-ranking/teams/2026/september/20" target="_blank" rel="noopener noreferrer" class="hltv-official-link font-bold text-amber-400 hover:text-amber-300 inline-flex items-center gap-1 hover:underline transition-colors" title="Перейти к рейтингу Valve на официальном сайте HLTV">
-                <span>Valve Ranking на HLTV.org</span>
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
-              </a>
             </div>
 
           </div>
