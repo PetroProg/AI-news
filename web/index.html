@@ -1902,7 +1902,14 @@
         .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
         .replace(/\*\*|__/g, '')
         .replace(/\*|_/g, '')
-        .replace(/^[\s💀🚨🔥⚡️👉•\*\-]+/g, '')
+        // Strip emojis, pictographs, flags (surrogate pairs) and symbols
+        .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]|[\u2600-\u27BF\u2B00-\u2BFF\u2190-\u21FF\u2300-\u23FF\uFE00-\uFE0F\u200D\u200B-\u200F]/g, '')
+        // Strip country code prefixes (FR, TR, UA, EU, etc.)
+        .replace(/^(?:FR|TR|UA|EU|RU|DK|BR|US|DE|PL|KZ|NA|SA)\s+/i, '')
+        .replace(/\b(?:eu|ua|fr|tr|ru|dk|br|us)\s+(vitality|navi|spirit|astralis|furia|faze|mouz|falcons|g2|virtus\.pro|heroic|liquid|complexity|mongolz|aurora|xantares|zywoo|s1mple|donk|m0nesy)\b/gi, '$1')
+        .replace(/\s+это$/i, '')
+        .replace(/^[ \t\-\:\,\.\!\?\|—–«»\"]+/, '')
+        .replace(/[ \t\-\:\,\|—–«»\"]+$/, '')
         .replace(/\s+/g, ' ')
         .trim();
     }
@@ -2661,7 +2668,7 @@
     function formatShortSummary(text) {
       if (!text) return 'Краткое резюме формируется.';
       const clean = cleanText(text).trim();
-      const sentences = clean.match(/[^.!?]+[.!?]+(?:\s|$)/g);
+      const sentences = clean.match(/(?:[^.!?]|\d\.\d)+[.!?]+(?:\s|$)/g);
       if (sentences && sentences.length > 0) {
         return sentences.slice(0, 3).join('').trim();
       }

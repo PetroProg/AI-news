@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.ai.client import OllamaClient
+from app.processing.cleaner import ContentCleaner
 from app.database.models import Article, ArticleStatus, Category, Summary
 
 logger = logging.getLogger("news_ai.services.summarizer")
@@ -131,6 +132,14 @@ class SummarizerService:
             elif has_priority and not is_meme_or_ad and score >= 5.5:
                 score = min(10.0, max(score, 8.5))
                 logger.info("Article ID %d matched priority keywords! Boosted score to %.1f", article.id, score)
+
+            # If LLM returned a Russian title and original had Latin, update title
+            if analysis.russian_title and len(analysis.russian_title.strip()) > 3:
+                has_latin = any(c.isascii() and c.isalpha() for c in (article.title or ""))
+                if has_latin:
+                    article.title = ContentCleaner.clean_title(analysis.russian_title)
+            else:
+                article.title = ContentCleaner.clean_title(article.title)
 
             article.importance_score = score
 

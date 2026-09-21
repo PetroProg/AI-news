@@ -6,6 +6,7 @@ from telethon import TelegramClient
 from telethon.tl.types import Channel
 
 from app.collectors.base import BaseCollector, CollectedItem
+from app.processing.cleaner import ContentCleaner
 from app.config import get_settings
 
 logger = logging.getLogger("news_ai.collectors.telegram")
@@ -52,7 +53,8 @@ class TelegramCollector(BaseCollector):
                         continue
 
                     lines = [line.strip() for line in text.split("\n") if line.strip()]
-                    title = lines[0] if lines else "Новость из Telegram"
+                    raw_title = lines[0] if lines else "Новость из Telegram"
+                    title = ContentCleaner.clean_title(raw_title)
                     if len(title) > 150:
                         title = title[:147] + "..."
 
