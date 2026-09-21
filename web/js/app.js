@@ -1213,9 +1213,8 @@
       }
 
       // Safeguard: Never display untranslated Ukrainian content in the news feed
-      const rawTitle = item.title || '';
       const rawSummary = (item.summaries && item.summaries[state.lang]) || item.summary || '';
-      if (/[ієїґІЄЇҐ]/.test(rawTitle) || /[ієїґІЄЇҐ]/.test(rawSummary)) {
+      if (/[ієїґІЄЇҐ]/.test(item.title || '') || /[ієїґІЄЇҐ]/.test(rawSummary)) {
         return false;
       }
 
