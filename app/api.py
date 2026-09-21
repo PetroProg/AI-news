@@ -37,6 +37,12 @@ WEB_DIR = BASE_DIR / "web"
 MEDIA_DIR = BASE_DIR / "media"
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/media", StaticFiles(directory=str(MEDIA_DIR)), name="media")
+CSS_DIR = WEB_DIR / "css"
+JS_DIR = WEB_DIR / "js"
+CSS_DIR.mkdir(parents=True, exist_ok=True)
+JS_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/css", StaticFiles(directory=str(CSS_DIR)), name="css")
+app.mount("/js", StaticFiles(directory=str(JS_DIR)), name="js")
 
 DIAGRAM_KEYWORDS = [
     "benchmark", "chart", "diagram", "graph", "perf", "comparison", "speedup",
