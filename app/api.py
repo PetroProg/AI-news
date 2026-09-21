@@ -281,11 +281,8 @@ async def get_news_feed(
     stmt = (
         select(Article)
         .options(selectinload(Article.summary), selectinload(Article.category), selectinload(Article.source))
-        .where(Article.status.in_([ArticleStatus.SUMMARIZED, ArticleStatus.REPORTED, ArticleStatus.PROCESSED]))
-        .order_by(
-            case((Article.status.in_([ArticleStatus.SUMMARIZED, ArticleStatus.REPORTED]), 0), else_=1),
-            Article.published_at.desc()
-        )
+        .where(Article.status.in_([ArticleStatus.SUMMARIZED, ArticleStatus.REPORTED]))
+        .order_by(Article.published_at.desc())
         .limit(limit)
     )
     res = await session.execute(stmt)
@@ -369,6 +366,19 @@ async def get_news_feed(
             score = max(score, 9.0)
         elif is_priority and score >= 6.0 and score < 8.5:
             score = 8.5
+
+        # Strict rule: user is not interested in news below 5.1
+        if score < 5.1:
+            continue
+
+        # Safeguard: Never display untranslated Ukrainian titles in the feed
+        has_ukr_letters = any(c in "ієїґІЄЇҐ" for c in (art.title or ""))
+        if has_ukr_letters and (cat_name == "Украина" or "novynaukr" in source_combined):
+            continue
+
+        # Require a valid AI summary
+        if not art.summary or not art.summary.short_summary:
+            continue
 
         news_items.append({
             "id": art.id,

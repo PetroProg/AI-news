@@ -154,14 +154,20 @@ class SummarizerService:
                 score = min(10.0, max(score, 8.5))
                 logger.info("Article ID %d matched priority keywords! Boosted score to %.1f", article.id, score)
 
-            # If LLM returned a Russian title and original had Latin, update title
+            # If LLM returned a Russian title, ensure translation for Latin/Ukrainian or Ukraine category
+            is_ukr_source = (category.name == "Украина") or ("novynaukr" in combined_source)
             if analysis.russian_title and len(analysis.russian_title.strip()) > 3:
                 has_latin = any(c.isascii() and c.isalpha() for c in (article.title or ""))
                 has_ukrainian = any(c in "ієїґІЄЇҐ" for c in (article.title or ""))
-                if has_latin or has_ukrainian:
+                if has_latin or has_ukrainian or is_ukr_source:
                     article.title = ContentCleaner.clean_title(analysis.russian_title)
             else:
                 article.title = ContentCleaner.clean_title(article.title)
+
+            if is_ukr_source and any(c in "ієїґІЄЇҐ" for c in (article.title or "")) and analysis.short_summary:
+                first_sent = analysis.short_summary.split('.')[0].strip()
+                if len(first_sent) > 10 and not any(c in "ієїґІЄЇҐ" for c in first_sent):
+                    article.title = ContentCleaner.clean_title(first_sent)
 
             article.importance_score = score
 

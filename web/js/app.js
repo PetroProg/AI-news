@@ -1205,7 +1205,26 @@
         return false;
       }
 
-      const score = item.importance_score ? Number(item.importance_score) : 5.0;
+      const score = item.importance_score ? Number(item.importance_score) : 0;
+
+      // Strict user constraint: News below 5.1 are not interesting
+      if (score < 5.1) {
+        return false;
+      }
+
+      // Safeguard: Never display untranslated Ukrainian content in the news feed
+      const rawTitle = item.title || '';
+      const rawSummary = (item.summaries && item.summaries[state.lang]) || item.summary || '';
+      if (/[ієїґІЄЇҐ]/.test(rawTitle) || /[ієїґІЄЇҐ]/.test(rawSummary)) {
+        return false;
+      }
+
+      // Require a valid AI summary
+      const hasSummary = Boolean((item.summaries && item.summaries[state.lang]) || item.summary);
+      if (!hasSummary) {
+        return false;
+      }
+
       const isAll = (!targetCategory || targetCategory === 'all' || targetCategory === 'Все');
 
       // 1. "Все" category: only score >= 8.0 in the main feed (suppress operational micro-alerts)
