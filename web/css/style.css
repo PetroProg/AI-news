@@ -285,3 +285,23 @@
       }
     }
 
+    /* Ukraine Category & Attack Analysis Widget */
+    .border-ukraine-glow {
+      border-color: rgba(56, 189, 248, 0.4);
+      box-shadow: 0 0 25px rgba(14, 165, 233, 0.12), inset 0 0 15px rgba(245, 158, 11, 0.05);
+    }
+
+    .attack-timeline-track {
+      position: relative;
+    }
+    .attack-timeline-track::before {
+      content: '';
+      position: absolute;
+      left: 1rem;
+      top: 0.5rem;
+      bottom: 0.5rem;
+      width: 2px;
+      background: linear-gradient(to bottom, rgba(239, 68, 68, 0.5), rgba(245, 158, 11, 0.3), rgba(56, 189, 248, 0.2));
+    }
+
+

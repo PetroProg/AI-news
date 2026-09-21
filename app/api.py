@@ -1,3 +1,4 @@
+from datetime import datetime, timezone, timedelta
 import time
 from pathlib import Path
 from typing import Any, Dict, List
@@ -15,7 +16,7 @@ from app.processing.cleaner import ContentCleaner
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import case, func, select
+from sqlalchemy import case, func, select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -161,6 +162,8 @@ def detect_diagram_image(raw_content: str, images: list[str]) -> tuple[str | Non
 def infer_category_from_source(source_name: str) -> str:
     """Infer topic category from source name if AI category is not assigned yet."""
     s = source_name.lower()
+    if any(k in s for k in ["novynaukr", "украин", "украина", "україна"]):
+        return "Украина"
     if any(k in s for k in ["csgo", "cs3", "clashroyalepin", "clashroyale", "hltv", "game", "игры", "киберспорт"]):
         return "CS2"
     if any(k in s for k in ["python", "rust", "golang", "go", "c++", "tproger", "habr", "proglib", "dev"]):
@@ -303,10 +306,13 @@ async def get_news_feed(
         title_lower = (art.title or "").lower()
         content_lower = (art.cleaned_content or raw_text).lower()
 
+        is_ukraine = any(k in source_combined for k in ["novynaukr", "украин", "украина", "україна"]) or (raw_cat and "украин" in raw_cat.lower())
         is_gaming = any(k in source_combined for k in ["csgo", "cs3", "clashroyalepin", "hltv", "game", "киберспорт"]) or \
                     any(k in title_lower for k in GAMING_INDICATORS)
 
-        if is_gaming:
+        if is_ukraine:
+            cat_name = "Украина"
+        elif is_gaming:
             cat_name = "CS2"
         elif raw_cat:
             cat_name = raw_cat
@@ -330,10 +336,34 @@ async def get_news_feed(
         if is_final_or_winner and "финал" not in matched_kws:
             matched_kws.append("финал")
 
-        is_priority = (len(matched_kws) > 0 or is_final_or_winner) and not is_meme_or_ad
+        is_operational_alert = False
+        if cat_name == "Украина":
+            is_operational_alert = any(ping in text_for_check for ping in [
+                "курсом на", "курс на", "напрямку", "в напрямку", "в сторону", "в направлении",
+                "летить дрон", "летит дрон", "тривога в", "тревога в", "загроза балістики", "угроза баллистики",
+                "чисто в", "відбій", "отбой", "пуски шахедів", "пуски шахедов"
+            ]) and len(text_for_check) < 300
+
+        has_ukr_priority = (cat_name == "Украина") and not is_operational_alert and any(kw in text_for_check for kw in [
+            "дніпро", "днепр", "дніпров", "оон", "нато", "nato", "тцк", "блекаут", "блэкаут",
+            "збито", "сбито", "повітряні сили", "воздушные силы", "генштаб"
+        ])
+        if has_ukr_priority and any(k in text_for_check for k in ["дніпро", "днепр"]):
+            if "дніпро" not in matched_kws:
+                matched_kws.append("дніпро")
+        if has_ukr_priority and any(k in text_for_check for k in ["оон", "нато", "nato"]):
+            if "оон/нато" not in matched_kws:
+                matched_kws.append("оон/нато")
+        if has_ukr_priority and "тцк" in text_for_check:
+            if "тцк" not in matched_kws:
+                matched_kws.append("тцк")
+
+        is_priority = (len(matched_kws) > 0 or is_final_or_winner or has_ukr_priority) and not is_meme_or_ad and not is_operational_alert
 
         score = float(art.importance_score or 5.0)
-        if is_meme_or_ad and score > 4.0:
+        if is_operational_alert:
+            score = min(score, 5.0)
+        elif is_meme_or_ad and score > 4.0:
             score = 3.0
         elif is_final_or_winner and not is_meme_or_ad:
             score = max(score, 9.0)
@@ -357,6 +387,7 @@ async def get_news_feed(
             "video_url": primary_video,
             "has_diagram": is_diagram,
             "is_priority": is_priority,
+            "is_operational_alert": is_operational_alert,
             "priority_keywords": matched_kws,
         })
 
@@ -439,4 +470,126 @@ async def trigger_news_cleanup(
     """Ручной запуск автоматической очистки новостей старше указанного количества дней (по умолчанию 7)."""
     count = await cleanup_old_articles(days=days)
     return {"success": True, "deleted_count": count, "days": days}
+
+
+
+@app.get("/api/ukraine/attacks-summary")
+async def get_ukraine_attacks_summary(session: AsyncSession = Depends(get_db_session)) -> Dict[str, Any]:
+    """Оперативная сводка и анализ атак за последние 24 часа из канала @NovynaUKR."""
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+    stmt = (
+        select(Article)
+        .options(selectinload(Article.summary), selectinload(Article.source))
+        .where(
+            Article.published_at >= cutoff,
+            or_(
+                Article.source.has(Source.name.ilike("%NovynaUKR%")),
+                Article.source.has(Source.url.ilike("%NovynaUKR%")),
+                Article.original_url.ilike("%NovynaUKR%")
+            )
+        )
+        .order_by(Article.published_at.asc())
+    )
+    res = await session.execute(stmt)
+    articles = res.scalars().all()
+
+    attack_events = []
+    drones_count = 0
+    missiles_count = 0
+    ballistics_count = 0
+    air_defense_count = 0
+    hotspots = set()
+    times = []
+
+    city_keywords = {
+        "Дніпро": ["дніпро", "днепр", "дніпропетров"],
+        "Київ": ["київ", "киев", "київщин", "киевск"],
+        "Харків": ["харків", "харьков", "харківщин"],
+        "Одеса": ["одес", "одесс", "одещин"],
+        "Запоріжжя": ["запоріж", "запорож"],
+        "Полтава": ["полтав", "кременчу"],
+        "Суми": ["сум", "сумщин"],
+        "Миколаїв": ["микола", "никола"],
+        "Хмельницький": ["хмельниц", "старокост"],
+        "Вінниця": ["вінниц", "винниц"]
+    }
+
+    for art in articles:
+        txt = ((art.title or "") + " " + (art.cleaned_content or "")).lower()
+        has_attack_keyword = any(kw in txt for kw in [
+            "шахед", "дрон", "бпла", "ракета", "балістик", "баллистик", "тривога", "тревога",
+            "вибух", "взрыв", "удар", "приліт", "прилет", "обстріл", "обстрел", "ппо", "пво", "збито", "сбито"
+        ])
+        if not has_attack_keyword:
+            continue
+
+        if art.published_at:
+            times.append(art.published_at)
+
+        if any(k in txt for k in ["шахед", "дрон", "бпла", "камикадзе"]):
+            drones_count += 1
+        if any(k in txt for k in ["балістик", "баллистик", "іскандер", "кинжал", "кинджал"]):
+            ballistics_count += 1
+        elif any(k in txt for k in ["ракета", "ракет", "х-101", "калібр"]):
+            missiles_count += 1
+        if any(k in txt for k in ["ппо", "пво", "збит", "сбит"]):
+            air_defense_count += 1
+
+        for city, keys in city_keywords.items():
+            if any(k in txt for k in keys):
+                hotspots.add(city)
+
+        attack_events.append({
+            "id": art.id,
+            "time": art.published_at.strftime("%H:%M") if art.published_at else "",
+            "title": ContentCleaner.clean_title(art.title),
+            "summary": art.summary.short_summary if art.summary else (art.title or ""),
+            "url": art.original_url or (f"https://t.me/NovynaUKR/{art.external_id.split('_')[-1]}" if art.external_id else "#")
+        })
+
+    time_window_str = "За последние 24 часа"
+    if times:
+        start_time = min(times).strftime("%H:%M")
+        end_time = max(times).strftime("%H:%M")
+        time_window_str = f"с {start_time} до {end_time}"
+
+    summary_parts = []
+    if times:
+        summary_parts.append(f"В период {time_window_str} зафиксирована активность атак по территории Украины.")
+    else:
+        summary_parts.append("За последние 24 часа активных сообщений об атаках не зафиксировано.")
+
+    if ballistics_count > 0 or missiles_count > 0:
+        missile_types = []
+        if ballistics_count > 0:
+            missile_types.append("баллистического вооружения")
+        if missiles_count > 0:
+            missile_types.append("крылатых ракет")
+        summary_parts.append(f"Отмечены пуски {' и '.join(missile_types)}.")
+
+    if drones_count > 0:
+        summary_parts.append(f"Фиксировались группы ударных БПЛА типа «Shahed» ({drones_count} сигналов).")
+
+    if hotspots:
+        top_cities = list(hotspots)[:5]
+        summary_parts.append(f"Основные направления: {', '.join(top_cities)}.")
+
+    if air_defense_count > 0:
+        summary_parts.append("Силы ПВО вели активную боевую работу по уничтожению воздушных целей.")
+
+    return {
+        "status": "active" if times else "quiet",
+        "attack_window": time_window_str,
+        "summary_text": " ".join(summary_parts),
+        "stats": {
+            "drones_signals": drones_count,
+            "ballistics_signals": ballistics_count,
+            "missiles_signals": missiles_count,
+            "air_defense_signals": air_defense_count,
+            "total_alerts": len(attack_events)
+        },
+        "hotspots": list(hotspots),
+        "recent_signals": attack_events[-8:][::-1],
+        "updated_at": datetime.now(timezone.utc).strftime("%d.%m.%Y %H:%M UTC")
+    }
 

@@ -589,6 +589,10 @@
         'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=800&q=80',
         'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80'
       ],
+      ukraine: [
+        'https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=800&q=80'
+      ],
       linux: [
         'https://images.unsplash.com/photo-1629654297299-c8506221ca97?auto=format&fit=crop&w=800&q=80',
         'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=800&q=80',
@@ -640,6 +644,9 @@
             t.includes('cs2') || t.includes('cs:go') || t.includes('starladder') || t.includes('vitality') || t.includes('navi') || t.includes('s1mple') || t.includes('m0nesy') || t.includes('donk') || t.includes('clash royale') || t.includes('bcgame') || t.includes('fut')) {
           return 'CS2';
         }
+        if (s.includes('novynaukr') || s.includes('novyna_ukr')) {
+          return 'Украина';
+        }
       }
       if (!rawCat) return 'IT';
       let c = cleanText(rawCat);
@@ -648,6 +655,9 @@
       const lower = c.toLowerCase();
       if (lower.includes('gaming') || lower.includes('игры') || lower.includes('sport') || lower.includes('киберспорт') || lower.includes('csgo') || lower.includes('navi') || lower.includes('vitality') || lower.includes('starladder') || lower.includes('cs2')) {
         return 'CS2';
+      }
+      if (lower.includes('украин') || lower.includes('україна') || lower.includes('ukraine') || lower.includes('novynaukr')) {
+        return 'Украина';
       }
 
       const map = {
@@ -669,7 +679,10 @@
         'ai': 'Искусственный интеллект',
         'ai & нейросети': 'Искусственный интеллект',
         'science': 'Наука',
-        'lifestyle': 'Тренды & Стиль'
+        'lifestyle': 'Тренды & Стиль',
+        'украина': 'Украина',
+        'україна': 'Украина',
+        'ukraine': 'Украина'
       };
 
       if (map[lower]) return map[lower];
@@ -681,6 +694,7 @@
 
     function getCategoryEmoji(catName) {
       const c = (catName || '').toUpperCase();
+      if (c.includes('УКРАИН') || c.includes('УКРАЇН') || c.includes('UKRAINE')) return '🇺🇦';
       if (c.includes('CS') || c.includes('GAME') || c.includes('ИГР') || c.includes('КИБЕРСПОРТ')) return '🎮';
       if (c.includes('АНАЛИТИК') || c.includes('DEV') || c.includes('ПРОГРАММ') || c.includes('IT')) return '💻';
       if (c.includes('LINUX') || c.includes('ИНФРАСТРУКТУРА') || c.includes('СЕРВЕР')) return '🐧';
@@ -703,6 +717,8 @@
 
       if (text.includes('cs') || text.includes('game') || text.includes('игр')) {
         pool = THEMATIC_IMAGES.csgo;
+      } else if (text.includes('украин') || text.includes('україна') || text.includes('ukraine') || text.includes('novynaukr')) {
+        pool = THEMATIC_IMAGES.ukraine;
       } else if (text.includes('linux') || text.includes('opennet') || text.includes('сервер')) {
         pool = THEMATIC_IMAGES.linux;
       } else if (text.includes('безопас') || text.includes('взлом') || text.includes('cve')) {
@@ -999,6 +1015,102 @@
       renderNews();
     };
 
+    let selectedUkraineTag = 'all';
+
+    window.filterUkraineByTag = function(tag) {
+      if (selectedUkraineTag && selectedUkraineTag.toLowerCase() === tag.toLowerCase() && tag !== 'all') {
+        selectedUkraineTag = 'all';
+      } else {
+        selectedUkraineTag = tag;
+      }
+
+      // Update chip styling in aside
+      document.querySelectorAll('.ukraine-chip').forEach(btn => {
+        const chipTag = (btn.getAttribute('data-ukr-tag') || '').toLowerCase();
+        if (chipTag === selectedUkraineTag.toLowerCase()) {
+          btn.className = 'ukraine-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-sky-500 text-white border border-sky-400 shadow-md shadow-sky-500/20';
+        } else {
+          btn.className = 'ukraine-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border border-sky-500/30';
+        }
+      });
+
+      renderNews();
+    };
+
+    let lastUkraineSummaryFetch = 0;
+    async function loadUkraineAttacksSummary(force = false) {
+      const now = Date.now();
+      if (!force && (now - lastUkraineSummaryFetch < 60000)) {
+        return;
+      }
+      const refreshIcon = document.getElementById('ukraine-refresh-icon');
+      if (refreshIcon) refreshIcon.classList.add('animate-spin');
+
+      try {
+        const res = await fetch('/api/ukraine/attacks-summary');
+        if (res.ok) {
+          const data = await res.json();
+          lastUkraineSummaryFetch = Date.now();
+
+          const badgeEl = document.getElementById('attack-window-badge');
+          const summaryEl = document.getElementById('attack-summary-text');
+          const ballisticsEl = document.getElementById('attack-stat-ballistics');
+          const dronesEl = document.getElementById('attack-stat-drones');
+          const pvoEl = document.getElementById('attack-stat-pvo');
+          const listEl = document.getElementById('ukraine-signals-list');
+
+          if (badgeEl) {
+            badgeEl.textContent = data.attack_window || 'За последние 24ч';
+          }
+          if (summaryEl) {
+            summaryEl.textContent = data.summary_text || 'Оперативная обстановка стабильная.';
+          }
+          if (ballisticsEl) {
+            const bCount = (data.stats && ((data.stats.ballistics_signals || 0) + (data.stats.missiles_signals || 0))) || 0;
+            ballisticsEl.textContent = bCount;
+          }
+          if (dronesEl) {
+            dronesEl.textContent = (data.stats && data.stats.drones_signals) || 0;
+          }
+          if (pvoEl) {
+            pvoEl.textContent = (data.stats && data.stats.air_defense_signals) || 0;
+          }
+
+          if (listEl) {
+            if (data.recent_signals && data.recent_signals.length > 0) {
+              listEl.innerHTML = data.recent_signals.map(sig => {
+                const sTitle = cleanText(sig.title || sig.summary || 'Оперативный сигнал');
+                const sTime = sig.time || 'Сегодня';
+                const sUrl = sig.url || 'https://t.me/NovynaUKR';
+                return `
+                  <a href="${sUrl}" target="_blank" rel="noopener noreferrer" class="block p-2 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800/70 hover:border-sky-500/30 transition-all text-xs group">
+                    <div class="flex items-center justify-between text-[10px] text-slate-400 mb-1">
+                      <span class="font-mono text-amber-400 font-bold bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">${sTime}</span>
+                      <span class="text-sky-400 group-hover:underline flex items-center gap-0.5">В канал ↗</span>
+                    </div>
+                    <div class="text-slate-200 line-clamp-2 leading-relaxed text-[11px] group-hover:text-white font-medium">${sTitle}</div>
+                  </a>
+                `;
+              }).join('');
+            } else {
+              listEl.innerHTML = `
+                <div class="p-3 text-center text-xs text-slate-400 bg-slate-900/40 rounded-xl border border-slate-800/60">
+                  <span>За последние 24 часа активных сигналов атак не зафиксировано</span>
+                </div>
+              `;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Ошибка загрузки сводки атак Украины:', err);
+      } finally {
+        if (refreshIcon) {
+          setTimeout(() => refreshIcon.classList.remove('animate-spin'), 400);
+        }
+      }
+    }
+    window.loadUkraineAttacksSummary = loadUkraineAttacksSummary;
+
     window.setDynamicCategory = function(cat) {
       state.newsCategoryFilter = (cat === 'all' || cat === 'Все') ? 'all' : cat;
       const isAll = (state.newsCategoryFilter === 'all' || state.newsCategoryFilter === 'Все' || !state.newsCategoryFilter);
@@ -1017,10 +1129,17 @@
                         state.newsCategoryFilter.toLowerCase().includes('киберспорт') || 
                         state.newsCategoryFilter.toLowerCase().includes('gaming') || 
                         state.newsCategoryFilter.toLowerCase().includes('cs'));
+
+      const isUkraine = !isAll && 
+                        (state.newsCategoryFilter === 'Украина' || 
+                         state.newsCategoryFilter.toLowerCase().includes('украин') || 
+                         state.newsCategoryFilter.toLowerCase().includes('україна') || 
+                         state.newsCategoryFilter.toLowerCase().includes('ukraine'));
       
       const itAside = document.getElementById('programming-analytics-aside');
       const digestAside = document.getElementById('all-digest-aside');
       const esportsAside = document.getElementById('esports-hltv-aside');
+      const ukraineAside = document.getElementById('ukraine-attacks-aside');
       const langBar = document.getElementById('language-selection-bar');
       const mainCol = document.getElementById('news-main-column');
 
@@ -1033,11 +1152,14 @@
       if (esportsAside) {
         esportsAside.style.display = isGaming ? 'block' : 'none';
       }
+      if (ukraineAside) {
+        ukraineAside.style.display = isUkraine ? 'block' : 'none';
+      }
       if (langBar) {
         langBar.style.display = isIT ? 'flex' : 'none';
       }
       if (mainCol) {
-        if (isIT || isAll || isGaming) {
+        if (isIT || isAll || isGaming || isUkraine) {
           mainCol.className = 'order-2 lg:order-1 lg:col-span-7 xl:col-span-8 space-y-6 w-full';
         } else {
           mainCol.className = 'order-2 lg:order-1 lg:col-span-12 space-y-6 w-full';
@@ -1046,6 +1168,9 @@
 
       if (isGaming) {
         loadHLTVRanking();
+      }
+      if (isUkraine) {
+        loadUkraineAttacksSummary();
       }
 
       // If switching away from IT, reset language filter
@@ -1056,6 +1181,9 @@
       }
       if (!isGaming && selectedEsportsTag !== 'all') {
         selectedEsportsTag = 'all';
+      }
+      if (!isUkraine && selectedUkraineTag !== 'all') {
+        selectedUkraineTag = 'all';
       }
 
       renderCategoryPills();
@@ -1080,8 +1208,9 @@
       const score = item.importance_score ? Number(item.importance_score) : 5.0;
       const isAll = (!targetCategory || targetCategory === 'all' || targetCategory === 'Все');
 
-      // 1. "Все" category: only score >= 8.0 in the main feed
+      // 1. "Все" category: only score >= 8.0 in the main feed (suppress operational micro-alerts)
       if (isAll) {
+        if (item.is_operational_alert) return false;
         return score >= 8.0;
       }
 
@@ -1155,6 +1284,34 @@
           if ((target === 'c' || target === 'c ') && !fullText.includes(' c ') && !fullText.includes('ядро') && !fullText.includes('linux') && !fullText.includes('kernel') && !fullText.includes('embedded')) return false;
           if (target === 'php' && !fullText.includes('php') && !fullText.includes('laravel') && !fullText.includes('symfony') && !fullText.includes('wordpress')) return false;
           if (target === 'kotlin' && !fullText.includes('kotlin') && !fullText.includes('swift') && !fullText.includes('android') && !fullText.includes('ios')) return false;
+        }
+      }
+
+      // 5. Strict Quality Filter & Tag Filter for Ukraine:
+      const isUkraineCategory = targetCatLower === 'украина' || targetCatLower.includes('украин') || targetCatLower.includes('україна') || targetCatLower.includes('ukraine');
+      if (isUkraineCategory) {
+        // Suppress micro-alerts: do not show tactical drone/alert spams in main news feed (they are in the Attacks Aside)
+        if (item.is_operational_alert && score < 6.0) {
+          return false;
+        }
+
+        // Sub-filter by tag
+        if (selectedUkraineTag && selectedUkraineTag !== 'all') {
+          const fullText = ((item.title || '') + ' ' + (item.summary || '') + ' ' + (item.why_it_matters || '') + ' ' + (item.source || '')).toLowerCase();
+          const tag = selectedUkraineTag.toLowerCase();
+          if (tag === 'дніпро' || tag === 'днепр') {
+            if (!fullText.includes('дніпр') && !fullText.includes('днепр')) return false;
+          } else if (tag === 'oon_nato') {
+            if (!fullText.includes('оон') && !fullText.includes('нато') && !fullText.includes('nato')) return false;
+          } else if (tag === 'tck') {
+            if (!fullText.includes('тцк') && !fullText.includes('военкомат') && !fullText.includes('мобілізац') && !fullText.includes('мобилизац')) return false;
+          } else if (tag === 'energy') {
+            if (!fullText.includes('энерг') && !fullText.includes('енерг') && !fullText.includes('свет') && !fullText.includes('світл') && !fullText.includes('блэкаут') && !fullText.includes('блекаут') && !fullText.includes('дтек') && !fullText.includes('дтэк') && !fullText.includes('укрэнерго') && !fullText.includes('укренерго')) return false;
+          } else if (tag === 'pvo') {
+            if (!fullText.includes('пво') && !fullText.includes('збито') && !fullText.includes('сбито') && !fullText.includes('сбиты') && !fullText.includes('повітряних сил') && !fullText.includes('воздушных сил')) return false;
+          } else {
+            if (!fullText.includes(tag)) return false;
+          }
         }
       }
 
@@ -1426,6 +1583,9 @@
               rawTitle.includes('уязвим') || rawTitle.includes('cve-')) {
             return false;
           }
+          if (item.is_operational_alert) {
+            return false;
+          }
           const score = item.importance_score ? Number(item.importance_score) : 5.0;
           return score >= 6.0 && score < 8.0;
         });
@@ -1485,7 +1645,10 @@
         const isPriority = article.is_priority || 
           ['simple', 's1mple', 'navi', 'bcgame', 'bc.game', 'fut'].some(kw => 
             ((article.title || '') + ' ' + (article.summary || '') + ' ' + (article.why_it_matters || '')).toLowerCase().includes(kw)
-          );
+          ) ||
+          (['дніпро', 'днепр', 'оон', 'нато', 'nato', 'тцк'].some(kw =>
+            ((article.title || '') + ' ' + (article.summary || '') + ' ' + (article.why_it_matters || '')).toLowerCase().includes(kw)
+          ) && (category === 'Украина' || ((article.source || '') + (article.url || '')).toLowerCase().includes('novynaukr')));
 
         const priorityBadge = isPriority
           ? `<span class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-amber-500/30 backdrop-blur-md text-amber-300 border border-amber-400/60 shadow-lg shadow-amber-500/25 flex items-center gap-1 animate-pulse">⭐ Приоритет</span>`
