@@ -12,7 +12,6 @@ from app.database.models import (
     Report,
     ReportArticle,
     ReportType,
-    Source,
 )
 from app.processing.cleaner import ContentCleaner
 
@@ -22,8 +21,7 @@ logger = logging.getLogger("news_ai.services.report")
 class ReportBuilderService:
     """Aggregates, ranks, filters, and formats curated daily digests."""
 
-    MIN_IMPORTANCE_THRESHOLD = 5.0
-    TOP_HIGHLIGHT_THRESHOLD = 7.5
+    MIN_IMPORTANCE_THRESHOLD = 8.0
 
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
@@ -61,84 +59,80 @@ class ReportBuilderService:
             select(func.count(Article.id)).where(Article.published_at >= cutoff)
         ) or len(articles)
 
-        top_articles: List[Article] = []
         categorized: Dict[str, List[Article]] = {}
 
         for art in articles:
             art.title = ContentCleaner.clean_title(art.title)
-            
-            if art.importance_score and art.importance_score >= self.TOP_HIGHLIGHT_THRESHOLD and len(top_articles) < 4:
-                top_articles.append(art)
-            else:
-                cat_name = art.category.name if art.category else "Technology"
-                categorized.setdefault(cat_name, []).append(art)
+            cat_name = art.category.name if art.category else "Технологии"
+            categorized.setdefault(cat_name, []).append(art)
 
         title_text = "🌅 УТРЕННИЙ ДАЙДЖЕСТ" if report_type == ReportType.MORNING else "🌃 ВЕЧЕРНИЙ ДАЙДЖЕСТ"
+        if report_type == ReportType.CUSTOM:
+            title_text = "⚡ АКТУАЛЬНЫЙ ДАЙДЖЕСТ"
+
         tz = ZoneInfo("Europe/Zurich")
         now_str = datetime.now(tz).strftime("%d.%m.%Y — %H:%M")
-        
+
         lines: List[str] = [
-            f"📰 *{title_text}*",
-            f"📅 {now_str}\n",
+            f"*{title_text}*",
+            f"📅 {now_str}",
+            "",
         ]
 
-        if top_articles:
-            lines.append("🔥 *ГЛАВНОЕ*")
-            for i, art in enumerate(top_articles, 1):
-                safe_title = art.title.replace("[", "(").replace("]", ")").replace("*", "").strip()
-                score_str = f" [🔥 {art.importance_score:.1f}]" if art.importance_score else ""
-                url = art.original_url or "#"
-                
-                lines.append(f"{i}. [{safe_title}]({url}){score_str}")
-                if art.summary and art.summary.short_summary:
-                    clean_sum = art.summary.short_summary.strip()
-                    lines.append(f"> {clean_sum}")
-                    if art.summary.why_it_matters:
-                        lines.append(f"> 💡 *Почему важно:* {art.summary.why_it_matters.strip()}")
-                lines.append("")
-
         cat_icons = {
+            "УКРАИНА": "🇺🇦",
             "LINUX": "🐧",
             "DEV": "💻",
             "DEVELOPMENT": "💻",
+            "IT": "💻",
+            "CS2": "🎮",
             "CS": "🎮",
             "GAMING": "🎮",
             "CYBERSPORT": "🎮",
             "AI": "🤖",
-            "TECH": "⚡",
+            "КИБЕРБЕЗОПАСНОСТЬ": "🛡",
             "SECURITY": "🛡",
+            "TECH": "⚡",
         }
 
-        # 3. Блок категорий с кликабельными ссылками и цитатами
+        # Вывод новостей строго по категориям
         for cat_name, cat_articles in categorized.items():
             clean_cat = cat_name.split("(")[0].strip().upper() or "ТЕХНОЛОГИИ"
-            
+
             icon = "📁"
             for key, emoji in cat_icons.items():
                 if key in clean_cat:
                     icon = emoji
                     break
 
-            lines.append(f"── {icon} *{clean_cat}* ─────────────────")
+            lines.append(f"*{icon} {clean_cat}*")
 
-            for art in cat_articles[:5]:
-                score = art.importance_score or 5.0
-                badge = "🔥" if score >= 7.5 else "•"
-                safe_title = art.title.replace("[", "(").replace("]", ")").replace("*", "").strip()
+            for art in cat_articles[:6]:
+                safe_title = (
+                    art.title.replace("[", "(")
+                    .replace("]", ")")
+                    .replace("*", "")
+                    .replace("_", "")
+                    .strip()
+                )
                 url = art.original_url or "#"
 
-                lines.append(f"{badge} [{safe_title}]({url})")
+                lines.append(f"• [{safe_title}]({url})")
 
                 if art.summary and art.summary.short_summary:
                     clean_summary = art.summary.short_summary.strip()
-                    quote_lines = "\n".join([f"> {l}" for l in clean_summary.split("\n") if l.strip()])
-                    lines.append(quote_lines)
+                    # Только одно четкое первое предложение
+                    first_sent = clean_summary.split(". ")[0].strip()
+                    if first_sent and not first_sent.endswith((".", "!", "?")):
+                        first_sent += "."
+                    first_sent = first_sent.replace("*", "").replace("_", "")
+                    if first_sent:
+                        lines.append(f"  _{first_sent}_")
 
-                lines.append("")
+            lines.append("")
 
-        lines.append("─────────────────────────────────────")
-        lines.append(f"📊 Всего собрано: {total_collected}  •  Отобрано: {len(articles)}")
-        lines.append("🌐 [Личный веб-дашборд](http://100.107.4.120:8000)")
+        lines.append("─────────────────────────")
+        lines.append("🌐 [Веб-дашборд](http://100.107.4.120:8000)")
 
         content_markdown = "\n".join(lines)
 
