@@ -1047,7 +1047,7 @@
       if (refreshIcon) refreshIcon.classList.add('animate-spin');
 
       try {
-        const res = await fetch('/api/ukraine/attacks-summary');
+        const res = await fetch('/api/ukraine/attacks-summary?t=' + Date.now());
         if (res.ok) {
           const data = await res.json();
           lastUkraineSummaryFetch = Date.now();
