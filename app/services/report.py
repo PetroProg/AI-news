@@ -95,7 +95,7 @@ class ReportBuilderService:
             "TECH": "⚡",
         }
 
-        # Вывод новостей строго по категориям
+        # Вывод новостей строго по категориям без ссылок
         for cat_name, cat_articles in categorized.items():
             clean_cat = cat_name.split("(")[0].strip().upper() or "ТЕХНОЛОГИИ"
 
@@ -107,27 +107,15 @@ class ReportBuilderService:
 
             lines.append(f"*{icon} {clean_cat}*")
 
-            for art in cat_articles[:6]:
+            for art in cat_articles[:8]:
                 safe_title = (
-                    art.title.replace("[", "(")
-                    .replace("]", ")")
-                    .replace("*", "")
+                    art.title.replace("*", "")
                     .replace("_", "")
+                    .replace("`", "")
                     .strip()
                 )
-                url = art.original_url or "#"
 
-                lines.append(f"• [{safe_title}]({url})")
-
-                if art.summary and art.summary.short_summary:
-                    clean_summary = art.summary.short_summary.strip()
-                    # Только одно четкое первое предложение
-                    first_sent = clean_summary.split(". ")[0].strip()
-                    if first_sent and not first_sent.endswith((".", "!", "?")):
-                        first_sent += "."
-                    first_sent = first_sent.replace("*", "").replace("_", "")
-                    if first_sent:
-                        lines.append(f"  _{first_sent}_")
+                lines.append(f"• {safe_title}")
 
             lines.append("")
 
