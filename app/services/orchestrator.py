@@ -110,7 +110,7 @@ class PipelineOrchestrator:
             ]
             for ch in tg_channels:
                 try:
-                    collector = TelegramCollector(channel_username=ch, limit=15)
+                    collector = TelegramCollector(channel_username=ch, limit=50)
                     await ingestion.run_collector(collector, source_type=SourceType.TELEGRAM)
                 except Exception as exc:
                     logger.error("Error collecting Telegram channel @%s: %s", ch, exc)
@@ -120,13 +120,13 @@ class PipelineOrchestrator:
             await processing.process_collected_articles()
 
             # 5. AI Summarization Phase (batch of top unsummarized articles)
-            gpu_timeout = 10 if was_already_online else 90
+            gpu_timeout = 15 if was_already_online else 150
             logger.info("Verifying AI GPU worker reachability (timeout: %ds)...", gpu_timeout)
             gpu_online = await self.wait_for_gpu_node(timeout_seconds=gpu_timeout)
 
             if gpu_online:
                 summarizer = SummarizerService(session=session)
-                await summarizer.summarize_pending_articles(limit=10)
+                await summarizer.summarize_pending_articles(limit=30)
             else:
                 logger.warning("AI GPU worker did not respond within %ds. Skipping summarization for this run.", gpu_timeout)
                 if self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
