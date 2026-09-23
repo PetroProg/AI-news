@@ -16,6 +16,12 @@ UKRAINE_PRIORITY_KEYWORDS = [
 ]
 
 PRIORITY_KEYWORDS = ["simple", "s1mple", "navi", "bcgame", "bc.game", "fut"]
+CS_UPDATE_KEYWORDS = [
+    "вышло обновление", "вышел патч", "крупное обновление", "огромное обновление",
+    "большое обновление", "масштабное обновление", "ночной патч", "ночная обнова",
+    "патчноут", "в cs2 вышло", "в cs:go вышло", "cs2 update", "release notes",
+    "в файлах игры нашли", "в файлах игры появилась", "в файлах игры появились"
+]
 CS_FINAL_KEYWORDS = [
     "победитель финала", "победители финала", "победитель гранд-финала", "победители гранд-финала",
     "победил в финале", "победили в финале", "победил в гранд-финале", "победили в гранд-финале",
@@ -64,15 +70,30 @@ class SummarizerService:
         Args:
             limit: Maximum number of articles to process in one batch (protects Celeron CPU).
         """
-        stmt = (
+        cand_stmt = (
             select(Article)
             .options(selectinload(Article.source), selectinload(Article.summary))
             .where(Article.status == ArticleStatus.PROCESSED)
             .order_by(Article.published_at.desc())
-            .limit(limit)
+            .limit(200)
         )
-        res = await self.session.execute(stmt)
-        articles = list(res.scalars().all())
+        cand_res = await self.session.execute(cand_stmt)
+        candidates = list(cand_res.scalars().all())
+
+        def article_priority_weight(a: Article) -> int:
+            t = ((a.title or "") + " " + (a.raw_content or "")).lower()
+            if any(uk in t for uk in ["вышло обновление", "вышел патч", "огромное обновление", "крупное обновление", "ночной патч", "cs2 update", "release notes"]):
+                return 100
+            if any(fk in t for fk in ["чемпион", "победитель", "гранд-финал", "выиграл турнир"]):
+                return 80
+            if any(pk in t for pk in ["s1mple", "simple", "navi", "дніпро", "днепр", "нато", "оон"]):
+                return 60
+            if any(dk in t for dk in ["#дайджест", "утренний дайджест", "вечерний дайджест", "новости дня", "главное за день"]):
+                return -50
+            return 10
+
+        candidates.sort(key=lambda a: (article_priority_weight(a), a.published_at), reverse=True)
+        articles = candidates[:limit]
 
         if not articles:
             logger.info("No articles waiting for AI summarization.")
@@ -143,14 +164,22 @@ class SummarizerService:
 
             has_ukr_priority = chosen_category == "Украина" and not is_ukr_micro_alert and any(kw in text_for_check for kw in UKRAINE_PRIORITY_KEYWORDS)
             has_priority = (any(kw in text_for_check for kw in PRIORITY_KEYWORDS) or has_ukr_priority) and not is_ukr_micro_alert
-            is_digest = any(d in text_for_check for d in ["#дайджест", "дайджест", "утренний дайджест", "новости дня", "главное за день", "итоги недели", "итоги дня", "ура, воскресенье"])
+            is_digest = any(d in text_for_check for d in ["#дайджест", "дайджест", "утренний дайджест", "вечерний дайджест", "новости дня", "главное за день", "итоги недели", "итоги дня", "ура, воскресенье"])
+            if is_digest:
+                score = 3.0
+                logger.info("Article ID %d detected as channel digest/compilation. Reduced score to 3.0", article.id)
+
+            is_cs_update = is_gaming and any(uk in text_for_check for uk in CS_UPDATE_KEYWORDS) and not is_digest
             is_round_only = any(r in text_for_check for r in ["финальный раунд", "финальном раунде", "финального раунда", "финальные раунды"])
             is_final_or_winner = is_gaming and not is_digest and not is_round_only and any(kw in text_for_check for kw in CS_FINAL_KEYWORDS)
 
-            if is_final_or_winner and not is_meme_or_ad:
+            if is_cs_update and not is_meme_or_ad:
+                score = 9.5
+                logger.info("Article ID %d matched CS2 game update/patch! Set top score to %.1f", article.id, score)
+            elif is_final_or_winner and not is_meme_or_ad:
                 score = max(score, 9.0)
                 logger.info("Article ID %d matched CS:GO finals/winner! Set score to %.1f", article.id, score)
-            elif has_priority and not is_meme_or_ad and score >= 5.5:
+            elif has_priority and not is_meme_or_ad and not is_digest and score >= 5.5:
                 score = min(10.0, max(score, 8.5))
                 logger.info("Article ID %d matched priority keywords! Boosted score to %.1f", article.id, score)
 

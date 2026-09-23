@@ -126,9 +126,85 @@ class ProcessingService:
                 })
 
         await self.session.commit()
+        await self.cluster_cs_update_bursts()
 
         logger.info(
             "Processing completed: %d unique marked as PROCESSED, %d marked as DUPLICATE",
             unique_count, duplicate_count
         )
         return unique_count, duplicate_count
+
+    async def cluster_cs_update_bursts(self) -> int:
+        """Detects bursts of CS2 posts within a 2.5-hour window regarding a game update,
+        merges their details into the primary (first) announcement post, and marks the rest as duplicates.
+        """
+        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=24)
+        stmt = (
+            select(Article)
+            .where(
+                Article.published_at >= cutoff_time,
+                Article.status == ArticleStatus.PROCESSED,
+            )
+            .order_by(Article.published_at.asc())
+        )
+        res = await self.session.execute(stmt)
+        candidates = list(res.scalars().all())
+
+        update_markers = [
+            "обновлен", "патч", "апдейт", "куроч", "яйц", "питомц", "перезарядк",
+            "m14", "rush", "клан-тег", "ночной обнов", "в файлах игры", "коктейл"
+        ]
+
+        cs_posts = []
+        for a in candidates:
+            txt = ((a.title or "") + " " + (a.raw_content or "")).lower()
+            if any(m in txt for m in update_markers):
+                cs_posts.append(a)
+
+        if len(cs_posts) < 3:
+            return 0
+
+        clusters: List[List[Article]] = []
+        current_cluster: List[Article] = [cs_posts[0]]
+
+        for next_post in cs_posts[1:]:
+            prev_post = current_cluster[-1]
+            diff_hours = abs((next_post.published_at - prev_post.published_at).total_seconds()) / 3600.0
+            if diff_hours <= 2.5:
+                current_cluster.append(next_post)
+            else:
+                if len(current_cluster) >= 3:
+                    clusters.append(current_cluster)
+                current_cluster = [next_post]
+
+        if len(current_cluster) >= 3:
+            clusters.append(current_cluster)
+
+        merged_count = 0
+        for cluster in clusters:
+            primary_post = cluster[0]
+            collected_lines = []
+            for item in cluster:
+                cleaned_item = ContentCleaner.clean(item.raw_content or item.title)
+                for line in cleaned_item.splitlines():
+                    line = line.strip()
+                    if line and len(line) > 15 and line not in collected_lines and not line.startswith("#"):
+                        collected_lines.append(line)
+
+            merged_text = "\n\n".join(collected_lines[:15])
+            if merged_text and primary_post.cleaned_content:
+                header = "Детали обновления:"
+                if header not in primary_post.cleaned_content:
+                    primary_post.cleaned_content += "\n\n" + header + "\n" + merged_text
+                    primary_post.title = "В CS2 вышло масштабное обновление"
+                    logger.info("Clustered %d CS2 update posts into primary post ID %d", len(cluster), primary_post.id)
+
+            for sub_post in cluster[1:]:
+                sub_post.status = ArticleStatus.DUPLICATE
+                sub_post.duplicate_of_id = primary_post.id
+                merged_count += 1
+
+        if merged_count > 0:
+            await self.session.commit()
+            logger.info("Total %d burst posts clustered into primary update announcements.", merged_count)
+        return merged_count
