@@ -81,6 +81,8 @@ class ReportBuilderService:
 
         cat_icons = {
             "УКРАИНА": "🇺🇦",
+            "SWISS": "🇨🇭",
+            "ШВЕЙЦАР": "🇨🇭",
             "LINUX": "🐧",
             "DEV": "💻",
             "DEVELOPMENT": "💻",

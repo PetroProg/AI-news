@@ -9,6 +9,7 @@ from app.database.session import async_session_maker
 from app.database.models import ReportType, SourceType
 from app.collectors.rss import RSSCollector
 from app.collectors.telegram import TelegramCollector
+from app.collectors.instagram import InstagramCollector
 from app.services.ingestion import IngestionService
 from app.services.processing import ProcessingService
 from app.services.summarizer import SummarizerService
@@ -114,6 +115,15 @@ class PipelineOrchestrator:
                     await ingestion.run_collector(collector, source_type=SourceType.TELEGRAM)
                 except Exception as exc:
                     logger.error("Error collecting Telegram channel @%s: %s", ch, exc)
+
+            # Instagram Swiss Channels via RSS-Bridge
+            ig_accounts = ["rtsinfo", "rtsarchives", "blick_media", "20minutesonline"]
+            for acc in ig_accounts:
+                try:
+                    collector = InstagramCollector(username=acc, limit=15, language="fr")
+                    await ingestion.run_collector(collector, source_type=SourceType.CUSTOM)
+                except Exception as exc:
+                    logger.error("Error collecting Instagram account @%s: %s", acc, exc)
 
             # 4. Cleaning & Deduplication Phase
             processing = ProcessingService(session=session)

@@ -40,6 +40,12 @@ GAMING_INDICATORS = [
     "donk", "zywoo", "clash royale", "bcgame", "fut", "blast", "esl"
 ]
 
+SWISS_PRIORITY_KEYWORDS = [
+    "vaud", "lausanne", "fribourg", "palezieux", "palézieux", "oron", "renens",
+    "bern", "berne", "geneve", "genève", "cff", "sbb", "infomaniak", "etml"
+]
+
+
 
 class SummarizerService:
     """Orchestrates LLM summarization, scoring, and categorical classification."""
@@ -86,6 +92,8 @@ class SummarizerService:
                 return 100
             if any(fk in t for fk in ["чемпион", "победитель", "гранд-финал", "выиграл турнир"]):
                 return 80
+            if any(sk in t for sk in SWISS_PRIORITY_KEYWORDS):
+                return 75
             if any(pk in t for pk in ["s1mple", "simple", "navi", "дніпро", "днепр", "нато", "оон"]):
                 return 60
             if any(dk in t for dk in ["#дайджест", "утренний дайджест", "вечерний дайджест", "новости дня", "главное за день"]):
@@ -128,7 +136,12 @@ class SummarizerService:
             is_ukraine = ("novynaukr" in combined_source) or \
                          (analysis.category and "украин" in analysis.category.lower())
 
-            if is_ukraine:
+            is_swiss = any(acc in combined_source for acc in ["rtsinfo", "rtsarchives", "blick_media", "20minutesonline", "instagram"]) or \
+                       (analysis.category and "swiss" in analysis.category.lower())
+
+            if is_swiss:
+                chosen_category = "Swiss"
+            elif is_ukraine:
                 chosen_category = "Украина"
             elif is_gaming or (analysis.category and analysis.category.lower() in ["игры & киберспорт", "игры и киберспорт", "gaming", "cs2"]):
                 chosen_category = "CS2"
@@ -173,30 +186,38 @@ class SummarizerService:
             is_round_only = any(r in text_for_check for r in ["финальный раунд", "финальном раунде", "финального раунда", "финальные раунды"])
             is_final_or_winner = is_gaming and not is_digest and not is_round_only and any(kw in text_for_check for kw in CS_FINAL_KEYWORDS)
 
+            has_swiss_priority = (chosen_category == "Swiss") and any(kw in text_for_check for kw in SWISS_PRIORITY_KEYWORDS)
+
             if is_cs_update and not is_meme_or_ad:
                 score = 9.5
                 logger.info("Article ID %d matched CS2 game update/patch! Set top score to %.1f", article.id, score)
             elif is_final_or_winner and not is_meme_or_ad:
                 score = max(score, 9.0)
                 logger.info("Article ID %d matched CS:GO finals/winner! Set score to %.1f", article.id, score)
+            elif has_swiss_priority and not is_meme_or_ad:
+                score = max(score, 8.5)
+                logger.info("Article ID %d matched Swiss priority keywords! Set score to %.1f", article.id, score)
             elif has_priority and not is_meme_or_ad and not is_digest and score >= 5.5:
                 score = min(10.0, max(score, 8.5))
                 logger.info("Article ID %d matched priority keywords! Boosted score to %.1f", article.id, score)
 
-            # If LLM returned a Russian title, ensure translation for Latin/Ukrainian or Ukraine category
-            is_ukr_source = (category.name == "Украина") or ("novynaukr" in combined_source)
-            if analysis.russian_title and len(analysis.russian_title.strip()) > 3:
-                has_latin = any(c.isascii() and c.isalpha() for c in (article.title or ""))
-                has_ukrainian = any(c in "ієїґІЄЇҐ" for c in (article.title or ""))
-                if has_latin or has_ukrainian or is_ukr_source:
-                    article.title = ContentCleaner.clean_title(analysis.russian_title)
-            else:
+            # Title handling: keep original without Russian translation if Swiss
+            if chosen_category == "Swiss":
                 article.title = ContentCleaner.clean_title(article.title)
+            else:
+                is_ukr_source = (category.name == "Украина") or ("novynaukr" in combined_source)
+                if analysis.russian_title and len(analysis.russian_title.strip()) > 3:
+                    has_latin = any(c.isascii() and c.isalpha() for c in (article.title or ""))
+                    has_ukrainian = any(c in "ієїґІЄЇҐ" for c in (article.title or ""))
+                    if has_latin or has_ukrainian or is_ukr_source:
+                        article.title = ContentCleaner.clean_title(analysis.russian_title)
+                else:
+                    article.title = ContentCleaner.clean_title(article.title)
 
-            if is_ukr_source and any(c in "ієїґІЄЇҐ" for c in (article.title or "")) and analysis.short_summary:
-                first_sent = analysis.short_summary.split('.')[0].strip()
-                if len(first_sent) > 10 and not any(c in "ієїґІЄЇҐ" for c in first_sent):
-                    article.title = ContentCleaner.clean_title(first_sent)
+                if is_ukr_source and any(c in "ієїґІЄЇҐ" for c in (article.title or "")) and analysis.short_summary:
+                    first_sent = analysis.short_summary.split('.')[0].strip()
+                    if len(first_sent) > 10 and not any(c in "ієїґІЄЇҐ" for c in first_sent):
+                        article.title = ContentCleaner.clean_title(first_sent)
 
             article.importance_score = score
 
