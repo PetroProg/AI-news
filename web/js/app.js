@@ -791,35 +791,38 @@
     window.switchAsideTab = function(tab) {
       const bTop10 = document.getElementById('aside-block-top10');
       const bDeep = document.getElementById('aside-block-deepdive');
+      const bTasks = document.getElementById('aside-block-tasks');
       const btnTop10 = document.getElementById('aside-tab-top10');
       const btnDeep = document.getElementById('aside-tab-deepdive');
-      const btnAll = document.getElementById('aside-tab-all');
+      const btnTasks = document.getElementById('aside-tab-tasks');
 
       if (!bTop10 || !bDeep) return;
 
       const activeClass = 'flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all bg-sky-500 text-white shadow-md flex items-center justify-center gap-1.5';
       const inactiveClass = 'flex-1 py-1.5 px-3 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-900/80 transition-all flex items-center justify-center gap-1.5';
-      const allActiveClass = 'py-1.5 px-2.5 rounded-xl text-xs font-bold transition-all bg-sky-500 text-white shadow-md flex items-center justify-center';
-      const allInactiveClass = 'py-1.5 px-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-900/80 transition-all flex items-center justify-center';
 
       if (tab === 'deepdive') {
         bTop10.style.display = 'none';
         bDeep.style.display = 'block';
+        if (bTasks) bTasks.style.display = 'none';
         if (btnTop10) btnTop10.className = inactiveClass;
         if (btnDeep) btnDeep.className = activeClass;
-        if (btnAll) btnAll.className = allInactiveClass;
-      } else if (tab === 'all') {
-        bTop10.style.display = 'block';
-        bDeep.style.display = 'block';
+        if (btnTasks) btnTasks.className = inactiveClass;
+      } else if (tab === 'tasks') {
+        bTop10.style.display = 'none';
+        bDeep.style.display = 'none';
+        if (bTasks) bTasks.style.display = 'block';
         if (btnTop10) btnTop10.className = inactiveClass;
         if (btnDeep) btnDeep.className = inactiveClass;
-        if (btnAll) btnAll.className = allActiveClass;
+        if (btnTasks) btnTasks.className = activeClass;
+        renderITQuiz();
       } else { // 'top10'
         bTop10.style.display = 'block';
         bDeep.style.display = 'none';
+        if (bTasks) bTasks.style.display = 'none';
         if (btnTop10) btnTop10.className = activeClass;
         if (btnDeep) btnDeep.className = inactiveClass;
-        if (btnAll) btnAll.className = allInactiveClass;
+        if (btnTasks) btnTasks.className = inactiveClass;
       }
     };
 
@@ -1451,12 +1454,179 @@
       renderLinuxQuiz();
     }
 
+    // ==========================================
+    // MULTI-LANGUAGE SHORT CODE CHALLENGES (IT)
+    // ==========================================
+    const IT_QUIZ_BANK = [
+      {
+        lang: "Python",
+        code: `def add_item(val, lst=[]):\n    lst.append(val)\n    return lst\n\nprint(add_item(1))\nprint(add_item(2))`,
+        question: "Что напечатает данный код при выполнении?",
+        options: [
+          "[1] затем [1, 2]",
+          "[1] затем [2]",
+          "[1] затем [1]",
+          "TypeError: mutable default argument"
+        ],
+        correct: 0,
+        explanation: "Дефолтный аргумент lst=[] создаётся один раз при определении функции, а не при каждом вызове. Поэтому список сохраняет состояние между вызовами."
+      },
+      {
+        lang: "JavaScript",
+        code: `console.log([] + []);\nconsole.log([] + {});`,
+        question: "Каков результат обоих выражений в консоли?",
+        options: [
+          '"" (пустая строка) и "[object Object]"',
+          '"" и undefined',
+          '[] и {}',
+          'NaN и NaN'
+        ],
+        correct: 0,
+        explanation: "Оператор + приводит операнды к примитивам. [].toString() даёт \"\", а {}.toString() даёт \"[object Object]\". Результаты: \"\" и \"[object Object]\"."
+      },
+      {
+        lang: "Go",
+        code: `s := []int{1, 2, 3}\nfor _, v := range s {\n    go func() { println(v) }()\n}`,
+        question: "В классическом Go (до версии 1.22) что чаще всего выведет эта программа?",
+        options: [
+          "3 3 3 (значение последней итерации для всех горутин)",
+          "1 2 3 строго по порядку",
+          "3 2 1",
+          "Ошибка компиляции: variable shadow"
+        ],
+        correct: 0,
+        explanation: "До Go 1.22 переменная v замыкалась по ссылке на одну и ту же область памяти. К моменту старта горутин цикл уже заканчивался со значением 3."
+      },
+      {
+        lang: "Rust",
+        code: `let s1 = String::from("hello");\nlet s2 = s1;\nprintln!("{}", s1);`,
+        question: "Что произойдет при компиляции данного кода?",
+        options: [
+          "Ошибка компиляции: use of moved value `s1`",
+          "Напечатает hello",
+          "Напечатает пустую строку",
+          "Паника в рантайме: NullPointerException"
+        ],
+        correct: 0,
+        explanation: "При присваивании let s2 = s1 владение (ownership) перемещается в s2. Тип String не реализует трейт Copy, поэтому s1 становится невалидным."
+      },
+      {
+        lang: "C++",
+        code: `int a = 5;\nint b = a++ + ++a;\nstd::cout << b;`,
+        question: "Каково поведение данного выражения согласно стандартам C++?",
+        options: [
+          "Undefined Behavior (UB) из-за множественной модификации без точки следования",
+          "Всегда строго 12",
+          "Всегда строго 11",
+          "Ошибка компиляции: duplicate increment"
+        ],
+        correct: 0,
+        explanation: "Модификация одной и той же скалярной переменной дважды в одном выражении без промежуточной точки следования (sequence point) является классическим Undefined Behavior."
+      },
+      {
+        lang: "Python",
+        code: `a = [1, 2, 3]\nb = a\na += [4]\nprint(b)`,
+        question: "Что выведет print(b)?",
+        options: [
+          "[1, 2, 3, 4]",
+          "[1, 2, 3]",
+          "None",
+          "[4]"
+        ],
+        correct: 0,
+        explanation: "Для списков оператор += вызывает in-place метод __iadd__ (аналог extend), изменяя существующий объект по ссылке. b ссылается на тот же список."
+      }
+    ];
+
+    let itQuizIndex = 0;
+    let itQuizScore = Number(localStorage.getItem('it_quiz_score') || 0);
+    let currentITShuffled = null;
+
+    function renderITQuiz() {
+      const baseQ = IT_QUIZ_BANK[itQuizIndex % IT_QUIZ_BANK.length];
+      currentITShuffled = shuffleOptions(baseQ);
+      const q = currentITShuffled;
+
+      const langTag = document.getElementById('it-quiz-lang-tag');
+      const codeEl = document.getElementById('it-quiz-code');
+      const qEl = document.getElementById('it-quiz-question');
+      const optEl = document.getElementById('it-quiz-options');
+      const fbEl = document.getElementById('it-quiz-feedback');
+      const scoreBadge = document.getElementById('it-quiz-score-badge');
+
+      if (!codeEl || !qEl || !optEl) return;
+      if (scoreBadge) scoreBadge.textContent = `Очки: ${itQuizScore}`;
+      if (fbEl) fbEl.style.display = 'none';
+
+      if (langTag) {
+        langTag.textContent = baseQ.lang || 'Code';
+        if (baseQ.lang === 'Python') langTag.className = 'px-2 py-0.5 rounded-md font-mono text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40';
+        else if (baseQ.lang === 'JavaScript') langTag.className = 'px-2 py-0.5 rounded-md font-mono text-[10px] font-bold bg-yellow-500/20 text-yellow-300 border border-yellow-500/40';
+        else if (baseQ.lang === 'Go') langTag.className = 'px-2 py-0.5 rounded-md font-mono text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40';
+        else if (baseQ.lang === 'Rust') langTag.className = 'px-2 py-0.5 rounded-md font-mono text-[10px] font-bold bg-orange-500/20 text-orange-300 border border-orange-500/40';
+        else langTag.className = 'px-2 py-0.5 rounded-md font-mono text-[10px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/40';
+      }
+
+      codeEl.textContent = baseQ.code;
+      qEl.textContent = q.question;
+      optEl.innerHTML = q.options.map((opt, idx) => `
+        <button type="button" onclick="handleITQuizAnswer(${idx})" class="it-opt-btn w-full text-left p-2.5 rounded-xl bg-slate-900/90 hover:bg-sky-950/40 border border-slate-800 hover:border-sky-500/50 text-xs text-slate-200 transition-all cursor-pointer">
+          <div class="flex items-start gap-2">
+            <span class="font-mono text-sky-400 font-bold text-[11px] shrink-0">${String.fromCharCode(65 + idx)})</span>
+            <span class="flex-1 font-mono text-[11px]">${opt}</span>
+          </div>
+        </button>
+      `).join('');
+    }
+
+    function handleITQuizAnswer(selectedIdx) {
+      if (!currentITShuffled) return;
+      const q = currentITShuffled;
+      const btns = document.querySelectorAll('.it-opt-btn');
+      const fbEl = document.getElementById('it-quiz-feedback');
+      const scoreBadge = document.getElementById('it-quiz-score-badge');
+
+      btns.forEach((btn, idx) => {
+        btn.disabled = true;
+        btn.classList.remove('hover:bg-sky-950/40', 'cursor-pointer');
+        if (idx === q.correctIdx) {
+          btn.className = 'w-full text-left p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-500 text-xs text-emerald-200 transition-all font-mono text-[11px]';
+        } else if (idx === selectedIdx) {
+          btn.className = 'w-full text-left p-2.5 rounded-xl bg-rose-950/60 border border-rose-500 text-xs text-rose-200 transition-all font-mono text-[11px]';
+        } else {
+          btn.className = 'w-full text-left p-2.5 rounded-xl bg-slate-900/40 border border-slate-800/40 text-xs text-slate-500 opacity-60 font-mono text-[11px]';
+        }
+      });
+
+      if (fbEl) {
+        fbEl.style.display = 'block';
+        if (selectedIdx === q.correctIdx) {
+          itQuizScore += 10;
+          localStorage.setItem('it_quiz_score', itQuizScore);
+          if (scoreBadge) scoreBadge.textContent = `Очки: ${itQuizScore}`;
+          fbEl.className = 'p-3 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-200 text-xs space-y-1';
+          fbEl.innerHTML = `<div class="font-bold flex items-center gap-1.5"><span>🎉</span><span>Верно! (+10 очков)</span></div><div class="text-[11px] text-slate-300">${q.explanation}</div>`;
+        } else {
+          fbEl.className = 'p-3 rounded-2xl bg-rose-950/40 border border-rose-500/40 text-rose-200 text-xs space-y-1';
+          fbEl.innerHTML = `<div class="font-bold flex items-center gap-1.5"><span>💡</span><span>Разбор кода</span></div><div class="text-[11px] text-slate-300">${q.explanation}</div>`;
+        }
+      }
+    }
+
+    function nextITQuiz() {
+      itQuizIndex++;
+      renderITQuiz();
+    }
+
     window.renderAIQuiz = renderAIQuiz;
     window.handleAIQuizAnswer = handleAIQuizAnswer;
     window.nextAIQuiz = nextAIQuiz;
     window.renderLinuxQuiz = renderLinuxQuiz;
     window.handleLinuxQuizAnswer = handleLinuxQuizAnswer;
     window.nextLinuxQuiz = nextLinuxQuiz;
+    window.renderITQuiz = renderITQuiz;
+    window.handleITQuizAnswer = handleITQuizAnswer;
+    window.nextITQuiz = nextITQuiz;
 
     window.setDynamicCategory = function(cat) {
       state.newsCategoryFilter = (cat === 'all' || cat === 'Все') ? 'all' : cat;
@@ -1534,6 +1704,9 @@
       }
       if (isLinux) {
         renderLinuxQuiz();
+      }
+      if (isIT) {
+        renderITQuiz();
       }
 
       // If switching away from IT, reset language filter
