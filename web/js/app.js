@@ -1207,6 +1207,17 @@
         explanation: "Утилита fuser с флагом -k отправляет сигнал SIGKILL процессам, использующим порт. kill $(lsof -t -i:8080) также отлично справляется."
       },
       {
+        question: "Под в Kubernetes перешёл в статус CrashLoopBackOff. Какой командой быстрее всего посмотреть логи предыдущего упавшего контейнера?",
+        options: [
+          "kubectl logs <pod-name> --previous",
+          "kubectl describe pod <pod-name> --logs",
+          "kubectl get events --crash",
+          "journalctl -u k8s-pod --last"
+        ],
+        correct: 0,
+        explanation: "Флаг --previous (или -p) указывает kubectl извлечь логи контейнера до его последнего падения/рестарта, что критично для выявления причин OOMKilled или panic."
+      },
+      {
         question: "Как перезапустить systemd-сервис только в том случае, если он уже запущен (не запуская выключенный)?",
         options: [
           "systemctl try-restart <service>",
@@ -1216,6 +1227,28 @@
         ],
         correct: 0,
         explanation: "Команда 'systemctl try-restart' (или 'condrestart') перезапускает юнит только если он активен. Для остановленных сервисов команда ничего не делает."
+      },
+      {
+        question: "В Docker накопилось много dangling-образов, неиспользуемых сетей и остановленных контейнеров. Как очистить всё безопасной одной командой?",
+        options: [
+          "docker system prune -f",
+          "docker clean --all",
+          "docker rm -f $(docker ps -aq)",
+          "rm -rf /var/lib/docker/overlay2"
+        ],
+        correct: 0,
+        explanation: "docker system prune очищает остановленные контейнеры, неиспользуемые сети, dangling-образы и кэш сборки без удаления именованных томов данных."
+      },
+      {
+        question: "Диск переполнен (100% full), но rm не освобождает место: df -h всё ещё показывает 0 доступных байт. В чём причина?",
+        options: [
+          "Файл удалён, но удерживается открытым запущенным процессом (проверить lsof +L1)",
+          "Файловая система автоматически заблокировалась в read-only",
+          "Закончились дескрипторы сокетов",
+          "Требуется обязательный перезапуск ядра Linux"
+        ],
+        correct: 0,
+        explanation: "В Linux удаление файла (unlink) уменьшает счётчик ссылок. Если файл открыт процессом, блоки диска не освободятся до закрытия дескриптора или перезапуска процесса: 'lsof +L1' покажет виновника."
       },
       {
         question: "Какая команда покажет размер файлов и папок в текущей директории с сортировкой по убыванию в читаемом виде?",
@@ -1249,6 +1282,17 @@
         ],
         correct: 0,
         explanation: "Утилита ss (Socket Statistics) читает данные напрямую из пространства ядра через netlink, работая в разы быстрее netstat."
+      },
+      {
+        question: "Как просмотреть события ядра в реальном времени, включая OOM-killer и сбои драйверов?",
+        options: [
+          "dmesg -wH",
+          "tail -f /proc/kcore",
+          "journalctl --kernel --nowait",
+          "sysctl -a | grep error"
+        ],
+        correct: 0,
+        explanation: "dmesg с ключами -w (follow/watch) и -H (human-readable timestamps) выводит кольцевой буфер ядра в реальном времени с читаемыми датами."
       }
     ];
 
@@ -1391,9 +1435,12 @@
       const isIT = !isAll && 
                    (state.newsCategoryFilter === 'IT' || 
                     state.newsCategoryFilter === 'IT & Аналитика' || 
-                    state.newsCategoryFilter.toLowerCase().includes('аналитик') || 
-                    state.newsCategoryFilter.toLowerCase().includes('программир') || 
-                    state.newsCategoryFilter.toLowerCase().includes('dev'));
+                    state.newsCategoryFilter.toLowerCase() === 'it' ||
+                    state.newsCategoryFilter.toLowerCase() === 'it & аналитика' ||
+                    state.newsCategoryFilter.toLowerCase() === 'development' ||
+                    state.newsCategoryFilter.toLowerCase() === 'programming' ||
+                    state.newsCategoryFilter.toLowerCase() === 'разработка' ||
+                    state.newsCategoryFilter.toLowerCase() === 'языки программирования');
 
       const isGaming = !isAll && 
                        (state.newsCategoryFilter === 'CS2' || 
@@ -1557,10 +1604,13 @@
       }
 
       // 4. Strict Quality Filter for IT:
-      const isProgCategory = targetCatLower === 'it' ||
-                             targetCatLower.includes('аналитик') || 
-                             targetCatLower.includes('программир') || 
-                             targetCatLower.includes('dev');
+      const isProgCategory = (targetCatLower === 'it' ||
+                              targetCatLower === 'it & аналитика' ||
+                              targetCatLower === 'development' ||
+                              targetCatLower === 'programming' ||
+                              targetCatLower.includes('программир') ||
+                              (targetCatLower.includes('аналитик') && !targetCatLower.includes('linux'))) &&
+                             !targetCatLower.includes('devops') && !targetCatLower.includes('linux');
       if (isProgCategory) {
         // Exclude any gaming item that somehow reached here
         const isGamingItem = ['csgo', 'cs3', 'clashroyalepin', 'clashroyale', 'hltv'].some(s => ((item.source || '') + ' ' + (item.url || '')).toLowerCase().includes(s)) ||
