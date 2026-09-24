@@ -2352,12 +2352,12 @@
             ${mediaMarkup}
 
             <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-4">
-              <div>
+              <div class="flex-1 flex flex-col">
                 <h3 class="text-base sm:text-lg font-bold text-white font-heading group-hover:text-sky-300 transition-colors leading-snug">
                   ${title}
                 </h3>
                 
-                <div class="mt-3 p-3.5 rounded-2xl bg-slate-950/50 border border-slate-800/70 text-xs text-slate-300 leading-relaxed">
+                <div class="mt-3 p-3.5 rounded-2xl bg-slate-950/50 border border-slate-800/70 text-xs text-slate-300 leading-relaxed flex-1">
                   <span class="text-[11px] font-bold text-sky-400 uppercase tracking-wider block mb-1 flex items-center gap-1">
                     <span>🤖</span> <span>Резюме нейросети:</span>
                   </span>
@@ -2365,13 +2365,16 @@
                 </div>
               </div>
 
-              <div class="pt-3 border-t border-slate-800/80 flex items-center justify-end gap-2">
-                <button type="button" class="btn-delete-article p-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/25 border border-rose-500/30 hover:border-rose-500/60 text-rose-400 hover:text-rose-200 text-xs font-semibold flex items-center justify-center transition-all cursor-pointer" data-id="${article.id}" title="Удалить новость">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
-                </button>
-                <a href="${sourceUrl}" target="_blank" rel="noopener noreferrer" class="p-2.5 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 hover:text-white text-xs font-semibold flex items-center justify-center transition-all" title="Читать в источнике">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
-                </a>
+              <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2 mt-auto">
+                <span class="text-[11px] text-slate-500 font-medium">News AI Engine</span>
+                <div class="flex items-center gap-2">
+                  <button type="button" class="btn-delete-article p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/25 border border-rose-500/30 hover:border-rose-500/60 text-rose-400 hover:text-rose-200 text-xs font-semibold flex items-center justify-center transition-all cursor-pointer" data-id="${article.id}" title="Удалить новость">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+                  </button>
+                  <a href="${sourceUrl}" target="_blank" rel="noopener noreferrer" class="p-2 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 hover:text-white text-xs font-semibold flex items-center justify-center transition-all" title="Читать в источнике">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
+                  </a>
+                </div>
               </div>
             </div>
           </div>

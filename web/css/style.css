@@ -261,6 +261,8 @@
       .news-card-body {
         display: flex !important;
         flex-direction: column !important;
+        flex: 1 1 0% !important;
+        height: 100% !important;
       }
     }
 
