@@ -612,6 +612,11 @@
         'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=800&q=80',
         'https://images.unsplash.com/photo-1614064641938-3bbee52942c7?auto=format&fit=crop&w=800&q=80'
       ],
+      swiss: [
+        'https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1527668752968-14dc70a27c95?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=80'
+      ],
       tech: [
         'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80',
         'https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=800&q=80'
@@ -640,6 +645,9 @@
       if (item) {
         const s = ((item.source || '') + ' ' + (item.source_url || '') + ' ' + (item.url || '')).toLowerCase();
         const t = (item.title || '').toLowerCase();
+        if (s.includes('rtsinfo') || s.includes('rtsarchives') || s.includes('blick_media') || s.includes('20minutesonline') || s.includes('instagram')) {
+          return 'Swiss';
+        }
         if (s.includes('csgo') || s.includes('cs3') || s.includes('clashroyalepin') || s.includes('clashroyale') || s.includes('hltv') ||
             t.includes('cs2') || t.includes('cs:go') || t.includes('starladder') || t.includes('vitality') || t.includes('navi') || t.includes('s1mple') || t.includes('m0nesy') || t.includes('donk') || t.includes('clash royale') || t.includes('bcgame') || t.includes('fut')) {
           return 'CS2';
@@ -653,6 +661,9 @@
       c = c.replace(/^Категория\s*[\(:]?/i, '').replace(/[\)]+$/g, '').trim();
 
       const lower = c.toLowerCase();
+      if (lower.includes('swiss') || lower.includes('швейцар')) {
+        return 'Swiss';
+      }
       if (lower.includes('gaming') || lower.includes('игры') || lower.includes('sport') || lower.includes('киберспорт') || lower.includes('csgo') || lower.includes('navi') || lower.includes('vitality') || lower.includes('starladder') || lower.includes('cs2')) {
         return 'CS2';
       }
@@ -661,6 +672,8 @@
       }
 
       const map = {
+        'swiss': 'Swiss',
+        'швейцария': 'Swiss',
         'it': 'IT',
         'it & аналитика': 'IT',
         'it-аналитик': 'IT',
@@ -694,6 +707,7 @@
 
     function getCategoryEmoji(catName) {
       const c = (catName || '').toUpperCase();
+      if (c.includes('SWISS') || c.includes('ШВЕЙЦАР')) return '🇨🇭';
       if (c.includes('УКРАИН') || c.includes('УКРАЇН') || c.includes('UKRAINE')) return '🇺🇦';
       if (c.includes('CS') || c.includes('GAME') || c.includes('ИГР') || c.includes('КИБЕРСПОРТ')) return '🎮';
       if (c.includes('АНАЛИТИК') || c.includes('DEV') || c.includes('ПРОГРАММ') || c.includes('IT')) return '💻';
@@ -715,7 +729,9 @@
       const text = ((article.title || '') + ' ' + (article.category || '') + ' ' + (article.source || '')).toLowerCase();
       let pool = THEMATIC_IMAGES.tech;
 
-      if (text.includes('cs') || text.includes('game') || text.includes('игр')) {
+      if (text.includes('swiss') || text.includes('швейцар') || text.includes('lausanne') || text.includes('geneve') || text.includes('vaud') || text.includes('rts') || text.includes('blick')) {
+        pool = THEMATIC_IMAGES.swiss;
+      } else if (text.includes('cs') || text.includes('game') || text.includes('игр')) {
         pool = THEMATIC_IMAGES.csgo;
       } else if (text.includes('украин') || text.includes('україна') || text.includes('ukraine') || text.includes('novynaukr')) {
         pool = THEMATIC_IMAGES.ukraine;

@@ -76,6 +76,13 @@ services:
           cpus: '2.0'
           memory: 2500M
 
+  rss-bridge:
+    image: rssbridge/rss-bridge:latest
+    container_name: news_ai_rss_bridge
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+
 volumes:
   postgres_data:
     driver: local
