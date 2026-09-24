@@ -1,3 +1,4 @@
+import asyncio
 import html
 import logging
 import re
@@ -5,6 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
 import httpx
+import yt_dlp
 
 from app.collectors.base import BaseCollector, CollectedItem
 from app.processing.cleaner import ContentCleaner
@@ -154,11 +156,36 @@ class InstagramCollector(BaseCollector):
                             except Exception as dl_e:
                                 logger.debug("Could not download image %s: %s", c_url, dl_e)
 
+                    # If post is a video or reel, download the MP4 stream via yt_dlp
+                    video_filename = f"ig_{self.username}_{shortcode}.mp4"
+                    video_filepath = media_dir / video_filename
+                    if is_video and (not video_filepath.exists() or video_filepath.stat().st_size == 0):
+                        try:
+                            ydl_opts = {
+                                'outtmpl': str(video_filepath).replace('.mp4', '.%(ext)s'),
+                                'format': 'best[ext=mp4]/best',
+                                'quiet': True,
+                                'no_warnings': True,
+                            }
+                            loop = asyncio.get_running_loop()
+                            def _dl_vid():
+                                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                                    ydl.download([post_url])
+                            await loop.run_in_executor(None, _dl_vid)
+                            if video_filepath.exists() and video_filepath.stat().st_size > 0:
+                                logger.info("Downloaded Instagram video -> %s (%d bytes)", video_filename, video_filepath.stat().st_size)
+                        except Exception as vid_err:
+                            logger.debug("Could not download video %s: %s", post_url, vid_err)
+
                     raw_content = text_only
                     media_tags = []
-                    if filepath.exists() and filepath.stat().st_size > 0:
-                        if is_video:
-                            media_tags.append(f'<video poster="/media/{filename}" controls preload="metadata"></video>')
+                    has_video = video_filepath.exists() and video_filepath.stat().st_size > 0
+                    has_thumb = filepath.exists() and filepath.stat().st_size > 0
+
+                    if has_video:
+                        poster_attr = f' poster="/media/{filename}"' if has_thumb else ''
+                        media_tags.append(f'<video src="/media/{video_filename}"{poster_attr} controls preload="metadata"></video>')
+                    if has_thumb:
                         media_tags.append(f'<img src="/media/{filename}" alt="{title}" />')
 
                     if media_tags:

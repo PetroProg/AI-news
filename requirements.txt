@@ -33,3 +33,4 @@ apscheduler~=3.10.4
 asyncssh>=2.24.0
 curl_cffi>=0.7.0
 Pillow>=10.0.0
+yt-dlp>=2024.8.0
