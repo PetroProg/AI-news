@@ -88,6 +88,8 @@ class PipelineOrchestrator:
                 ("The Go Blog", "https://go.dev/blog/feed.atom"),
                 ("Official Rust Blog", "https://blog.rust-lang.org/feed.xml"),
                 ("OpenNET Linux News", "https://www.opennet.ru/opennews/opennews_all.rss"),
+                ("ByteByteGo: System Design", "https://www.youtube.com/feeds/videos.xml?channel_id=UCZgt6AzoyjslHTC9dz0UoTw"),
+                ("Fireship: Code & Tech", "https://www.youtube.com/feeds/videos.xml?channel_id=UCsBjURrPoezykLs9EqgamOA"),
             ]
             for name, feed_url in rss_sources:
                 try:
@@ -104,6 +106,8 @@ class PipelineOrchestrator:
                 "golang_tg",
                 "rust_tg",
                 "habr_com",
+                "ai_newz",
+                "devops_def",
                 "newcsgo",
                 "cs3news",
                 "ClashRoyalePin",

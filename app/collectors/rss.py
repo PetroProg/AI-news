@@ -86,6 +86,16 @@ class RSSCollector(BaseCollector):
         elif "description" in entry:
             raw_content = entry.get("description", "")
 
+        # Extract YouTube/media thumbnails if present
+        thumbnail_url = None
+        if "media_thumbnail" in entry and entry.media_thumbnail:
+            thumbnail_url = entry.media_thumbnail[0].get("url")
+        elif "media_content" in entry and entry.media_content:
+            thumbnail_url = entry.media_content[0].get("url")
+
+        if thumbnail_url and "<img" not in raw_content:
+            raw_content = f'<img src="{thumbnail_url}" /><br>' + raw_content
+
         original_url = entry.get("link", None)
         external_id = entry.get("id") or original_url or title
 

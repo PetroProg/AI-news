@@ -683,14 +683,18 @@
         'programming': 'IT',
         'разработка': 'IT',
         'языки программирования': 'IT',
-        'linux': 'Linux & Инфраструктура',
-        'linux & infrastructure': 'Linux & Инфраструктура',
+        'linux': 'DevOps & Linux',
+        'linux & infrastructure': 'DevOps & Linux',
+        'devops & linux': 'DevOps & Linux',
+        'devops': 'DevOps & Linux',
         'gaming': 'CS2',
         'cs2': 'CS2',
         'игры & киберспорт': 'CS2',
         'игры и киберспорт': 'CS2',
-        'ai': 'Искусственный интеллект',
-        'ai & нейросети': 'Искусственный интеллект',
+        'ai': 'AI & Нейросети',
+        'ai & нейросети': 'AI & Нейросети',
+        'искусственный интеллект': 'AI & Нейросети',
+        'нейросети': 'AI & Нейросети',
         'science': 'Наука',
         'lifestyle': 'Тренды & Стиль',
         'украина': 'Украина',
@@ -699,8 +703,8 @@
       };
 
       if (map[lower]) return map[lower];
-      if (lower.includes('linux') || lower.includes('opennet')) return 'Linux & Инфраструктура';
-      if (lower.includes('ai') || lower.includes('нейро') || lower.includes('интеллект')) return 'Искусственный интеллект';
+      if (lower.includes('linux') || lower.includes('devops') || lower.includes('opennet') || lower.includes('инфраструктур') || lower.includes('сервер')) return 'DevOps & Linux';
+      if (lower.includes('ai') || lower.includes('нейро') || lower.includes('интеллект')) return 'AI & Нейросети';
       if (lower.includes('аналитик') || lower.includes('dev') || lower.includes('программир') || lower.includes('разработ') || lower.includes('it')) return 'IT';
       return 'IT';
     }
@@ -710,9 +714,9 @@
       if (c.includes('SWISS') || c.includes('ШВЕЙЦАР')) return '🇨🇭';
       if (c.includes('УКРАИН') || c.includes('УКРАЇН') || c.includes('UKRAINE')) return '🇺🇦';
       if (c.includes('CS') || c.includes('GAME') || c.includes('ИГР') || c.includes('КИБЕРСПОРТ')) return '🎮';
-      if (c.includes('АНАЛИТИК') || c.includes('DEV') || c.includes('ПРОГРАММ') || c.includes('IT')) return '💻';
-      if (c.includes('LINUX') || c.includes('ИНФРАСТРУКТУРА') || c.includes('СЕРВЕР')) return '🐧';
+      if (c.includes('LINUX') || c.includes('DEVOPS') || c.includes('ИНФРАСТРУКТУРА') || c.includes('СЕРВЕР')) return '🐧';
       if (c.includes('AI') || c.includes('ИИ') || c.includes('ИНТЕЛЛЕКТ') || c.includes('НЕЙРО')) return '🤖';
+      if (c.includes('АНАЛИТИК') || c.includes('DEV') || c.includes('ПРОГРАММ') || c.includes('IT')) return '💻';
       if (c.includes('БЕЗОПАС') || c.includes('SEC') || c.includes('УЯЗВИМ')) return '🛡️';
       if (c.includes('СЕТЬ') || c.includes('VPN')) return '🌐';
       if (c.includes('НАУК')) return '🔬';
@@ -1129,6 +1133,257 @@
     }
     window.loadUkraineAttacksSummary = loadUkraineAttacksSummary;
 
+    // ==========================================
+    // INTERACTIVE AI & DEVOPS CHALLENGES (QUIZ)
+    // ==========================================
+    const AI_QUIZ_BANK = [
+      {
+        question: "В чем фундаментальная разница между Temperature и Top-P при генерации текста в LLM?",
+        options: [
+          "Temperature масштабирует логиты вероятностей всех токенов, а Top-P динамически отсекает кумулятивный хвост",
+          "Temperature задает длину ответа, а Top-P отвечает за точность грамматики",
+          "Temperature используется только для картинок, а Top-P — для текста",
+          "Они делают абсолютно одно и то же разными математическими формулами"
+        ],
+        correct: 0,
+        explanation: "Temperature делит логиты на T (сглаживая или делая пикообразным распределение). Top-P (nucleus sampling) суммирует вероятности сверху вниз и берет только минимальный набор токенов с суммой >= P."
+      },
+      {
+        question: "Какой формат квантования обеспечивает лучшее соотношение скорость/качество для моделей 7B-14B на 8–12 ГБ VRAM в Ollama?",
+        options: [
+          "Q4_K_M (или Q5_K_M) в формате GGUF",
+          "FP16 без квантования",
+          "Q1_0 экстремальное сжатие",
+          "INT8 классический симметричный"
+        ],
+        correct: 0,
+        explanation: "Метод k-quants (Q4_K_M) использует смешанную разрядность: критические слои внимания и эмбеддингов квантуются точнее, сохраняя до 99% качества FP16 при падении потребления памяти в 3.5 раза."
+      },
+      {
+        question: "Что дает технология LoRA (Low-Rank Adaptation) при дообучении нейросетей?",
+        options: [
+          "Замораживает исходные веса и обучает две низкоранговые матрицы A и B, снижая VRAM на 70-80%",
+          "Автоматически переводит модель на русский язык без датасета",
+          "Увеличивает контекстное окно модели в 10 раз",
+          "Позволяет запускать модель вообще без видеокарты"
+        ],
+        correct: 0,
+        explanation: "LoRA факторизует матрицу дельты весов W = W0 + B*A, где ранг r обычно от 8 до 64. Это позволяет обучать лишь доли процента от общего числа параметров."
+      },
+      {
+        question: "Что такое RoPE (Rotary Position Embedding) в современных архитектурах LLM (Llama 3, Mistral, Qwen)?",
+        options: [
+          "Метод позиционного кодирования через поворот векторов внимания в комплексной плоскости",
+          "Система защиты от промпт-инъекций и джейлбрейков",
+          "Алгоритм сжатия KV-кэша на диске",
+          "Формат упаковки весов для мобильных процессоров"
+        ],
+        correct: 0,
+        explanation: "RoPE кодирует относительное расстояние между токенами поворотом векторного пространства Q и K, обеспечивая естественное затухание внимания с расстоянием и легкое масштабирование контекста."
+      },
+      {
+        question: "Как в архитектуре MoE (Mixture of Experts) в моделях Mixtral и DeepSeek достигается высокая скорость?",
+        options: [
+          "Маршрутизатор (Router) активирует только 2 эксперта из 8 на каждый отдельный токен",
+          "Модель одновременно запускается на 8 серверах параллельно",
+          "Все вычисления переводятся в целочисленный 1-битный формат",
+          "Эксперты включаются только при ошибке основной сети"
+        ],
+        correct: 0,
+        explanation: "В MoE общие параметры модели огромны (например, 47B), но для обработки каждого токена роутер активирует лишь top-2 FFN-блока (около 13B активных параметров), кардинально экономя вычисления."
+      }
+    ];
+
+    const LINUX_QUIZ_BANK = [
+      {
+        question: "Какой командой мгновенно найти и завершить процесс, слушающий TCP-порт 8080?",
+        options: [
+          "fuser -k 8080/tcp (или kill $(lsof -t -i:8080))",
+          "netstat --kill 8080",
+          "systemctl kill port 8080",
+          "iptables -D INPUT 8080"
+        ],
+        correct: 0,
+        explanation: "Утилита fuser с флагом -k отправляет сигнал SIGKILL процессам, использующим порт. kill $(lsof -t -i:8080) также отлично справляется."
+      },
+      {
+        question: "Как перезапустить systemd-сервис только в том случае, если он уже запущен (не запуская выключенный)?",
+        options: [
+          "systemctl try-restart <service>",
+          "systemctl restart --if-running <service>",
+          "systemctl reload-or-restart <service>",
+          "service <service> conditional-restart"
+        ],
+        correct: 0,
+        explanation: "Команда 'systemctl try-restart' (или 'condrestart') перезапускает юнит только если он активен. Для остановленных сервисов команда ничего не делает."
+      },
+      {
+        question: "Какая команда покажет размер файлов и папок в текущей директории с сортировкой по убыванию в читаемом виде?",
+        options: [
+          "du -sh * | sort -hr",
+          "df -h --sort=size",
+          "ls -l --sort-bytes",
+          "find . -size +100M"
+        ],
+        correct: 0,
+        explanation: "du -sh * суммирует размер каждого элемента в human-readable формате, а sort -hr корректно сортирует суффиксы K, M, G в порядке убывания."
+      },
+      {
+        question: "Как проверить корректность конфигурационных файлов Nginx без перезагрузки и простоя веб-сервера?",
+        options: [
+          "nginx -t",
+          "systemctl check nginx",
+          "nginx --verify-config",
+          "cat /etc/nginx/nginx.conf | test"
+        ],
+        correct: 0,
+        explanation: "Команда 'nginx -t' проверяет синтаксис всех подключенных директив и выводит [ok] / [successful] либо точный номер строки с ошибкой."
+      },
+      {
+        question: "Какая современная утилита в Linux заменяет устаревший netstat для быстрого просмотра слушающих сокетов?",
+        options: [
+          "ss -tulpn",
+          "sockstat -a",
+          "ip route show all",
+          "portstat -l"
+        ],
+        correct: 0,
+        explanation: "Утилита ss (Socket Statistics) читает данные напрямую из пространства ядра через netlink, работая в разы быстрее netstat."
+      }
+    ];
+
+    let aiQuizIndex = 0;
+    let linuxQuizIndex = 0;
+    let aiQuizScore = Number(localStorage.getItem('ai_quiz_score') || 0);
+    let linuxQuizScore = Number(localStorage.getItem('linux_quiz_score') || 0);
+
+    function renderAIQuiz() {
+      const q = AI_QUIZ_BANK[aiQuizIndex % AI_QUIZ_BANK.length];
+      const qEl = document.getElementById('ai-quiz-question');
+      const optEl = document.getElementById('ai-quiz-options');
+      const fbEl = document.getElementById('ai-quiz-feedback');
+      const scoreBadge = document.getElementById('ai-quiz-score-badge');
+
+      if (!qEl || !optEl) return;
+      if (scoreBadge) scoreBadge.textContent = `Очки: ${aiQuizScore}`;
+      if (fbEl) fbEl.style.display = 'none';
+
+      qEl.textContent = q.question;
+      optEl.innerHTML = q.options.map((opt, idx) => `
+        <button type="button" onclick="handleAIQuizAnswer(${idx})" class="ai-opt-btn w-full text-left p-2.5 rounded-xl bg-slate-900/90 hover:bg-purple-950/40 border border-slate-800 hover:border-purple-500/50 text-xs text-slate-200 transition-all cursor-pointer">
+          <div class="flex items-start gap-2">
+            <span class="font-mono text-purple-400 font-bold text-[11px] shrink-0">${String.fromCharCode(65 + idx)})</span>
+            <span class="flex-1">${opt}</span>
+          </div>
+        </button>
+      `).join('');
+    }
+
+    function handleAIQuizAnswer(selectedIdx) {
+      const q = AI_QUIZ_BANK[aiQuizIndex % AI_QUIZ_BANK.length];
+      const btns = document.querySelectorAll('.ai-opt-btn');
+      const fbEl = document.getElementById('ai-quiz-feedback');
+      const scoreBadge = document.getElementById('ai-quiz-score-badge');
+
+      btns.forEach((btn, idx) => {
+        btn.disabled = true;
+        btn.classList.remove('hover:bg-purple-950/40', 'cursor-pointer');
+        if (idx === q.correct) {
+          btn.className = 'w-full text-left p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-500 text-xs text-emerald-200 transition-all';
+        } else if (idx === selectedIdx) {
+          btn.className = 'w-full text-left p-2.5 rounded-xl bg-rose-950/60 border border-rose-500 text-xs text-rose-200 transition-all';
+        } else {
+          btn.className = 'w-full text-left p-2.5 rounded-xl bg-slate-900/40 border border-slate-800/40 text-xs text-slate-500 opacity-60';
+        }
+      });
+
+      if (fbEl) {
+        fbEl.style.display = 'block';
+        if (selectedIdx === q.correct) {
+          aiQuizScore += 10;
+          localStorage.setItem('ai_quiz_score', aiQuizScore);
+          if (scoreBadge) scoreBadge.textContent = `Очки: ${aiQuizScore}`;
+          fbEl.className = 'p-3 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-200 text-xs space-y-1';
+          fbEl.innerHTML = `<div class="font-bold flex items-center gap-1.5"><span>🎉</span><span>Верно! (+10 очков)</span></div><div class="text-[11px] text-slate-300">${q.explanation}</div>`;
+        } else {
+          fbEl.className = 'p-3 rounded-2xl bg-rose-950/40 border border-rose-500/40 text-rose-200 text-xs space-y-1';
+          fbEl.innerHTML = `<div class="font-bold flex items-center gap-1.5"><span>💡</span><span>Не совсем так</span></div><div class="text-[11px] text-slate-300">${q.explanation}</div>`;
+        }
+      }
+    }
+
+    function nextAIQuiz() {
+      aiQuizIndex++;
+      renderAIQuiz();
+    }
+
+    function renderLinuxQuiz() {
+      const q = LINUX_QUIZ_BANK[linuxQuizIndex % LINUX_QUIZ_BANK.length];
+      const qEl = document.getElementById('linux-quiz-question');
+      const optEl = document.getElementById('linux-quiz-options');
+      const fbEl = document.getElementById('linux-quiz-feedback');
+      const scoreBadge = document.getElementById('linux-quiz-score-badge');
+
+      if (!qEl || !optEl) return;
+      if (scoreBadge) scoreBadge.textContent = `Очки: ${linuxQuizScore}`;
+      if (fbEl) fbEl.style.display = 'none';
+
+      qEl.textContent = q.question;
+      optEl.innerHTML = q.options.map((opt, idx) => `
+        <button type="button" onclick="handleLinuxQuizAnswer(${idx})" class="linux-opt-btn w-full text-left p-2.5 rounded-xl bg-slate-900/90 hover:bg-emerald-950/40 border border-slate-800 hover:border-emerald-500/50 text-xs text-slate-200 transition-all cursor-pointer">
+          <div class="flex items-start gap-2">
+            <span class="font-mono text-emerald-400 font-bold text-[11px] shrink-0">${String.fromCharCode(65 + idx)})</span>
+            <span class="flex-1 font-mono text-[11px]">${opt}</span>
+          </div>
+        </button>
+      `).join('');
+    }
+
+    function handleLinuxQuizAnswer(selectedIdx) {
+      const q = LINUX_QUIZ_BANK[linuxQuizIndex % LINUX_QUIZ_BANK.length];
+      const btns = document.querySelectorAll('.linux-opt-btn');
+      const fbEl = document.getElementById('linux-quiz-feedback');
+      const scoreBadge = document.getElementById('linux-quiz-score-badge');
+
+      btns.forEach((btn, idx) => {
+        btn.disabled = true;
+        btn.classList.remove('hover:bg-emerald-950/40', 'cursor-pointer');
+        if (idx === q.correct) {
+          btn.className = 'w-full text-left p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-500 text-xs text-emerald-200 transition-all font-mono text-[11px]';
+        } else if (idx === selectedIdx) {
+          btn.className = 'w-full text-left p-2.5 rounded-xl bg-rose-950/60 border border-rose-500 text-xs text-rose-200 transition-all font-mono text-[11px]';
+        } else {
+          btn.className = 'w-full text-left p-2.5 rounded-xl bg-slate-900/40 border border-slate-800/40 text-xs text-slate-500 opacity-60 font-mono text-[11px]';
+        }
+      });
+
+      if (fbEl) {
+        fbEl.style.display = 'block';
+        if (selectedIdx === q.correct) {
+          linuxQuizScore += 10;
+          localStorage.setItem('linux_quiz_score', linuxQuizScore);
+          if (scoreBadge) scoreBadge.textContent = `Очки: ${linuxQuizScore}`;
+          fbEl.className = 'p-3 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-200 text-xs space-y-1';
+          fbEl.innerHTML = `<div class="font-bold flex items-center gap-1.5"><span>🎉</span><span>Верно! (+10 очков)</span></div><div class="text-[11px] text-slate-300">${q.explanation}</div>`;
+        } else {
+          fbEl.className = 'p-3 rounded-2xl bg-rose-950/40 border border-rose-500/40 text-rose-200 text-xs space-y-1';
+          fbEl.innerHTML = `<div class="font-bold flex items-center gap-1.5"><span>💡</span><span>Разбор команды</span></div><div class="text-[11px] text-slate-300">${q.explanation}</div>`;
+        }
+      }
+    }
+
+    function nextLinuxQuiz() {
+      linuxQuizIndex++;
+      renderLinuxQuiz();
+    }
+
+    window.renderAIQuiz = renderAIQuiz;
+    window.handleAIQuizAnswer = handleAIQuizAnswer;
+    window.nextAIQuiz = nextAIQuiz;
+    window.renderLinuxQuiz = renderLinuxQuiz;
+    window.handleLinuxQuizAnswer = handleLinuxQuizAnswer;
+    window.nextLinuxQuiz = nextLinuxQuiz;
+
     window.setDynamicCategory = function(cat) {
       state.newsCategoryFilter = (cat === 'all' || cat === 'Все') ? 'all' : cat;
       const isAll = (state.newsCategoryFilter === 'all' || state.newsCategoryFilter === 'Все' || !state.newsCategoryFilter);
@@ -1153,31 +1408,38 @@
                          state.newsCategoryFilter.toLowerCase().includes('украин') || 
                          state.newsCategoryFilter.toLowerCase().includes('україна') || 
                          state.newsCategoryFilter.toLowerCase().includes('ukraine'));
-      
+
+      const isAI = !isAll && 
+                   (state.newsCategoryFilter === 'AI & Нейросети' || 
+                    state.newsCategoryFilter.toLowerCase().includes('ai') || 
+                    state.newsCategoryFilter.toLowerCase().includes('нейро'));
+
+      const isLinux = !isAll && 
+                      (state.newsCategoryFilter === 'DevOps & Linux' || 
+                       state.newsCategoryFilter.toLowerCase().includes('devops') || 
+                       state.newsCategoryFilter.toLowerCase().includes('linux'));
+
       const itAside = document.getElementById('programming-analytics-aside');
       const digestAside = document.getElementById('all-digest-aside');
       const esportsAside = document.getElementById('esports-hltv-aside');
       const ukraineAside = document.getElementById('ukraine-attacks-aside');
+      const aiAside = document.getElementById('ai-models-aside');
+      const linuxAside = document.getElementById('devops-linux-aside');
       const langBar = document.getElementById('language-selection-bar');
       const mainCol = document.getElementById('news-main-column');
 
-      if (itAside) {
-        itAside.style.display = isIT ? 'block' : 'none';
-      }
-      if (digestAside) {
-        digestAside.style.display = isAll ? 'block' : 'none';
-      }
-      if (esportsAside) {
-        esportsAside.style.display = isGaming ? 'block' : 'none';
-      }
-      if (ukraineAside) {
-        ukraineAside.style.display = isUkraine ? 'block' : 'none';
-      }
+      if (itAside) itAside.style.display = isIT ? 'block' : 'none';
+      if (digestAside) digestAside.style.display = isAll ? 'block' : 'none';
+      if (esportsAside) esportsAside.style.display = isGaming ? 'block' : 'none';
+      if (ukraineAside) ukraineAside.style.display = isUkraine ? 'block' : 'none';
+      if (aiAside) aiAside.style.display = isAI ? 'block' : 'none';
+      if (linuxAside) linuxAside.style.display = isLinux ? 'block' : 'none';
+
       if (langBar) {
         langBar.style.display = isIT ? 'flex' : 'none';
       }
       if (mainCol) {
-        if (isIT || isAll || isGaming || isUkraine) {
+        if (isIT || isAll || isGaming || isUkraine || isAI || isLinux) {
           mainCol.className = 'order-2 lg:order-1 lg:col-span-7 xl:col-span-8 space-y-6 w-full';
         } else {
           mainCol.className = 'order-2 lg:order-1 lg:col-span-12 space-y-6 w-full';
@@ -1189,6 +1451,12 @@
       }
       if (isUkraine) {
         loadUkraineAttacksSummary();
+      }
+      if (isAI) {
+        renderAIQuiz();
+      }
+      if (isLinux) {
+        renderLinuxQuiz();
       }
 
       // If switching away from IT, reset language filter
@@ -1706,7 +1974,18 @@
         const card = document.createElement('div');
         card.className = `news-card glass-panel glass-panel-hover rounded-2xl md:rounded-3xl overflow-hidden border ${borderClass} flex flex-col group transition-all duration-300 hover:shadow-2xl hover:shadow-sky-500/5 md:hover:-translate-y-1`;
 
+        const isPractice = article.is_practice ||
+          (category === 'AI & Нейросети' || category === 'DevOps & Linux') &&
+          (['задач', 'практик', 'квиз', 'решени', 'туториал', 'шпаргалк', 'совет', 'лайфхак', 'interview', 'cheat', 'quiz', 'challenge', 'shorts', 'youtube.com'].some(kw =>
+            ((article.title || '') + ' ' + (article.summary || '') + ' ' + (article.why_it_matters || '') + ' ' + (article.source || '') + ' ' + (article.url || '')).toLowerCase().includes(kw)
+          ));
+
+        const practiceBadge = isPractice
+          ? `<span class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-emerald-500/25 backdrop-blur-md text-emerald-300 border border-emerald-400/50 shadow-lg shadow-emerald-500/20 flex items-center gap-1">🧠 Практика</span>`
+          : '';
+
         const mobilePriorityBadge = isPriority ? `<span class="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/30 text-amber-300 shrink-0">⭐</span>` : '';
+        const mobilePracticeBadge = isPractice ? `<span class="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/25 text-emerald-300 shrink-0">🧠</span>` : '';
         const mobileScoreBadge = isHighQuality 
           ? `<span class="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/25 text-amber-300 shrink-0 font-mono">🔥${score}</span>` 
           : `<span class="px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-slate-800 text-slate-400 shrink-0 font-mono">${score}</span>`;
@@ -1717,6 +1996,7 @@
               <span class="text-xs shrink-0">${getCategoryEmoji(category)}</span>
               <span class="text-[10px] font-mono text-slate-400 shrink-0">${timeStr}</span>
               ${mobilePriorityBadge}
+              ${mobilePracticeBadge}
               ${mobileScoreBadge}
               <span class="text-xs font-semibold text-white truncate flex-1 leading-snug">${title}</span>
             </div>
@@ -1749,6 +2029,7 @@
                 <span>ВИДЕО</span>
               </button>
               ${priorityBadge}
+              ${practiceBadge}
               ${scoreBadge}
             </div>
 
@@ -1786,6 +2067,7 @@
                 <span>${category}</span>
               </span>
               ${priorityBadge}
+              ${practiceBadge}
               ${scoreBadge}
               ${diagramBadge}
             </div>
