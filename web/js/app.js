@@ -1301,8 +1301,33 @@
     let aiQuizScore = Number(localStorage.getItem('ai_quiz_score') || 0);
     let linuxQuizScore = Number(localStorage.getItem('linux_quiz_score') || 0);
 
+    // Current displayed shuffled questions
+    let currentAIShuffled = null;
+    let currentLinuxShuffled = null;
+
+    function shuffleOptions(questionObj) {
+      const items = questionObj.options.map((opt, originalIdx) => ({
+        text: opt,
+        isCorrect: originalIdx === questionObj.correct
+      }));
+      // Fisher-Yates shuffle
+      for (let i = items.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [items[i], items[j]] = [items[j], items[i]];
+      }
+      return {
+        question: questionObj.question,
+        options: items.map(it => it.text),
+        correctIdx: items.findIndex(it => it.isCorrect),
+        explanation: questionObj.explanation
+      };
+    }
+
     function renderAIQuiz() {
-      const q = AI_QUIZ_BANK[aiQuizIndex % AI_QUIZ_BANK.length];
+      const baseQ = AI_QUIZ_BANK[aiQuizIndex % AI_QUIZ_BANK.length];
+      currentAIShuffled = shuffleOptions(baseQ);
+      const q = currentAIShuffled;
+
       const qEl = document.getElementById('ai-quiz-question');
       const optEl = document.getElementById('ai-quiz-options');
       const fbEl = document.getElementById('ai-quiz-feedback');
@@ -1324,7 +1349,8 @@
     }
 
     function handleAIQuizAnswer(selectedIdx) {
-      const q = AI_QUIZ_BANK[aiQuizIndex % AI_QUIZ_BANK.length];
+      if (!currentAIShuffled) return;
+      const q = currentAIShuffled;
       const btns = document.querySelectorAll('.ai-opt-btn');
       const fbEl = document.getElementById('ai-quiz-feedback');
       const scoreBadge = document.getElementById('ai-quiz-score-badge');
@@ -1332,7 +1358,7 @@
       btns.forEach((btn, idx) => {
         btn.disabled = true;
         btn.classList.remove('hover:bg-purple-950/40', 'cursor-pointer');
-        if (idx === q.correct) {
+        if (idx === q.correctIdx) {
           btn.className = 'w-full text-left p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-500 text-xs text-emerald-200 transition-all';
         } else if (idx === selectedIdx) {
           btn.className = 'w-full text-left p-2.5 rounded-xl bg-rose-950/60 border border-rose-500 text-xs text-rose-200 transition-all';
@@ -1343,7 +1369,7 @@
 
       if (fbEl) {
         fbEl.style.display = 'block';
-        if (selectedIdx === q.correct) {
+        if (selectedIdx === q.correctIdx) {
           aiQuizScore += 10;
           localStorage.setItem('ai_quiz_score', aiQuizScore);
           if (scoreBadge) scoreBadge.textContent = `Очки: ${aiQuizScore}`;
@@ -1362,7 +1388,10 @@
     }
 
     function renderLinuxQuiz() {
-      const q = LINUX_QUIZ_BANK[linuxQuizIndex % LINUX_QUIZ_BANK.length];
+      const baseQ = LINUX_QUIZ_BANK[linuxQuizIndex % LINUX_QUIZ_BANK.length];
+      currentLinuxShuffled = shuffleOptions(baseQ);
+      const q = currentLinuxShuffled;
+
       const qEl = document.getElementById('linux-quiz-question');
       const optEl = document.getElementById('linux-quiz-options');
       const fbEl = document.getElementById('linux-quiz-feedback');
@@ -1384,7 +1413,8 @@
     }
 
     function handleLinuxQuizAnswer(selectedIdx) {
-      const q = LINUX_QUIZ_BANK[linuxQuizIndex % LINUX_QUIZ_BANK.length];
+      if (!currentLinuxShuffled) return;
+      const q = currentLinuxShuffled;
       const btns = document.querySelectorAll('.linux-opt-btn');
       const fbEl = document.getElementById('linux-quiz-feedback');
       const scoreBadge = document.getElementById('linux-quiz-score-badge');
@@ -1392,7 +1422,7 @@
       btns.forEach((btn, idx) => {
         btn.disabled = true;
         btn.classList.remove('hover:bg-emerald-950/40', 'cursor-pointer');
-        if (idx === q.correct) {
+        if (idx === q.correctIdx) {
           btn.className = 'w-full text-left p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-500 text-xs text-emerald-200 transition-all font-mono text-[11px]';
         } else if (idx === selectedIdx) {
           btn.className = 'w-full text-left p-2.5 rounded-xl bg-rose-950/60 border border-rose-500 text-xs text-rose-200 transition-all font-mono text-[11px]';
@@ -1403,7 +1433,7 @@
 
       if (fbEl) {
         fbEl.style.display = 'block';
-        if (selectedIdx === q.correct) {
+        if (selectedIdx === q.correctIdx) {
           linuxQuizScore += 10;
           localStorage.setItem('linux_quiz_score', linuxQuizScore);
           if (scoreBadge) scoreBadge.textContent = `Очки: ${linuxQuizScore}`;
