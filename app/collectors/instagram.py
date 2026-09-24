@@ -120,21 +120,49 @@ class InstagramCollector(BaseCollector):
                         if poster_match:
                             img_url = poster_match.group(1)
 
-                    raw_content = text_only
-                    if img_url:
-                        filename = f"ig_{self.username}_{shortcode}.jpg"
-                        filepath = media_dir / filename
-                        if not filepath.exists() or filepath.stat().st_size == 0:
+                    filename = f"ig_{self.username}_{shortcode}.jpg"
+                    filepath = media_dir / filename
+                    is_video = ("<video" in raw_html) or ("\u25b6" in (item.get("title") or ""))
+
+                    # Try fetching high-resolution CDN og:image directly from Instagram via OpenGraph crawler
+                    if not filepath.exists() or filepath.stat().st_size == 0:
+                        direct_img_url = None
+                        crawler_headers = {
+                            "User-Agent": "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
+                            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                        }
+                        try:
+                            og_resp = await dl_client.get(post_url, headers=crawler_headers, timeout=8.0)
+                            if og_resp.status_code == 200:
+                                m_og = re.search(r'<meta\s+(?:property|name)=["\']og:image["\']\s+content=["\']([^"\']+)["\']', og_resp.text, re.I)
+                                if not m_og:
+                                    m_og = re.search(r'content=["\']([^"\']+)["\']\s+(?:property|name)=["\']og:image["\']', og_resp.text, re.I)
+                                if m_og:
+                                    direct_img_url = html.unescape(m_og.group(1))
+                        except Exception as og_err:
+                            logger.debug("Failed to fetch og:image for %s: %s", post_url, og_err)
+
+                        # Try downloading direct CDN image first, fallback to bridge img_url
+                        candidate_dl_urls = [u for u in [direct_img_url, img_url] if u]
+                        for c_url in candidate_dl_urls:
                             try:
-                                img_resp = await dl_client.get(img_url)
+                                img_resp = await dl_client.get(c_url, timeout=10.0)
                                 if img_resp.status_code == 200 and len(img_resp.content) > 1000:
                                     filepath.write_bytes(img_resp.content)
-                                    logger.info("Downloaded Instagram image -> %s", filename)
+                                    logger.info("Downloaded Instagram image -> %s (%d bytes)", filename, len(img_resp.content))
+                                    break
                             except Exception as dl_e:
-                                logger.debug("Could not download image %s: %s", img_url, dl_e)
+                                logger.debug("Could not download image %s: %s", c_url, dl_e)
 
-                        if filepath.exists() and filepath.stat().st_size > 0:
-                            raw_content = f'<img src="/media/{filename}" alt="{title}" />\n' + raw_content
+                    raw_content = text_only
+                    media_tags = []
+                    if filepath.exists() and filepath.stat().st_size > 0:
+                        if is_video:
+                            media_tags.append(f'<video poster="/media/{filename}" controls preload="metadata"></video>')
+                        media_tags.append(f'<img src="/media/{filename}" alt="{title}" />')
+
+                    if media_tags:
+                        raw_content = "\n".join(media_tags) + "\n" + raw_content
 
                     collected_items.append(
                         CollectedItem(

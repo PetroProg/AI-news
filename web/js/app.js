@@ -722,8 +722,10 @@
     function getArticleImage(article, index) {
       if (article.image_url) return article.image_url;
       if (article.raw_content) {
-        const match = article.raw_content.match(/<img[^>]+src=["'](https?:\/\/[^"']+)["']/i);
+        const match = article.raw_content.match(/<img[^>]+src=["']([^"']+)["']/i);
         if (match && match[1]) return match[1];
+        const posterMatch = article.raw_content.match(/<video[^>]+poster=["']([^"']+)["']/i);
+        if (posterMatch && posterMatch[1]) return posterMatch[1];
       }
 
       const text = ((article.title || '') + ' ' + (article.category || '') + ' ' + (article.source || '')).toLowerCase();
