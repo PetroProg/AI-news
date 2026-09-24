@@ -145,6 +145,10 @@ class SummarizerService:
                 chosen_category = "Украина"
             elif is_gaming or (analysis.category and analysis.category.lower() in ["игры & киберспорт", "игры и киберспорт", "gaming", "cs2"]):
                 chosen_category = "CS2"
+            elif (analysis.category and any(k in analysis.category.lower() for k in ["linux", "devops", "opennet", "инфраструктур", "сервер"])) or ("opennet" in combined_source):
+                chosen_category = "DevOps & Linux"
+            elif (analysis.category and any(k in analysis.category.lower() for k in ["ai", "нейро", "интеллект", "llm", "машинн", "ml"])) or ("huggingface" in combined_source):
+                chosen_category = "AI & Нейросети"
             elif analysis.category and analysis.category.lower() in ["it & аналитика", "it-аналитик", "development", "общие технологии", "general tech", "technology"]:
                 chosen_category = "IT"
             else:
