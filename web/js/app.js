@@ -1304,164 +1304,6 @@
       }
     ];
 
-    let aiQuizIndex = 0;
-    let linuxQuizIndex = 0;
-    let aiQuizScore = Number(localStorage.getItem('ai_quiz_score') || 0);
-    let linuxQuizScore = Number(localStorage.getItem('linux_quiz_score') || 0);
-
-    // Current displayed shuffled questions
-    let currentAIShuffled = null;
-    let currentLinuxShuffled = null;
-
-    function shuffleOptions(questionObj) {
-      const items = questionObj.options.map((opt, originalIdx) => ({
-        text: opt,
-        isCorrect: originalIdx === questionObj.correct
-      }));
-      // Fisher-Yates shuffle
-      for (let i = items.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [items[i], items[j]] = [items[j], items[i]];
-      }
-      return {
-        question: questionObj.question,
-        options: items.map(it => it.text),
-        correctIdx: items.findIndex(it => it.isCorrect),
-        explanation: questionObj.explanation
-      };
-    }
-
-    function renderAIQuiz() {
-      const baseQ = AI_QUIZ_BANK[aiQuizIndex % AI_QUIZ_BANK.length];
-      currentAIShuffled = shuffleOptions(baseQ);
-      const q = currentAIShuffled;
-
-      const qEl = document.getElementById('ai-quiz-question');
-      const optEl = document.getElementById('ai-quiz-options');
-      const fbEl = document.getElementById('ai-quiz-feedback');
-      const scoreBadge = document.getElementById('ai-quiz-score-badge');
-
-      if (!qEl || !optEl) return;
-      if (scoreBadge) scoreBadge.textContent = `Очки: ${aiQuizScore}`;
-      if (fbEl) fbEl.style.display = 'none';
-
-      qEl.textContent = q.question;
-      optEl.innerHTML = q.options.map((opt, idx) => `
-        <button type="button" onclick="handleAIQuizAnswer(${idx})" class="ai-opt-btn w-full text-left p-2.5 rounded-xl bg-slate-900/90 hover:bg-purple-950/40 border border-slate-800 hover:border-purple-500/50 text-xs text-slate-200 transition-all cursor-pointer">
-          <div class="flex items-start gap-2">
-            <span class="font-mono text-purple-400 font-bold text-[11px] shrink-0">${String.fromCharCode(65 + idx)})</span>
-            <span class="flex-1">${opt}</span>
-          </div>
-        </button>
-      `).join('');
-    }
-
-    function handleAIQuizAnswer(selectedIdx) {
-      if (!currentAIShuffled) return;
-      const q = currentAIShuffled;
-      const btns = document.querySelectorAll('.ai-opt-btn');
-      const fbEl = document.getElementById('ai-quiz-feedback');
-      const scoreBadge = document.getElementById('ai-quiz-score-badge');
-
-      btns.forEach((btn, idx) => {
-        btn.disabled = true;
-        btn.classList.remove('hover:bg-purple-950/40', 'cursor-pointer');
-        if (idx === q.correctIdx) {
-          btn.className = 'w-full text-left p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-500 text-xs text-emerald-200 transition-all';
-        } else if (idx === selectedIdx) {
-          btn.className = 'w-full text-left p-2.5 rounded-xl bg-rose-950/60 border border-rose-500 text-xs text-rose-200 transition-all';
-        } else {
-          btn.className = 'w-full text-left p-2.5 rounded-xl bg-slate-900/40 border border-slate-800/40 text-xs text-slate-500 opacity-60';
-        }
-      });
-
-      if (fbEl) {
-        fbEl.style.display = 'block';
-        if (selectedIdx === q.correctIdx) {
-          aiQuizScore += 10;
-          localStorage.setItem('ai_quiz_score', aiQuizScore);
-          if (scoreBadge) scoreBadge.textContent = `Очки: ${aiQuizScore}`;
-          fbEl.className = 'p-3 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-200 text-xs space-y-1';
-          fbEl.innerHTML = `<div class="font-bold flex items-center gap-1.5"><span>🎉</span><span>Верно! (+10 очков)</span></div><div class="text-[11px] text-slate-300">${q.explanation}</div>`;
-        } else {
-          fbEl.className = 'p-3 rounded-2xl bg-rose-950/40 border border-rose-500/40 text-rose-200 text-xs space-y-1';
-          fbEl.innerHTML = `<div class="font-bold flex items-center gap-1.5"><span>💡</span><span>Не совсем так</span></div><div class="text-[11px] text-slate-300">${q.explanation}</div>`;
-        }
-      }
-    }
-
-    function nextAIQuiz() {
-      aiQuizIndex++;
-      renderAIQuiz();
-    }
-
-    function renderLinuxQuiz() {
-      const baseQ = LINUX_QUIZ_BANK[linuxQuizIndex % LINUX_QUIZ_BANK.length];
-      currentLinuxShuffled = shuffleOptions(baseQ);
-      const q = currentLinuxShuffled;
-
-      const qEl = document.getElementById('linux-quiz-question');
-      const optEl = document.getElementById('linux-quiz-options');
-      const fbEl = document.getElementById('linux-quiz-feedback');
-      const scoreBadge = document.getElementById('linux-quiz-score-badge');
-
-      if (!qEl || !optEl) return;
-      if (scoreBadge) scoreBadge.textContent = `Очки: ${linuxQuizScore}`;
-      if (fbEl) fbEl.style.display = 'none';
-
-      qEl.textContent = q.question;
-      optEl.innerHTML = q.options.map((opt, idx) => `
-        <button type="button" onclick="handleLinuxQuizAnswer(${idx})" class="linux-opt-btn w-full text-left p-2.5 rounded-xl bg-slate-900/90 hover:bg-emerald-950/40 border border-slate-800 hover:border-emerald-500/50 text-xs text-slate-200 transition-all cursor-pointer">
-          <div class="flex items-start gap-2">
-            <span class="font-mono text-emerald-400 font-bold text-[11px] shrink-0">${String.fromCharCode(65 + idx)})</span>
-            <span class="flex-1 font-mono text-[11px]">${opt}</span>
-          </div>
-        </button>
-      `).join('');
-    }
-
-    function handleLinuxQuizAnswer(selectedIdx) {
-      if (!currentLinuxShuffled) return;
-      const q = currentLinuxShuffled;
-      const btns = document.querySelectorAll('.linux-opt-btn');
-      const fbEl = document.getElementById('linux-quiz-feedback');
-      const scoreBadge = document.getElementById('linux-quiz-score-badge');
-
-      btns.forEach((btn, idx) => {
-        btn.disabled = true;
-        btn.classList.remove('hover:bg-emerald-950/40', 'cursor-pointer');
-        if (idx === q.correctIdx) {
-          btn.className = 'w-full text-left p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-500 text-xs text-emerald-200 transition-all font-mono text-[11px]';
-        } else if (idx === selectedIdx) {
-          btn.className = 'w-full text-left p-2.5 rounded-xl bg-rose-950/60 border border-rose-500 text-xs text-rose-200 transition-all font-mono text-[11px]';
-        } else {
-          btn.className = 'w-full text-left p-2.5 rounded-xl bg-slate-900/40 border border-slate-800/40 text-xs text-slate-500 opacity-60 font-mono text-[11px]';
-        }
-      });
-
-      if (fbEl) {
-        fbEl.style.display = 'block';
-        if (selectedIdx === q.correctIdx) {
-          linuxQuizScore += 10;
-          localStorage.setItem('linux_quiz_score', linuxQuizScore);
-          if (scoreBadge) scoreBadge.textContent = `Очки: ${linuxQuizScore}`;
-          fbEl.className = 'p-3 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-200 text-xs space-y-1';
-          fbEl.innerHTML = `<div class="font-bold flex items-center gap-1.5"><span>🎉</span><span>Верно! (+10 очков)</span></div><div class="text-[11px] text-slate-300">${q.explanation}</div>`;
-        } else {
-          fbEl.className = 'p-3 rounded-2xl bg-rose-950/40 border border-rose-500/40 text-rose-200 text-xs space-y-1';
-          fbEl.innerHTML = `<div class="font-bold flex items-center gap-1.5"><span>💡</span><span>Разбор команды</span></div><div class="text-[11px] text-slate-300">${q.explanation}</div>`;
-        }
-      }
-    }
-
-    function nextLinuxQuiz() {
-      linuxQuizIndex++;
-      renderLinuxQuiz();
-    }
-
-    // ==========================================
-    // MULTI-LANGUAGE SHORT CODE CHALLENGES (IT)
-    // ==========================================
     const IT_QUIZ_BANK = [
       {
         lang: "Python",
@@ -1543,12 +1385,238 @@
       }
     ];
 
+    // In-memory pools of questions for the session
+    const AI_QUIZ_POOL = [...AI_QUIZ_BANK];
+    const LINUX_QUIZ_POOL = [...LINUX_QUIZ_BANK];
+    const IT_QUIZ_POOL = [...IT_QUIZ_BANK];
+
+
+    let aiQuizIndex = 0;
+    let linuxQuizIndex = 0;
     let itQuizIndex = 0;
+
+    let aiQuizScore = Number(localStorage.getItem('ai_quiz_score') || 0);
+    let linuxQuizScore = Number(localStorage.getItem('linux_quiz_score') || 0);
     let itQuizScore = Number(localStorage.getItem('it_quiz_score') || 0);
+
+    // Current displayed shuffled questions
+    let currentAIShuffled = null;
+    let currentLinuxShuffled = null;
     let currentITShuffled = null;
 
+    let isFetchingAIQuiz = false;
+    let isFetchingLinuxQuiz = false;
+    let isFetchingITQuiz = false;
+
+    function shuffleOptions(questionObj) {
+      const items = questionObj.options.map((opt, originalIdx) => ({
+        text: opt,
+        isCorrect: originalIdx === questionObj.correct
+      }));
+      // Fisher-Yates shuffle
+      for (let i = items.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [items[i], items[j]] = [items[j], items[i]];
+      }
+      return {
+        question: questionObj.question,
+        options: items.map(it => it.text),
+        correctIdx: items.findIndex(it => it.isCorrect),
+        explanation: questionObj.explanation,
+        lang: questionObj.lang,
+        code: questionObj.code,
+        is_ai_generated: questionObj.is_ai_generated
+      };
+    }
+
+    async function fetchNextDynamicQuiz(category) {
+      try {
+        const pool = category === 'ai' ? AI_QUIZ_POOL : (category === 'linux' ? LINUX_QUIZ_POOL : IT_QUIZ_POOL);
+        const excludeList = pool.slice(-6).map(q => encodeURIComponent(q.question.slice(0, 40))).join(',');
+        const res = await fetch(`/api/quiz/next?category=${category}&exclude=${excludeList}`);
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (data && data.question && Array.isArray(data.options) && data.options.length === 4) {
+          const exists = pool.some(item => item.question === data.question);
+          if (!exists) {
+            pool.push(data);
+          }
+          return data;
+        }
+      } catch (err) {
+        console.warn(`Ошибка фонового запроса задачи [${category}]:`, err);
+      }
+      return null;
+    }
+
+    function renderAIQuiz() {
+      const baseQ = AI_QUIZ_POOL[aiQuizIndex % AI_QUIZ_POOL.length];
+      currentAIShuffled = shuffleOptions(baseQ);
+      const q = currentAIShuffled;
+
+      const qEl = document.getElementById('ai-quiz-question');
+      const optEl = document.getElementById('ai-quiz-options');
+      const fbEl = document.getElementById('ai-quiz-feedback');
+      const scoreBadge = document.getElementById('ai-quiz-score-badge');
+
+      if (!qEl || !optEl) return;
+      if (scoreBadge) scoreBadge.textContent = `Очки: ${aiQuizScore}`;
+      if (fbEl) fbEl.style.display = 'none';
+
+      qEl.textContent = q.question;
+      optEl.innerHTML = q.options.map((opt, idx) => `
+        <button type="button" onclick="handleAIQuizAnswer(${idx})" class="ai-opt-btn w-full text-left p-2.5 rounded-xl bg-slate-900/90 hover:bg-purple-950/40 border border-slate-800 hover:border-purple-500/50 text-xs text-slate-200 transition-all cursor-pointer">
+          <div class="flex items-start gap-2">
+            <span class="font-mono text-purple-400 font-bold text-[11px] shrink-0">${String.fromCharCode(65 + idx)})</span>
+            <span class="flex-1">${opt}</span>
+          </div>
+        </button>
+      `).join('');
+    }
+
+    function handleAIQuizAnswer(selectedIdx) {
+      if (!currentAIShuffled) return;
+      const q = currentAIShuffled;
+      const btns = document.querySelectorAll('.ai-opt-btn');
+      const fbEl = document.getElementById('ai-quiz-feedback');
+      const scoreBadge = document.getElementById('ai-quiz-score-badge');
+
+      btns.forEach((btn, idx) => {
+        btn.disabled = true;
+        btn.classList.remove('hover:bg-purple-950/40', 'cursor-pointer');
+        if (idx === q.correctIdx) {
+          btn.className = 'w-full text-left p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-500 text-xs text-emerald-200 transition-all';
+        } else if (idx === selectedIdx) {
+          btn.className = 'w-full text-left p-2.5 rounded-xl bg-rose-950/60 border border-rose-500 text-xs text-rose-200 transition-all';
+        } else {
+          btn.className = 'w-full text-left p-2.5 rounded-xl bg-slate-900/40 border border-slate-800/40 text-xs text-slate-500 opacity-60';
+        }
+      });
+
+      if (fbEl) {
+        fbEl.style.display = 'block';
+        if (selectedIdx === q.correctIdx) {
+          aiQuizScore += 10;
+          localStorage.setItem('ai_quiz_score', aiQuizScore);
+          if (scoreBadge) scoreBadge.textContent = `Очки: ${aiQuizScore}`;
+          fbEl.className = 'p-3 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-200 text-xs space-y-1';
+          fbEl.innerHTML = `<div class="font-bold flex items-center gap-1.5"><span>🎉</span><span>Верно! (+10 очков)</span></div><div class="text-[11px] text-slate-300">${q.explanation}</div>`;
+        } else {
+          fbEl.className = 'p-3 rounded-2xl bg-rose-950/40 border border-rose-500/40 text-rose-200 text-xs space-y-1';
+          fbEl.innerHTML = `<div class="font-bold flex items-center gap-1.5"><span>💡</span><span>Не совсем так</span></div><div class="text-[11px] text-slate-300">${q.explanation}</div>`;
+        }
+      }
+    }
+
+    async function nextAIQuiz() {
+      const btn = document.querySelector('button[onclick="nextAIQuiz()"]');
+      if (btn) btn.classList.add('opacity-50', 'animate-spin');
+
+      if (!isFetchingAIQuiz) {
+        isFetchingAIQuiz = true;
+        try {
+          const freshQ = await fetchNextDynamicQuiz('ai');
+          if (freshQ) {
+            aiQuizIndex = AI_QUIZ_POOL.length - 1;
+          } else {
+            aiQuizIndex++;
+          }
+        } finally {
+          isFetchingAIQuiz = false;
+        }
+      } else {
+        aiQuizIndex++;
+      }
+
+      if (btn) btn.classList.remove('opacity-50', 'animate-spin');
+      renderAIQuiz();
+    }
+
+    function renderLinuxQuiz() {
+      const baseQ = LINUX_QUIZ_POOL[linuxQuizIndex % LINUX_QUIZ_POOL.length];
+      currentLinuxShuffled = shuffleOptions(baseQ);
+      const q = currentLinuxShuffled;
+
+      const qEl = document.getElementById('linux-quiz-question');
+      const optEl = document.getElementById('linux-quiz-options');
+      const fbEl = document.getElementById('linux-quiz-feedback');
+      const scoreBadge = document.getElementById('linux-quiz-score-badge');
+
+      if (!qEl || !optEl) return;
+      if (scoreBadge) scoreBadge.textContent = `Очки: ${linuxQuizScore}`;
+      if (fbEl) fbEl.style.display = 'none';
+
+      qEl.textContent = q.question;
+      optEl.innerHTML = q.options.map((opt, idx) => `
+        <button type="button" onclick="handleLinuxQuizAnswer(${idx})" class="linux-opt-btn w-full text-left p-2.5 rounded-xl bg-slate-900/90 hover:bg-emerald-950/40 border border-slate-800 hover:border-emerald-500/50 text-xs text-slate-200 transition-all cursor-pointer">
+          <div class="flex items-start gap-2">
+            <span class="font-mono text-emerald-400 font-bold text-[11px] shrink-0">${String.fromCharCode(65 + idx)})</span>
+            <span class="flex-1 font-mono text-[11px]">${opt}</span>
+          </div>
+        </button>
+      `).join('');
+    }
+
+    function handleLinuxQuizAnswer(selectedIdx) {
+      if (!currentLinuxShuffled) return;
+      const q = currentLinuxShuffled;
+      const btns = document.querySelectorAll('.linux-opt-btn');
+      const fbEl = document.getElementById('linux-quiz-feedback');
+      const scoreBadge = document.getElementById('linux-quiz-score-badge');
+
+      btns.forEach((btn, idx) => {
+        btn.disabled = true;
+        btn.classList.remove('hover:bg-emerald-950/40', 'cursor-pointer');
+        if (idx === q.correctIdx) {
+          btn.className = 'w-full text-left p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-500 text-xs text-emerald-200 transition-all font-mono text-[11px]';
+        } else if (idx === selectedIdx) {
+          btn.className = 'w-full text-left p-2.5 rounded-xl bg-rose-950/60 border border-rose-500 text-xs text-rose-200 transition-all font-mono text-[11px]';
+        } else {
+          btn.className = 'w-full text-left p-2.5 rounded-xl bg-slate-900/40 border border-slate-800/40 text-xs text-slate-500 opacity-60 font-mono text-[11px]';
+        }
+      });
+
+      if (fbEl) {
+        fbEl.style.display = 'block';
+        if (selectedIdx === q.correctIdx) {
+          linuxQuizScore += 10;
+          localStorage.setItem('linux_quiz_score', linuxQuizScore);
+          if (scoreBadge) scoreBadge.textContent = `Очки: ${linuxQuizScore}`;
+          fbEl.className = 'p-3 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-200 text-xs space-y-1';
+          fbEl.innerHTML = `<div class="font-bold flex items-center gap-1.5"><span>🎉</span><span>Верно! (+10 очков)</span></div><div class="text-[11px] text-slate-300">${q.explanation}</div>`;
+        } else {
+          fbEl.className = 'p-3 rounded-2xl bg-rose-950/40 border border-rose-500/40 text-rose-200 text-xs space-y-1';
+          fbEl.innerHTML = `<div class="font-bold flex items-center gap-1.5"><span>💡</span><span>Разбор команды</span></div><div class="text-[11px] text-slate-300">${q.explanation}</div>`;
+        }
+      }
+    }
+
+    async function nextLinuxQuiz() {
+      const btn = document.querySelector('button[onclick="nextLinuxQuiz()"]');
+      if (btn) btn.classList.add('opacity-50', 'animate-spin');
+
+      if (!isFetchingLinuxQuiz) {
+        isFetchingLinuxQuiz = true;
+        try {
+          const freshQ = await fetchNextDynamicQuiz('linux');
+          if (freshQ) {
+            linuxQuizIndex = LINUX_QUIZ_POOL.length - 1;
+          } else {
+            linuxQuizIndex++;
+          }
+        } finally {
+          isFetchingLinuxQuiz = false;
+        }
+      } else {
+        linuxQuizIndex++;
+      }
+
+      if (btn) btn.classList.remove('opacity-50', 'animate-spin');
+      renderLinuxQuiz();
+    }
+
     function renderITQuiz() {
-      const baseQ = IT_QUIZ_BANK[itQuizIndex % IT_QUIZ_BANK.length];
+      const baseQ = IT_QUIZ_POOL[itQuizIndex % IT_QUIZ_POOL.length];
       currentITShuffled = shuffleOptions(baseQ);
       const q = currentITShuffled;
 
@@ -1563,16 +1631,17 @@
       if (scoreBadge) scoreBadge.textContent = `Очки: ${itQuizScore}`;
       if (fbEl) fbEl.style.display = 'none';
 
+      const langName = baseQ.lang || q.lang || 'Code';
       if (langTag) {
-        langTag.textContent = baseQ.lang || 'Code';
-        if (baseQ.lang === 'Python') langTag.className = 'px-2 py-0.5 rounded-md font-mono text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40';
-        else if (baseQ.lang === 'JavaScript') langTag.className = 'px-2 py-0.5 rounded-md font-mono text-[10px] font-bold bg-yellow-500/20 text-yellow-300 border border-yellow-500/40';
-        else if (baseQ.lang === 'Go') langTag.className = 'px-2 py-0.5 rounded-md font-mono text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40';
-        else if (baseQ.lang === 'Rust') langTag.className = 'px-2 py-0.5 rounded-md font-mono text-[10px] font-bold bg-orange-500/20 text-orange-300 border border-orange-500/40';
+        langTag.textContent = langName;
+        if (langName === 'Python') langTag.className = 'px-2 py-0.5 rounded-md font-mono text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40';
+        else if (langName === 'JavaScript') langTag.className = 'px-2 py-0.5 rounded-md font-mono text-[10px] font-bold bg-yellow-500/20 text-yellow-300 border border-yellow-500/40';
+        else if (langName === 'Go') langTag.className = 'px-2 py-0.5 rounded-md font-mono text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40';
+        else if (langName === 'Rust') langTag.className = 'px-2 py-0.5 rounded-md font-mono text-[10px] font-bold bg-orange-500/20 text-orange-300 border border-orange-500/40';
         else langTag.className = 'px-2 py-0.5 rounded-md font-mono text-[10px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/40';
       }
 
-      codeEl.textContent = baseQ.code;
+      codeEl.textContent = baseQ.code || q.code || '';
       qEl.textContent = q.question;
       optEl.innerHTML = q.options.map((opt, idx) => `
         <button type="button" onclick="handleITQuizAnswer(${idx})" class="it-opt-btn w-full text-left p-2.5 rounded-xl bg-slate-900/90 hover:bg-sky-950/40 border border-slate-800 hover:border-sky-500/50 text-xs text-slate-200 transition-all cursor-pointer">
@@ -1618,8 +1687,27 @@
       }
     }
 
-    function nextITQuiz() {
-      itQuizIndex++;
+    async function nextITQuiz() {
+      const btn = document.querySelector('button[onclick="nextITQuiz()"]');
+      if (btn) btn.classList.add('opacity-50', 'animate-spin');
+
+      if (!isFetchingITQuiz) {
+        isFetchingITQuiz = true;
+        try {
+          const freshQ = await fetchNextDynamicQuiz('it');
+          if (freshQ) {
+            itQuizIndex = IT_QUIZ_POOL.length - 1;
+          } else {
+            itQuizIndex++;
+          }
+        } finally {
+          isFetchingITQuiz = false;
+        }
+      } else {
+        itQuizIndex++;
+      }
+
+      if (btn) btn.classList.remove('opacity-50', 'animate-spin');
       renderITQuiz();
     }
 
@@ -1632,6 +1720,7 @@
     window.renderITQuiz = renderITQuiz;
     window.handleITQuizAnswer = handleITQuizAnswer;
     window.nextITQuiz = nextITQuiz;
+
 
     window.setDynamicCategory = function(cat) {
       state.newsCategoryFilter = (cat === 'all' || cat === 'Все') ? 'all' : cat;
