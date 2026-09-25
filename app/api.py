@@ -1,7 +1,7 @@
 from datetime import datetime, timezone, timedelta
 import time
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 import re
 import httpx
 try:
@@ -603,3 +603,11 @@ async def get_ukraine_attacks_summary(session: AsyncSession = Depends(get_db_ses
         "updated_at": datetime.now(timezone.utc).strftime("%d.%m.%Y %H:%M UTC")
     }
 
+
+@app.get("/api/quiz/next")
+async def get_next_quiz(category: str = "ai", exclude: Optional[str] = None):
+    """Return the next dynamic or pre-fetched AI quiz challenge."""
+    from app.services.quiz_service import QuizService
+    exclude_list = [item.strip() for item in exclude.split(",") if item.strip()] if exclude else []
+    question_data = await QuizService.get_next_question(category, exclude_list)
+    return question_data
