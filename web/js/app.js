@@ -2247,7 +2247,19 @@
 
       const topAllCount = state.articles.filter(a => isArticleEligibleForDisplay(a, 'all')).length;
 
-      const sortedCategories = Object.keys(catCounts).sort((a, b) => catCounts[b] - catCounts[a]);
+      // Always guarantee essential categories are present even if article count is 0
+      const essentialCats = ['F1', 'IT', 'CS2', 'Украина', 'Swiss', 'AI & Нейросети', 'DevOps & Linux'];
+      essentialCats.forEach(ec => {
+        if (catCounts[ec] === undefined) {
+          catCounts[ec] = 0;
+        }
+      });
+
+      const sortedCategories = Object.keys(catCounts).sort((a, b) => {
+        const countDiff = (catCounts[b] || 0) - (catCounts[a] || 0);
+        if (countDiff !== 0) return countDiff;
+        return a.localeCompare(b);
+      });
       const categories = ['Все', ...sortedCategories];
 
       container.innerHTML = categories.map(cat => {
@@ -2511,14 +2523,26 @@
       }
 
       if (filtered.length === 0) {
-        const msg = isAll
-          ? 'В категории «Все» отображаются главные события с наивысшей важностью (оценка ≥ 8.0). Менее критичные события (6.0–8.0) собраны в экспресс-дайджесте справа.'
-          : 'В этой выборке нет новостей (для IT & Аналитики действует строгий фильтр: оценка ≥ 7.0)';
+        let msg = 'В этой выборке пока нет новостей.';
+        const catName = state.newsCategoryFilter || 'Все';
+        const catLower = catName.toLowerCase();
+
+        if (isAll) {
+          msg = 'В категории «Все» отображаются главные события с наивысшей важностью (оценка ≥ 8.0). Менее критичные события (6.0–8.0) собраны в экспресс-дайджесте справа.';
+        } else if (catLower === 'f1' || catLower.includes('формул') || catLower.includes('formula')) {
+          msg = 'В категории «F1» новости отбираются по ключевым темам (Red Bull, Verstappen, Leclerc, Hamilton, Champion). Свежие результаты гонок и зачет пилотов 2026 доступны в панели справа.';
+        } else if (catLower === 'it' || catLower.includes('it & аналитика') || catLower.includes('development') || catLower.includes('programming')) {
+          msg = 'В этой выборке нет новостей (для IT & Аналитики действует строгий фильтр: оценка ≥ 7.0)';
+        } else if (catLower === 'cs2' || catLower.includes('игры') || catLower.includes('gaming')) {
+          msg = 'В категории «CS2» действует фильтр качества (оценка ≥ 7.0). Актуальный рейтинг HLTV доступен в панели справа.';
+        } else if (catLower.includes('украин') || catLower.includes('ukraine')) {
+          msg = 'В категории «Украина» отображаются проверенные новости. Оперативная сводка атак и ПВО доступна в панели справа.';
+        }
 
         container.innerHTML = `
           <div class="col-span-full py-12 text-center text-slate-400 glass-panel rounded-3xl p-6 border border-slate-800">
-            <span class="text-3xl block mb-2">🔍</span>
-            <p class="text-sm font-semibold text-slate-300">${msg}</p>
+            <span class="text-3xl block mb-2">🏎️</span>
+            <p class="text-sm font-semibold text-slate-300 max-w-xl mx-auto leading-relaxed">${msg}</p>
             <button type="button" onclick="filterByLanguage('all'); setDynamicCategory('all');" class="mt-3 px-4 py-2 rounded-xl bg-sky-500/20 text-sky-300 border border-sky-500/30 text-xs font-semibold hover:bg-sky-500/30 transition-all">
               Показать все новости
             </button>
