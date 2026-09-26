@@ -571,6 +571,12 @@
         }
       });
 
+      // Show delete category button ONLY on news tab
+      const delCategoryBtn = document.getElementById('delete-category-news-btn');
+      if (delCategoryBtn) {
+        delCategoryBtn.style.display = (tabId === 'news') ? 'inline-flex' : 'none';
+      }
+
       if (tabId === 'vpn') {
         setTimeout(renderCanvasChart, 50);
       }
@@ -1352,6 +1358,76 @@
     };
 
     window.loadF1Results = loadF1Results;
+
+    // ==========================================
+    // DELETE CURRENT CATEGORY NEWS HANDLER
+    // ==========================================
+    function updateDeleteCategoryBtn() {
+      const btn = document.getElementById('delete-category-news-btn');
+      const textSpan = document.getElementById('delete-category-btn-text');
+      if (!btn || !textSpan) return;
+
+      const activeCat = state.newsCategoryFilter || 'all';
+      const isAll = (activeCat === 'all' || activeCat === 'Все');
+      
+      if (isAll) {
+        textSpan.textContent = 'Очистить все новости';
+        btn.title = 'Удалить абсолютно все новости из базы данных';
+      } else {
+        textSpan.textContent = `Очистить «${activeCat}»`;
+        btn.title = `Удалить все новости категории «${activeCat}» из базы данных`;
+      }
+    }
+
+    async function deleteCurrentCategoryNews() {
+      const activeCat = state.newsCategoryFilter || 'all';
+      const isAll = (activeCat === 'all' || activeCat === 'Все');
+      const catLabel = isAll ? 'ВСЕ новости' : `новости категории «${activeCat}»`;
+
+      const confirmed = window.confirm(`Вы уверены, что хотите удалить ${catLabel} из базы данных?\nЭто действие необратимо.`);
+      if (!confirmed) return;
+
+      const btn = document.getElementById('delete-category-news-btn');
+      if (btn) {
+        btn.disabled = true;
+        btn.classList.add('opacity-50', 'pointer-events-none');
+      }
+
+      try {
+        const encodedCat = encodeURIComponent(activeCat);
+        const resp = await fetch(`/api/news/category/${encodedCat}`, {
+          method: 'DELETE'
+        });
+
+        if (!resp.ok) {
+          throw new Error(`Ошибка сервера: ${resp.status}`);
+        }
+
+        const data = await resp.json();
+        const deletedCount = data.deleted_count || 0;
+
+        showToast(
+          'Удаление завершено',
+          `Удалено новостей: ${deletedCount}`,
+          'success'
+        );
+
+        // Reload live news from DB
+        await loadLiveNews();
+      } catch (err) {
+        console.error('Ошибка при удалении новостей:', err);
+        showToast('Ошибка удаления', err.message || 'Не удалось удалить новости', 'danger');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.classList.remove('opacity-50', 'pointer-events-none');
+        }
+      }
+    }
+
+    window.deleteCurrentCategoryNews = deleteCurrentCategoryNews;
+    window.updateDeleteCategoryBtn = updateDeleteCategoryBtn;
+
     const AI_QUIZ_BANK = [
       {
         question: "В чем фундаментальная разница между Temperature и Top-P при генерации текста в LLM?",
@@ -2040,6 +2116,7 @@
 
       renderCategoryPills();
       renderNews();
+      updateDeleteCategoryBtn();
     };
 
     function isArticleEligibleForDisplay(item, targetCategory, targetLang) {
@@ -3363,5 +3440,6 @@
     // Initialize Default View
     setLanguage('ru');
     switchTab('news');
+    updateDeleteCategoryBtn();
     loadLiveNews();
   })();
