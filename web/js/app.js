@@ -661,6 +661,9 @@
       c = c.replace(/^Категория\s*[\(:]?/i, '').replace(/[\)]+$/g, '').trim();
 
       const lower = c.toLowerCase();
+      if (lower.includes('formula 1') || lower.includes('formula1') || lower.includes(' f1') || lower.startsWith('f1') || lower.includes('формула 1') || lower.includes('формула-1') || lower.includes('red bull')) {
+        return 'F1';
+      }
       if (lower.includes('swiss') || lower.includes('швейцар')) {
         return 'Swiss';
       }
@@ -672,6 +675,9 @@
       }
 
       const map = {
+        'f1': 'F1',
+        'formula 1': 'F1',
+        'формула 1': 'F1',
         'swiss': 'Swiss',
         'швейцария': 'Swiss',
         'it': 'IT',
@@ -711,6 +717,7 @@
 
     function getCategoryEmoji(catName) {
       const c = (catName || '').toUpperCase();
+      if (c.includes('F1') || c.includes('FORMULA') || c.includes('ФОРМУЛА')) return '🏎️';
       if (c.includes('SWISS') || c.includes('ШВЕЙЦАР')) return '🇨🇭';
       if (c.includes('УКРАИН') || c.includes('УКРАЇН') || c.includes('UKRAINE')) return '🇺🇦';
       if (c.includes('CS') || c.includes('GAME') || c.includes('ИГР') || c.includes('КИБЕРСПОРТ')) return '🎮';
@@ -1140,10 +1147,211 @@
       }
     }
     window.loadUkraineAttacksSummary = loadUkraineAttacksSummary;
+ 
+    // ==========================================
+    // F1 2026 STANDINGS & RACES RESULTS LOGIC
+    // ==========================================
+    let f1ResultsData = null;
+    let selectedF1Tag = 'all';
+    let activeF1Tab = 'drivers';
+    let lastF1ResultsFetch = 0;
 
-    // ==========================================
-    // INTERACTIVE AI & DEVOPS CHALLENGES (QUIZ)
-    // ==========================================
+    async function loadF1Results(force = false) {
+      const statusEl = document.getElementById('f1-updated-date');
+      const driversContainer = document.getElementById('f1-block-drivers');
+      const racesContainer = document.getElementById('f1-block-races');
+      const refreshIcon = document.getElementById('f1-refresh-icon');
+
+      const now = Date.now();
+      if (!force && f1ResultsData && (now - lastF1ResultsFetch < 60000)) {
+        renderF1Results();
+        return;
+      }
+
+      if (refreshIcon && force) refreshIcon.classList.add('animate-spin');
+      if (statusEl && force) statusEl.textContent = 'Обновление...';
+
+      try {
+        const resp = await fetch('/api/f1/results' + (force ? '?force=true' : ''));
+        if (!resp.ok) throw new Error('API error ' + resp.status);
+        const data = await resp.json();
+        f1ResultsData = data;
+        lastF1ResultsFetch = Date.now();
+
+        if (statusEl) {
+          statusEl.textContent = data.season ? `Сезон ${data.season}` : '2026';
+        }
+
+        renderF1Results();
+      } catch (err) {
+        console.error('Failed to load F1 results:', err);
+        if (driversContainer && !f1ResultsData) {
+          driversContainer.innerHTML = `<div class="p-3 text-center text-xs text-rose-400 bg-rose-950/20 rounded-xl border border-rose-900/40">Ошибка загрузки зачета пилотов</div>`;
+        }
+        if (racesContainer && !f1ResultsData) {
+          racesContainer.innerHTML = `<div class="p-3 text-center text-xs text-rose-400 bg-rose-950/20 rounded-xl border border-rose-900/40">Ошибка загрузки календаря гонок</div>`;
+        }
+      } finally {
+        if (refreshIcon) {
+          setTimeout(() => refreshIcon.classList.remove('animate-spin'), 300);
+        }
+      }
+    }
+
+    function renderF1Results() {
+      if (!f1ResultsData) return;
+      renderF1Drivers(f1ResultsData.drivers || []);
+      renderF1Races(f1ResultsData.races || []);
+    }
+
+    function renderF1Drivers(drivers) {
+      const container = document.getElementById('f1-block-drivers');
+      if (!container) return;
+
+      if (!drivers || drivers.length === 0) {
+        container.innerHTML = `<div class="text-xs text-slate-400 p-4 text-center">Нет данных о зачете пилотов</div>`;
+        return;
+      }
+
+      container.innerHTML = drivers.map((d, idx) => {
+        const pos = d.pos || (idx + 1);
+        let rankBadge = `<span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold font-mono bg-slate-800 text-slate-300 border border-slate-700">${pos}</span>`;
+        if (pos == 1) {
+          rankBadge = `<span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold font-mono bg-amber-500 text-slate-950 border border-amber-300 shadow-sm shadow-amber-500/50">🥇</span>`;
+        } else if (pos == 2) {
+          rankBadge = `<span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold font-mono bg-slate-300 text-slate-900 border border-white shadow-sm">🥈</span>`;
+        } else if (pos == 3) {
+          rankBadge = `<span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold font-mono bg-amber-700 text-amber-100 border border-amber-600 shadow-sm">🥉</span>`;
+        }
+
+        const isRedBull = (d.team || '').toLowerCase().includes('red bull');
+        const isVerstappen = (d.driver || '').toLowerCase().includes('verstappen');
+        const isFerrari = (d.team || '').toLowerCase().includes('ferrari');
+        const isHamilton = (d.driver || '').toLowerCase().includes('hamilton');
+        const isLeclerc = (d.driver || '').toLowerCase().includes('leclerc');
+
+        let cardClass = 'bg-slate-950/60 border-slate-800/80 hover:border-red-500/50 hover:bg-slate-900/60';
+        if (isRedBull || isVerstappen) {
+          cardClass = 'bg-red-950/20 border-red-500/40 hover:border-red-400 shadow-sm shadow-red-500/10';
+        } else if (isFerrari || isLeclerc || isHamilton) {
+          cardClass = 'bg-rose-950/20 border-rose-500/30 hover:border-rose-400';
+        }
+
+        const pts = (d.points !== undefined && d.points !== null) ? d.points : ((d.pts !== undefined && d.pts !== null) ? d.pts : 0);
+        const driverName = cleanText(d.driver || 'Пилот');
+        const teamName = cleanText(d.team || 'Команда');
+        const nationality = d.nationality ? `<span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700/80 shrink-0">${d.nationality}</span>` : '';
+
+        return `
+          <div class="p-2.5 rounded-2xl border transition-all ${cardClass}">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2 min-w-0">
+                ${rankBadge}
+                <div class="min-w-0">
+                  <div class="text-xs font-bold text-white flex items-center gap-1.5 truncate">
+                    <span>${driverName}</span>
+                    ${isVerstappen ? '<span class="text-[9px] bg-red-600/30 text-red-300 border border-red-500/40 px-1 rounded font-bold">1</span>' : ''}
+                  </div>
+                  <div class="text-[10px] text-slate-400 truncate flex items-center gap-1">
+                    <span>${teamName}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                ${nationality}
+                <span class="font-mono text-xs font-black text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20">${pts} PTS</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderF1Races(races) {
+      const container = document.getElementById('f1-block-races');
+      if (!container) return;
+
+      if (!races || races.length === 0) {
+        container.innerHTML = `<div class="text-xs text-slate-400 p-4 text-center">Нет данных о гонках сезона 2026</div>`;
+        return;
+      }
+
+      container.innerHTML = races.map((r, idx) => {
+        const gpName = cleanText(r.grand_prix || 'Гран-при');
+        const date = r.date || '';
+        const winner = cleanText(r.winner || '—');
+        const team = cleanText(r.team || '—');
+        const laps = r.laps ? `${r.laps} кр.` : '';
+        const time = r.time || '';
+
+        const isRedBullWinner = (team || '').toLowerCase().includes('red bull');
+
+        return `
+          <div class="p-2.5 rounded-2xl border transition-all ${isRedBullWinner ? 'bg-red-950/20 border-red-500/40' : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700'}">
+            <div class="flex items-center justify-between text-xs mb-1">
+              <span class="font-bold text-white flex items-center gap-1">
+                <span>🏁</span> <span class="truncate">${gpName}</span>
+              </span>
+              <span class="font-mono text-[10px] text-slate-400 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800 shrink-0">${date}</span>
+            </div>
+            <div class="flex items-center justify-between text-[11px] pt-1 border-t border-slate-800/60">
+              <div class="min-w-0">
+                <span class="text-slate-400 text-[10px]">Победитель: </span>
+                <span class="font-bold ${isRedBullWinner ? 'text-red-300' : 'text-slate-200'}">${winner}</span>
+                <span class="text-slate-500 text-[10px]"> (${team})</span>
+              </div>
+              <div class="text-right shrink-0">
+                <span class="font-mono text-[10px] text-emerald-400 font-semibold">${time || laps}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.switchF1Tab = function(tab) {
+      activeF1Tab = tab;
+      const bDrivers = document.getElementById('f1-block-drivers');
+      const bRaces = document.getElementById('f1-block-races');
+      const tabDrivers = document.getElementById('f1-tab-drivers');
+      const tabRaces = document.getElementById('f1-tab-races');
+
+      const activeClass = 'flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all bg-red-600 text-white shadow-md flex items-center justify-center gap-1.5';
+      const inactiveClass = 'flex-1 py-1.5 px-3 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1.5';
+
+      if (tab === 'races') {
+        if (bDrivers) bDrivers.style.display = 'none';
+        if (bRaces) bRaces.style.display = 'block';
+        if (tabDrivers) tabDrivers.className = inactiveClass;
+        if (tabRaces) tabRaces.className = activeClass;
+      } else {
+        if (bDrivers) bDrivers.style.display = 'block';
+        if (bRaces) bRaces.style.display = 'none';
+        if (tabDrivers) tabDrivers.className = activeClass;
+        if (tabRaces) tabRaces.className = inactiveClass;
+      }
+    };
+
+    window.filterF1ByTag = function(tag) {
+      if (selectedF1Tag && selectedF1Tag.toLowerCase() === tag.toLowerCase() && tag !== 'all') {
+        selectedF1Tag = 'all';
+      } else {
+        selectedF1Tag = tag;
+      }
+
+      document.querySelectorAll('.f1-chip').forEach(btn => {
+        const chipTag = (btn.getAttribute('data-f1-tag') || '').toLowerCase();
+        if (chipTag === selectedF1Tag.toLowerCase()) {
+          btn.className = 'f1-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-red-600 text-white border border-red-500 shadow-md shadow-red-600/30';
+        } else {
+          btn.className = 'f1-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30';
+        }
+      });
+
+      renderNews();
+    };
+
+    window.loadF1Results = loadF1Results;
     const AI_QUIZ_BANK = [
       {
         question: "В чем фундаментальная разница между Temperature и Top-P при генерации текста в LLM?",
@@ -1760,12 +1968,19 @@
                        state.newsCategoryFilter.toLowerCase().includes('devops') || 
                        state.newsCategoryFilter.toLowerCase().includes('linux'));
 
+      const isF1 = !isAll && 
+                   (state.newsCategoryFilter === 'F1' || 
+                    state.newsCategoryFilter.toLowerCase() === 'f1' ||
+                    state.newsCategoryFilter.toLowerCase().includes('формула') ||
+                    state.newsCategoryFilter.toLowerCase().includes('formula'));
+
       const itAside = document.getElementById('programming-analytics-aside');
       const digestAside = document.getElementById('all-digest-aside');
       const esportsAside = document.getElementById('esports-hltv-aside');
       const ukraineAside = document.getElementById('ukraine-attacks-aside');
       const aiAside = document.getElementById('ai-models-aside');
       const linuxAside = document.getElementById('devops-linux-aside');
+      const f1Aside = document.getElementById('f1-results-aside');
       const langBar = document.getElementById('language-selection-bar');
       const mainCol = document.getElementById('news-main-column');
 
@@ -1775,12 +1990,13 @@
       if (ukraineAside) ukraineAside.style.display = isUkraine ? 'block' : 'none';
       if (aiAside) aiAside.style.display = isAI ? 'block' : 'none';
       if (linuxAside) linuxAside.style.display = isLinux ? 'block' : 'none';
+      if (f1Aside) f1Aside.style.display = isF1 ? 'block' : 'none';
 
       if (langBar) {
         langBar.style.display = isIT ? 'flex' : 'none';
       }
       if (mainCol) {
-        if (isIT || isAll || isGaming || isUkraine || isAI || isLinux) {
+        if (isIT || isAll || isGaming || isUkraine || isAI || isLinux || isF1) {
           mainCol.className = 'order-2 lg:order-1 lg:col-span-7 xl:col-span-8 space-y-6 w-full';
         } else {
           mainCol.className = 'order-2 lg:order-1 lg:col-span-12 space-y-6 w-full';
@@ -1802,6 +2018,9 @@
       if (isIT) {
         renderITQuiz();
       }
+      if (isF1) {
+        loadF1Results();
+      }
 
       // If switching away from IT, reset language filter
       if (!isIT && state.selectedLanguage && state.selectedLanguage !== 'all') {
@@ -1814,6 +2033,9 @@
       }
       if (!isUkraine && selectedUkraineTag !== 'all') {
         selectedUkraineTag = 'all';
+      }
+      if (!isF1 && selectedF1Tag !== 'all') {
+        selectedF1Tag = 'all';
       }
 
       renderCategoryPills();
@@ -1963,6 +2185,34 @@
           } else {
             if (!fullText.includes(tag)) return false;
           }
+        }
+      }
+
+      // 6. F1 Filter: Priority keywords Red Bull, Max Verstappen, Charles Leclerc, Hamilton, Champion
+      const isF1Category = targetCatLower === 'f1' || targetCatLower.includes('формула') || targetCatLower.includes('formula');
+      if (isF1Category) {
+        const fullText = ((item.title || '') + ' ' + (item.summary || '') + ' ' + (item.why_it_matters || '') + ' ' + (item.source || '')).toLowerCase();
+
+        // Sub-filter by specific driver/team chip if selected
+        if (selectedF1Tag && selectedF1Tag !== 'all') {
+          const tag = selectedF1Tag.toLowerCase();
+          if (tag === 'red bull') {
+            if (!fullText.includes('red bull') && !fullText.includes('ред булл') && !fullText.includes('ред булл') && !fullText.includes('rb')) return false;
+          } else if (tag === 'verstappen') {
+            if (!fullText.includes('verstappen') && !fullText.includes('ферстаппен') && !fullText.includes('макс')) return false;
+          } else if (tag === 'leclerc') {
+            if (!fullText.includes('leclerc') && !fullText.includes('леклер')) return false;
+          } else if (tag === 'hamilton') {
+            if (!fullText.includes('hamilton') && !fullText.includes('хэмилтон') && !fullText.includes('хемилтон')) return false;
+          } else if (tag === 'champion') {
+            if (!fullText.includes('champion') && !fullText.includes('чемпион') && !fullText.includes('титул') && !fullText.includes('зачет') && !fullText.includes('кубок')) return false;
+          } else {
+            if (!fullText.includes(tag)) return false;
+          }
+        } else {
+          // Default F1 feed: user requested focus on Red Bull, Verstappen, Leclerc, Hamilton, Champion
+          const hasPriorityKeywords = ['red bull', 'ред булл', 'verstappen', 'ферстаппен', 'leclerc', 'леклер', 'hamilton', 'хэмилтон', 'хемилтон', 'champion', 'чемпион', 'титул', 'f1', 'formula 1', 'формула'].some(k => fullText.includes(k));
+          if (!hasPriorityKeywords) return false;
         }
       }
 

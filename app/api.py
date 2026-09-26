@@ -70,9 +70,27 @@ GAMING_INDICATORS = [
     "donk", "zywoo", "clash royale", "bcgame", "fut", "blast", "esl"
 ]
 
+F1_INDICATORS = [
+    "formula 1", "formula1", "f1", "формула-1", "формула 1", "grand prix", "гран-при",
+    "red bull", "verstappen", "ферстаппен", "leclerc", "леклер", "hamilton", "хэмилтон",
+    "champion", "чемпион", "ferrari", "mercedes", "mclaren", "гонщик", "пилот"
+]
+
+F1_RED_BULL_PRIORITY = [
+    "red bull", "ред булл", "ред булл", "verstappen", "ферстаппен", "макс ферстаппен",
+    "leclerc", "леклер", "шарль леклер", "hamilton", "хэмилтон", "льюис хэмилтон", "champion", "чемпион"
+]
+
 # Cache for HLTV ranking
 _hltv_cache: Dict[str, Any] = {}
 _hltv_cache_time: float = 0.0
+
+# Cache for F1 Races & Drivers
+_f1_races_cache: Dict[str, Any] = {}
+_f1_races_cache_time: float = 0.0
+_f1_drivers_cache: Dict[str, Any] = {}
+_f1_drivers_cache_time: float = 0.0
+
 
 FALLBACK_HLTV_RANKINGS = [
     {"rank": 1, "name": "Spirit", "points": 2041, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/syrtYYKR7sBRw3ZHy1YFX7.png?ixlib=java-2.1.0&w=50&s=40e66714687bec05ea422255b1c0099e"},
@@ -162,6 +180,8 @@ def detect_diagram_image(raw_content: str, images: list[str]) -> tuple[str | Non
 def infer_category_from_source(source_name: str) -> str:
     """Infer topic category from source name if AI category is not assigned yet."""
     s = source_name.lower()
+    if any(k in s for k in ["formula 1", "formula1", "f1", "формула-1", "формула 1"]):
+        return "F1"
     if any(k in s for k in ["novynaukr", "украин", "украина", "україна"]):
         return "Украина"
     if any(k in s for k in ["csgo", "cs3", "clashroyalepin", "clashroyale", "hltv", "game", "игры", "киберспорт"]):
@@ -173,6 +193,7 @@ def infer_category_from_source(source_name: str) -> str:
     if "ai" in s or "нейро" in s:
         return "AI"
     return "IT"
+
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -272,6 +293,102 @@ async def get_hltv_ranking(force: bool = False) -> Dict[str, Any]:
     }
 
 
+@app.get("/api/f1/results")
+async def get_f1_results(force: bool = False) -> Dict[str, Any]:
+    """Получить результаты гонок (Races) и положение пилотов (Drivers) F1 2026 с автообновлением."""
+    global _f1_races_cache, _f1_races_cache_time
+    now = time.time()
+
+    # 15-minute in-memory cache
+    if not force and _f1_races_cache and (now - _f1_races_cache_time) < 900:
+        return _f1_races_cache
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+    }
+
+    races = []
+    drivers = []
+
+    try:
+        async with httpx.AsyncClient(headers=headers, timeout=20.0, follow_redirects=True) as client:
+            # 1. Fetch Races
+            try:
+                resp_r = await client.get("https://www.formula1.com/en/results/2026/races")
+                if resp_r.status_code == 200:
+                    soup_r = BeautifulSoup(resp_r.text, "html.parser")
+                    t_r = soup_r.find("table")
+                    if t_r:
+                        for tr in t_r.find_all("tr")[1:]:
+                            tds = [td.get_text(separator=" ", strip=True) for td in tr.find_all("td")]
+                            if len(tds) >= 6:
+                                gp_clean = re.sub(r"^Flag of\s+", "", tds[0], flags=re.IGNORECASE).strip()
+                                # Clean redundant country repeat e.g. "Australia Australia" -> "Australia"
+                                parts = gp_clean.split()
+                                if len(parts) == 2 and parts[0].lower() == parts[1].lower():
+                                    gp_clean = parts[0]
+                                races.append({
+                                    "grand_prix": gp_clean,
+                                    "date": tds[1],
+                                    "winner": tds[2],
+                                    "team": tds[3],
+                                    "laps": tds[4],
+                                    "time": tds[5]
+                                })
+            except Exception as e_r:
+                print(f"Error fetching F1 races: {e_r}")
+
+            # 2. Fetch Drivers
+            try:
+                resp_d = await client.get("https://www.formula1.com/en/results/2026/drivers")
+                if resp_d.status_code == 200:
+                    soup_d = BeautifulSoup(resp_d.text, "html.parser")
+                    t_d = soup_d.find("table")
+                    if t_d:
+                        for tr in t_d.find_all("tr")[1:]:
+                            tds = [td.get_text(separator=" ", strip=True) for td in tr.find_all("td")]
+                            if len(tds) >= 5:
+                                drivers.append({
+                                    "pos": tds[0],
+                                    "driver": tds[1],
+                                    "nationality": tds[2],
+                                    "team": tds[3],
+                                    "points": tds[4]
+                                })
+            except Exception as e_d:
+                print(f"Error fetching F1 drivers: {e_d}")
+
+        if races or drivers:
+            _f1_races_cache = {
+                "races": races,
+                "drivers": drivers,
+                "races_url": "https://www.formula1.com/en/results/2026/races",
+                "drivers_url": "https://www.formula1.com/en/results/2026/drivers",
+                "season": "2026",
+                "updated_at": datetime.now(timezone.utc).strftime("%d.%m.%Y %H:%M UTC")
+            }
+            _f1_races_cache_time = now
+            return _f1_races_cache
+
+    except Exception as e:
+        print(f"Error updating F1 results: {e}")
+
+    if _f1_races_cache:
+        return _f1_races_cache
+
+    return {
+        "races": [],
+        "drivers": [],
+        "races_url": "https://www.formula1.com/en/results/2026/races",
+        "drivers_url": "https://www.formula1.com/en/results/2026/drivers",
+        "season": "2026",
+        "updated_at": datetime.now(timezone.utc).strftime("%d.%m.%Y %H:%M UTC")
+    }
+
+
+
 @app.get("/api/news")
 async def get_news_feed(
     limit: int = 100,
@@ -303,11 +420,16 @@ async def get_news_feed(
         title_lower = (art.title or "").lower()
         content_lower = (art.cleaned_content or raw_text).lower()
 
+        is_f1 = any(k in source_combined for k in ["formula 1", "formula1", "f1", "формула-1"]) or \
+                (raw_cat and raw_cat.lower() == "f1") or \
+                any(k in title_lower for k in F1_INDICATORS)
         is_ukraine = any(k in source_combined for k in ["novynaukr", "украин", "украина", "україна"]) or (raw_cat and "украин" in raw_cat.lower())
         is_gaming = any(k in source_combined for k in ["csgo", "cs3", "clashroyalepin", "hltv", "game", "киберспорт"]) or \
                     any(k in title_lower for k in GAMING_INDICATORS)
 
-        if is_ukraine:
+        if is_f1:
+            cat_name = "F1"
+        elif is_ukraine:
             cat_name = "Украина"
         elif is_gaming:
             cat_name = "CS2"
@@ -322,6 +444,7 @@ async def get_news_feed(
                 cat_name = "IT"
         else:
             cat_name = infer_category_from_source(source_name)
+
 
         # Priority Keywords Detection & CS:GO Final Winner & Meme / Sarcasm Guard
         text_for_check = title_lower + " " + content_lower
@@ -355,7 +478,26 @@ async def get_news_feed(
             if "тцк" not in matched_kws:
                 matched_kws.append("тцк")
 
-        is_priority = (len(matched_kws) > 0 or is_final_or_winner or has_ukr_priority) and not is_meme_or_ad and not is_operational_alert
+        has_f1_priority = (cat_name == "F1") and any(kw in text_for_check for kw in F1_RED_BULL_PRIORITY)
+        if has_f1_priority:
+            if any(k in text_for_check for k in ["red bull", "ред булл"]):
+                if "Red Bull" not in matched_kws:
+                    matched_kws.append("Red Bull")
+            if any(k in text_for_check for k in ["verstappen", "ферстаппен"]):
+                if "Verstappen" not in matched_kws:
+                    matched_kws.append("Verstappen")
+            if any(k in text_for_check for k in ["leclerc", "леклер"]):
+                if "Leclerc" not in matched_kws:
+                    matched_kws.append("Leclerc")
+            if any(k in text_for_check for k in ["hamilton", "хэмилтон"]):
+                if "Hamilton" not in matched_kws:
+                    matched_kws.append("Hamilton")
+            if any(k in text_for_check for k in ["champion", "чемпион"]):
+                if "Champion" not in matched_kws:
+                    matched_kws.append("Champion")
+
+        is_priority = (len(matched_kws) > 0 or is_final_or_winner or has_ukr_priority or has_f1_priority) and not is_meme_or_ad and not is_operational_alert
+
 
         score = float(art.importance_score or 5.0)
         if is_operational_alert:

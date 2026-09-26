@@ -932,6 +932,95 @@
             </div>
           </div>
         </aside>
+
+        <!-- Aside Sidebar: Formula 1 (2026 Races & Drivers Standings) -->
+        <aside id="f1-results-aside" style="display: none;" class="order-1 lg:order-2 lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto pr-1 w-full aside-collapsible">
+          <div class="glass-panel p-5 rounded-3xl border border-red-500/25 bg-gradient-to-b from-slate-900/95 via-slate-950/95 to-slate-900/90 shadow-2xl relative overflow-hidden space-y-4">
+            <div class="absolute -right-8 -top-8 w-32 h-32 bg-red-600/10 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="absolute -left-8 -bottom-8 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+            <!-- Header with Title & Mobile Toggle -->
+            <div class="flex items-center justify-between border-b border-slate-800/80 pb-3 relative z-10">
+              <div>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-500/20 text-red-400 border border-red-500/30 flex items-center gap-1.5 w-fit mb-1">
+                  <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                  <span>Formula 1 • Сезон 2026</span>
+                </span>
+                <h3 class="text-sm font-black text-white font-heading flex items-center gap-1.5">
+                  <span>🏁 Результаты & Зачет</span>
+                </h3>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span id="f1-updated-date" class="text-[10px] font-mono text-slate-400 bg-slate-900/80 px-2 py-1 rounded-lg border border-slate-800">2026</span>
+                <button id="f1-refresh-btn" type="button" onclick="loadF1Results(true)" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-red-400 hover:text-red-300 transition-colors border border-slate-700" title="Обновить результаты с Formula1.com">
+                  <svg id="f1-refresh-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+                </button>
+                <button type="button" onclick="toggleMobileAside('f1-results-aside')" class="lg:hidden px-2 py-1 rounded-lg bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-300 text-xs font-semibold flex items-center gap-1 transition-all" title="Свернуть / Развернуть">
+                  <span class="aside-toggle-text text-[10px]">Свернуть</span>
+                  <svg class="w-3.5 h-3.5 aside-collapse-arrow transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="aside-collapsible-body space-y-3.5">
+              
+              <!-- Quick Sub-Filter Tags (Red Bull, Verstappen, Leclerc, Hamilton, Champion) -->
+              <div class="p-2.5 rounded-2xl bg-slate-950/70 border border-red-500/20 space-y-1.5">
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-red-400 flex items-center gap-1">
+                    <span>⭐</span> <span>Отбор новостей:</span>
+                  </span>
+                  <button type="button" onclick="filterF1ByTag('all')" class="text-[10px] text-slate-400 hover:text-white underline">Все F1</button>
+                </div>
+                <div class="flex flex-wrap gap-1.5">
+                  <button type="button" onclick="filterF1ByTag('red bull')" class="f1-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30" data-f1-tag="red bull">🐂 Red Bull</button>
+                  <button type="button" onclick="filterF1ByTag('verstappen')" class="f1-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30" data-f1-tag="verstappen">🦁 Verstappen</button>
+                  <button type="button" onclick="filterF1ByTag('leclerc')" class="f1-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30" data-f1-tag="leclerc">🐎 Charles Leclerc</button>
+                  <button type="button" onclick="filterF1ByTag('hamilton')" class="f1-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30" data-f1-tag="hamilton">⚡ Hamilton</button>
+                  <button type="button" onclick="filterF1ByTag('champion')" class="f1-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30" data-f1-tag="champion">🏆 Champion</button>
+                </div>
+              </div>
+
+              <!-- Switcher Tabs: Races vs Drivers -->
+              <div class="glass-panel p-1 rounded-2xl border border-slate-800 bg-slate-950/90 flex items-center gap-1 shadow-md">
+                <button type="button" id="f1-tab-drivers" onclick="switchF1Tab('drivers')" class="flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all bg-red-600 text-white shadow-md flex items-center justify-center gap-1.5">
+                  <span>🏎️</span> <span>Пилоты (Drivers)</span>
+                </button>
+                <button type="button" id="f1-tab-races" onclick="switchF1Tab('races')" class="flex-1 py-1.5 px-3 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1.5">
+                  <span>🏁</span> <span>Гран-при (Races)</span>
+                </button>
+              </div>
+
+              <!-- Content Tab 1: DRIVERS STANDINGS -->
+              <div id="f1-block-drivers" class="space-y-1.5 max-h-[360px] sm:max-h-[440px] lg:max-h-[520px] overflow-y-auto pr-1 scrollbar-thin">
+                <div class="text-xs text-slate-400 p-4 text-center">Загрузка зачета пилотов...</div>
+              </div>
+
+              <!-- Content Tab 2: RACES RESULTS -->
+              <div id="f1-block-races" style="display: none;" class="space-y-1.5 max-h-[360px] sm:max-h-[440px] lg:max-h-[520px] overflow-y-auto pr-1 scrollbar-thin">
+                <div class="text-xs text-slate-400 p-4 text-center">Загрузка результатов гонок...</div>
+              </div>
+
+              <!-- Official Links Bar -->
+              <div class="pt-2.5 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+                <span class="text-slate-400 flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>Formula1.com:</span>
+                </span>
+                <div class="flex items-center gap-2">
+                  <a href="https://www.formula1.com/en/results/2026/races" target="_blank" rel="noopener noreferrer" class="font-bold text-red-400 hover:text-red-300 inline-flex items-center gap-0.5 hover:underline transition-colors" title="Открыть Races 2026">
+                    <span>Races ↗</span>
+                  </a>
+                  <span class="text-slate-600">•</span>
+                  <a href="https://www.formula1.com/en/results/2026/drivers" target="_blank" rel="noopener noreferrer" class="font-bold text-red-400 hover:text-red-300 inline-flex items-center gap-0.5 hover:underline transition-colors" title="Открыть Drivers 2026">
+                    <span>Drivers ↗</span>
+                  </a>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </aside>
       </div>
 
     </section>
