@@ -651,6 +651,10 @@
       if (item) {
         const s = ((item.source || '') + ' ' + (item.source_url || '') + ' ' + (item.url || '')).toLowerCase();
         const t = (item.title || '').toLowerCase();
+        if (s.includes('marca') || s.includes('primera') || s.includes('sportsru') || s.includes('fabrizio') || s.includes('terrikon') || s.includes('uefa') ||
+            t.includes('месси') || t.includes('messi') || t.includes('барселона') || t.includes('barcelona') || t.includes('интер майами') || t.includes('ла лига') || t.includes('лига чемпионов') || t.includes('лига наций') || t.includes('лига европы')) {
+          return 'Футбол';
+        }
         if (s.includes('rtsinfo') || s.includes('rtsarchives') || s.includes('blick_media') || s.includes('20minutesonline') || s.includes('instagram')) {
           return 'Swiss';
         }
@@ -667,6 +671,9 @@
       c = c.replace(/^Категория\s*[\(:]?/i, '').replace(/[\)]+$/g, '').trim();
 
       const lower = c.toLowerCase();
+      if (lower.includes('футбол') || lower.includes('football') || lower.includes('soccer') || lower.includes('laliga') || lower.includes('ла лига')) {
+        return 'Футбол';
+      }
       if (lower.includes('formula 1') || lower.includes('formula1') || lower.includes(' f1') || lower.startsWith('f1') || lower.includes('формула 1') || lower.includes('формула-1') || lower.includes('red bull')) {
         return 'F1';
       }
@@ -681,6 +688,9 @@
       }
 
       const map = {
+        'футбол': 'Футбол',
+        'football': 'Футбол',
+        'soccer': 'Футбол',
         'f1': 'F1',
         'formula 1': 'F1',
         'формула 1': 'F1',
@@ -723,6 +733,7 @@
 
     function getCategoryEmoji(catName) {
       const c = (catName || '').toUpperCase();
+      if (c.includes('ФУТБОЛ') || c.includes('FOOTBALL') || c.includes('SOCCER')) return '⚽';
       if (c.includes('F1') || c.includes('FORMULA') || c.includes('ФОРМУЛА')) return '🏎️';
       if (c.includes('SWISS') || c.includes('ШВЕЙЦАР')) return '🇨🇭';
       if (c.includes('УКРАИН') || c.includes('УКРАЇН') || c.includes('UKRAINE')) return '🇺🇦';
@@ -1358,6 +1369,262 @@
     };
 
     window.loadF1Results = loadF1Results;
+
+    // ==========================================
+    // FOOTBALL TOURNAMENTS & RESULTS LOGIC (Terrikon)
+    // ==========================================
+    let footballResultsData = {};
+    let selectedFootballTag = 'all';
+    let activeFootballTournament = 'laliga';
+    let activeFootballView = 'standings'; // 'standings' | 'matches'
+    let lastFootballResultsFetch = {};
+
+    async function loadFootballResults(force = false) {
+      const tourn = activeFootballTournament || 'laliga';
+      const statusEl = document.getElementById('football-updated-date');
+      const headerTitle = document.getElementById('football-header-title');
+      const badgeEl = document.getElementById('football-tournament-badge');
+      const sourceLink = document.getElementById('football-source-link');
+      const refreshIcon = document.getElementById('football-refresh-icon');
+
+      const now = Date.now();
+      const lastFetch = lastFootballResultsFetch[tourn] || 0;
+      if (!force && footballResultsData[tourn] && (now - lastFetch < 60000)) {
+        renderFootballContent();
+        return;
+      }
+
+      if (refreshIcon && force) refreshIcon.classList.add('animate-spin');
+      if (statusEl && force) statusEl.textContent = 'Обновление...';
+
+      try {
+        const resp = await fetch(`/api/football/results?tournament=${tourn}${force ? '&force=true' : ''}`);
+        if (!resp.ok) throw new Error('API error ' + resp.status);
+        const data = await resp.json();
+        footballResultsData[tourn] = data;
+        lastFootballResultsFetch[tourn] = Date.now();
+
+        if (statusEl) {
+          statusEl.textContent = 'Live';
+        }
+        if (headerTitle) {
+          headerTitle.textContent = `${data.flag || '⚽'} ${data.title || 'Футбол'}`;
+        }
+        if (badgeEl) {
+          badgeEl.textContent = data.title || 'Ла Лига';
+        }
+        if (sourceLink && data.url) {
+          sourceLink.href = data.url;
+        }
+
+        renderFootballContent();
+      } catch (err) {
+        console.error('Failed to load football results:', err);
+        const standingsContainer = document.getElementById('football-block-standings');
+        const matchesContainer = document.getElementById('football-block-matches');
+        if (standingsContainer && !footballResultsData[tourn]) {
+          standingsContainer.innerHTML = `<div class="p-3 text-center text-xs text-rose-400 bg-rose-950/20 rounded-xl border border-rose-900/40">Ошибка загрузки таблицы турнира</div>`;
+        }
+        if (matchesContainer && !footballResultsData[tourn]) {
+          matchesContainer.innerHTML = `<div class="p-3 text-center text-xs text-rose-400 bg-rose-950/20 rounded-xl border border-rose-900/40">Ошибка загрузки матчей</div>`;
+        }
+      } finally {
+        if (refreshIcon) {
+          setTimeout(() => refreshIcon.classList.remove('animate-spin'), 300);
+        }
+      }
+    }
+
+    function renderFootballContent() {
+      const tourn = activeFootballTournament || 'laliga';
+      const data = footballResultsData[tourn];
+      if (!data) return;
+
+      renderFootballStandings(data);
+      renderFootballMatches(data.matches || []);
+    }
+
+    function renderFootballStandings(data) {
+      const container = document.getElementById('football-block-standings');
+      if (!container) return;
+
+      // Check if tournament has group tables (Nations League or multi-group)
+      if (data.groups && data.groups.length > 0) {
+        container.innerHTML = data.groups.map(g => `
+          <div class="space-y-1.5 mb-3">
+            <div class="text-[11px] font-bold text-emerald-400 bg-slate-900/90 px-2 py-1 rounded-lg border border-emerald-500/20 flex items-center justify-between">
+              <span>${g.group}</span>
+              <span class="text-[9px] text-slate-400 font-mono">Очки</span>
+            </div>
+            ${renderStandingsList(g.standings)}
+          </div>
+        `).join('');
+        return;
+      }
+
+      const standings = data.standings || [];
+      if (standings.length === 0) {
+        container.innerHTML = `<div class="text-xs text-slate-400 p-4 text-center">Нет данных о турнирной таблице</div>`;
+        return;
+      }
+
+      container.innerHTML = renderStandingsList(standings);
+    }
+
+    function renderStandingsList(standings) {
+      return standings.map((item, idx) => {
+        const pos = Number(item.pos || (idx + 1));
+        let posBadge = `<span class="w-5 h-5 rounded-lg flex items-center justify-center text-[10px] font-bold font-mono bg-slate-800 text-slate-300 border border-slate-700">${pos}</span>`;
+        if (pos === 1) {
+          posBadge = `<span class="w-5 h-5 rounded-lg flex items-center justify-center text-[10px] font-bold font-mono bg-amber-500 text-slate-950 border border-amber-300 shadow-sm shadow-amber-500/50">1</span>`;
+        } else if (pos <= 4) {
+          posBadge = `<span class="w-5 h-5 rounded-lg flex items-center justify-center text-[10px] font-bold font-mono bg-sky-500/20 text-sky-300 border border-sky-500/40">${pos}</span>`;
+        }
+
+        const isBarca = (item.team || '').toLowerCase().includes('барселона') || (item.team || '').toLowerCase().includes('barcelona');
+        const cardClass = isBarca 
+          ? 'bg-rose-950/30 border-rose-500/50 hover:border-rose-400 shadow-sm shadow-rose-500/10' 
+          : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700';
+
+        const teamName = cleanText(item.team || 'Команда');
+        const games = item.games || '0';
+        const win = item.win || '0';
+        const draw = item.draw || '0';
+        const loss = item.loss || '0';
+        const goals = item.goals || '0-0';
+        const pts = item.pts || '0';
+        const iconImg = item.icon ? `<img src="${item.icon}" alt="" class="w-3.5 h-2.5 object-cover rounded-sm inline-block mr-1 opacity-80" onerror="this.style.display='none'">` : '';
+
+        return `
+          <div class="p-2 rounded-2xl border transition-all ${cardClass}">
+            <div class="flex items-center justify-between gap-1.5">
+              <div class="flex items-center gap-1.5 min-w-0">
+                ${posBadge}
+                <div class="min-w-0">
+                  <div class="text-xs font-bold text-white flex items-center gap-1 truncate">
+                    ${iconImg}
+                    <span class="truncate ${isBarca ? 'text-amber-300' : ''}">${teamName}</span>
+                    ${isBarca ? '<span class="text-[9px] bg-rose-600/30 text-rose-300 border border-rose-500/40 px-1 rounded font-bold">FCB</span>' : ''}
+                  </div>
+                  <div class="text-[10px] text-slate-400 flex items-center gap-2 font-mono">
+                    <span>И: ${games}</span>
+                    <span>В: ${win}</span>
+                    <span>Н: ${draw}</span>
+                    <span>П: ${loss}</span>
+                    <span>Разн: ${goals}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="text-right shrink-0">
+                <span class="font-mono text-xs font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">${pts} О</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderFootballMatches(matches) {
+      const container = document.getElementById('football-block-matches');
+      if (!container) return;
+
+      if (!matches || matches.length === 0) {
+        container.innerHTML = `<div class="text-xs text-slate-400 p-4 text-center">Нет данных о последних матчах</div>`;
+        return;
+      }
+
+      container.innerHTML = matches.map(m => {
+        const home = cleanText(m.home || '—');
+        const score = m.score || 'vs';
+        const away = cleanText(m.away || '—');
+        const date = m.date || '';
+
+        const isBarcaMatch = (home + ' ' + away).toLowerCase().includes('барселона');
+        const cardClass = isBarcaMatch 
+          ? 'bg-rose-950/30 border-rose-500/50' 
+          : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700';
+
+        return `
+          <div class="p-2.5 rounded-2xl border transition-all ${cardClass}">
+            <div class="flex items-center justify-between text-[10px] text-slate-400 mb-1 font-mono">
+              <span class="flex items-center gap-1 font-bold text-slate-300">
+                <span>⚽</span> <span>Матч</span>
+              </span>
+              <span class="bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">${date}</span>
+            </div>
+            <div class="flex items-center justify-between text-xs py-1">
+              <div class="w-2/5 font-semibold text-right truncate ${home.toLowerCase().includes('барселона') ? 'text-amber-300 font-bold' : 'text-white'}">
+                ${home}
+              </div>
+              <div class="w-1/5 text-center font-mono font-black text-xs text-emerald-400 bg-slate-900/80 py-0.5 px-1.5 rounded border border-slate-800 shrink-0">
+                ${score}
+              </div>
+              <div class="w-2/5 font-semibold text-left truncate ${away.toLowerCase().includes('барселона') ? 'text-amber-300 font-bold' : 'text-white'}">
+                ${away}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.switchFootballTournament = function(tourn) {
+      activeFootballTournament = tourn;
+      
+      const tourns = ['laliga', 'cl', 'el', 'nations'];
+      tourns.forEach(t => {
+        const btn = document.getElementById(`football-tourn-${t}`);
+        if (!btn) return;
+        if (t === tourn) {
+          btn.className = 'py-1.5 px-2 rounded-xl text-[11px] font-bold transition-all bg-emerald-600 text-white shadow-md flex items-center justify-center gap-1';
+        } else {
+          btn.className = 'py-1.5 px-2 rounded-xl text-[11px] font-semibold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1';
+        }
+      });
+
+      loadFootballResults();
+    };
+
+    window.switchFootballView = function(view) {
+      activeFootballView = view;
+      const bStandings = document.getElementById('football-block-standings');
+      const bMatches = document.getElementById('football-block-matches');
+      const tabStandings = document.getElementById('football-subtab-standings');
+      const tabMatches = document.getElementById('football-subtab-matches');
+
+      if (view === 'matches') {
+        if (bStandings) bStandings.style.display = 'none';
+        if (bMatches) bMatches.style.display = 'block';
+        if (tabStandings) tabStandings.className = 'px-2.5 py-1 rounded-lg text-[10px] font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60';
+        if (tabMatches) tabMatches.className = 'px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-800 text-emerald-400 border border-slate-700';
+      } else {
+        if (bStandings) bStandings.style.display = 'block';
+        if (bMatches) bMatches.style.display = 'none';
+        if (tabStandings) tabStandings.className = 'px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-800 text-emerald-400 border border-slate-700';
+        if (tabMatches) tabMatches.className = 'px-2.5 py-1 rounded-lg text-[10px] font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60';
+      }
+    };
+
+    window.filterFootballByTag = function(tag) {
+      if (selectedFootballTag && selectedFootballTag.toLowerCase() === tag.toLowerCase() && tag !== 'all') {
+        selectedFootballTag = 'all';
+      } else {
+        selectedFootballTag = tag;
+      }
+
+      document.querySelectorAll('.football-chip').forEach(btn => {
+        const chipTag = (btn.getAttribute('data-football-tag') || '').toLowerCase();
+        if (chipTag === selectedFootballTag.toLowerCase()) {
+          btn.className = 'football-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-emerald-600 text-white border border-emerald-500 shadow-md shadow-emerald-600/30';
+        } else {
+          btn.className = 'football-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30';
+        }
+      });
+
+      renderNews();
+    };
+
+    window.loadFootballResults = loadFootballResults;
 
     // ==========================================
     // DELETE CURRENT CATEGORY NEWS HANDLER
@@ -2050,6 +2317,13 @@
                     state.newsCategoryFilter.toLowerCase().includes('формула') ||
                     state.newsCategoryFilter.toLowerCase().includes('formula'));
 
+      const isFootball = !isAll && 
+                         (state.newsCategoryFilter === 'Футбол' || 
+                          state.newsCategoryFilter.toLowerCase() === 'футбол' ||
+                          state.newsCategoryFilter.toLowerCase() === 'football' ||
+                          state.newsCategoryFilter.toLowerCase().includes('футбол') ||
+                          state.newsCategoryFilter.toLowerCase().includes('football'));
+
       const itAside = document.getElementById('programming-analytics-aside');
       const digestAside = document.getElementById('all-digest-aside');
       const esportsAside = document.getElementById('esports-hltv-aside');
@@ -2057,6 +2331,7 @@
       const aiAside = document.getElementById('ai-models-aside');
       const linuxAside = document.getElementById('devops-linux-aside');
       const f1Aside = document.getElementById('f1-results-aside');
+      const footballAside = document.getElementById('football-results-aside');
       const langBar = document.getElementById('language-selection-bar');
       const mainCol = document.getElementById('news-main-column');
 
@@ -2067,12 +2342,13 @@
       if (aiAside) aiAside.style.display = isAI ? 'block' : 'none';
       if (linuxAside) linuxAside.style.display = isLinux ? 'block' : 'none';
       if (f1Aside) f1Aside.style.display = isF1 ? 'block' : 'none';
+      if (footballAside) footballAside.style.display = isFootball ? 'block' : 'none';
 
       if (langBar) {
         langBar.style.display = isIT ? 'flex' : 'none';
       }
       if (mainCol) {
-        if (isIT || isAll || isGaming || isUkraine || isAI || isLinux || isF1) {
+        if (isIT || isAll || isGaming || isUkraine || isAI || isLinux || isF1 || isFootball) {
           mainCol.className = 'order-2 lg:order-1 lg:col-span-7 xl:col-span-8 space-y-6 w-full';
         } else {
           mainCol.className = 'order-2 lg:order-1 lg:col-span-12 space-y-6 w-full';
@@ -2097,6 +2373,9 @@
       if (isF1) {
         loadF1Results();
       }
+      if (isFootball) {
+        loadFootballResults();
+      }
 
       // If switching away from IT, reset language filter
       if (!isIT && state.selectedLanguage && state.selectedLanguage !== 'all') {
@@ -2112,6 +2391,9 @@
       }
       if (!isF1 && selectedF1Tag !== 'all') {
         selectedF1Tag = 'all';
+      }
+      if (!isFootball && selectedFootballTag !== 'all') {
+        selectedFootballTag = 'all';
       }
 
       renderCategoryPills();
@@ -2293,6 +2575,28 @@
         }
       }
 
+      // 7. Football Filter: Priority keywords Месси, Барселона, Испания, Интер Майами
+      const isFootballCategory = targetCatLower === 'футбол' || targetCatLower.includes('футбол') || targetCatLower.includes('football');
+      if (isFootballCategory) {
+        const fullText = ((item.title || '') + ' ' + (item.summary || '') + ' ' + (item.why_it_matters || '') + ' ' + (item.source || '')).toLowerCase();
+
+        // Sub-filter by specific tag chip if selected
+        if (selectedFootballTag && selectedFootballTag !== 'all') {
+          const tag = selectedFootballTag.toLowerCase();
+          if (tag === 'месси' || tag === 'messi') {
+            if (!fullText.includes('месси') && !fullText.includes('messi')) return false;
+          } else if (tag === 'барселона' || tag === 'barcelona') {
+            if (!fullText.includes('барселона') && !fullText.includes('barcelona') && !fullText.includes('барса') && !fullText.includes('barca')) return false;
+          } else if (tag === 'испания' || tag === 'spain') {
+            if (!fullText.includes('испани') && !fullText.includes('spain') && !fullText.includes('ла лига') && !fullText.includes('laliga')) return false;
+          } else if (tag === 'интер майами' || tag === 'inter miami') {
+            if (!fullText.includes('интер майами') && !fullText.includes('inter miami') && !fullText.includes('майами')) return false;
+          } else {
+            if (!fullText.includes(tag)) return false;
+          }
+        }
+      }
+
       return true;
     }
 
@@ -2325,7 +2629,7 @@
       const topAllCount = state.articles.filter(a => isArticleEligibleForDisplay(a, 'all')).length;
 
       // Always guarantee essential categories are present even if article count is 0
-      const essentialCats = ['F1', 'IT', 'CS2', 'Украина', 'Swiss', 'AI & Нейросети', 'DevOps & Linux'];
+      const essentialCats = ['Футбол', 'F1', 'IT', 'CS2', 'Украина', 'Swiss', 'AI & Нейросети', 'DevOps & Linux'];
       essentialCats.forEach(ec => {
         if (catCounts[ec] === undefined) {
           catCounts[ec] = 0;

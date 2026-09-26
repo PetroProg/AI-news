@@ -81,6 +81,21 @@ F1_RED_BULL_PRIORITY = [
     "leclerc", "леклер", "шарль леклер", "hamilton", "хэмилтон", "льюис хэмилтон", "champion", "чемпион"
 ]
 
+FOOTBALL_INDICATORS = [
+    "футбол", "football", "soccer", "ла лига", "laliga", "la liga",
+    "лига чемпионов", "champions league", "championsleague", "лига европы", "europa league",
+    "лига наций", "nations league", "барселона", "барса", "barcelona", "barca",
+    "месси", "messi", "интер майами", "inter miami", "испания", "spain",
+    "primera", "terrikon", "террикон", "uefa", "уефа", "fifa", "фифа"
+]
+
+FOOTBALL_PRIORITY = [
+    "месси", "messi", "лео месси", "лионель месси",
+    "барселона", "barcelona", "барса", "barca", "каталон", "fc barcelona",
+    "испания", "spain", "сборная испании", "ла лига", "laliga",
+    "интер майами", "inter miami", "майами", "интер-майами"
+]
+
 # Cache for HLTV ranking
 _hltv_cache: Dict[str, Any] = {}
 _hltv_cache_time: float = 0.0
@@ -90,6 +105,10 @@ _f1_races_cache: Dict[str, Any] = {}
 _f1_races_cache_time: float = 0.0
 _f1_drivers_cache: Dict[str, Any] = {}
 _f1_drivers_cache_time: float = 0.0
+
+# Cache for Football Tournaments & Results (Terrikon)
+_football_cache: Dict[str, Any] = {}
+_football_cache_time: Dict[str, float] = {}
 
 
 FALLBACK_HLTV_RANKINGS = [
@@ -180,6 +199,8 @@ def detect_diagram_image(raw_content: str, images: list[str]) -> tuple[str | Non
 def infer_category_from_source(source_name: str) -> str:
     """Infer topic category from source name if AI category is not assigned yet."""
     s = source_name.lower()
+    if any(k in s for k in ["marca", "primera", "sportsru", "fabrizio", "terrikon", "uefa", "футбол", "football"]):
+        return "Футбол"
     if any(k in s for k in ["formula 1", "formula1", "f1", "формула-1", "формула 1"]):
         return "F1"
     if any(k in s for k in ["novynaukr", "украин", "украина", "україна"]):
@@ -388,6 +409,180 @@ async def get_f1_results(force: bool = False) -> Dict[str, Any]:
     }
 
 
+def _parse_terrikon_standings(table) -> List[Dict[str, Any]]:
+    standings = []
+    if not table:
+        return standings
+    rows = table.find_all("tr")
+    for tr in rows[1:]:
+        tds = tr.find_all("td")
+        if len(tds) >= 10:
+            pos = tds[0].get_text(strip=True).replace(".", "")
+            team_img = tds[1].find("img")
+            icon_url = team_img.get("src") if team_img else ""
+            if icon_url and icon_url.startswith("/"):
+                icon_url = f"https://terrikon.com{icon_url}"
+            team_name = tds[1].get_text(strip=True)
+            games = tds[2].get_text(strip=True)
+            win = tds[3].get_text(strip=True)
+            draw = tds[4].get_text(strip=True)
+            loss = tds[5].get_text(strip=True)
+            gf = tds[6].get_text(strip=True)
+            ga = tds[8].get_text(strip=True)
+            pts = tds[9].get_text(strip=True)
+            standings.append({
+                "pos": pos,
+                "team": team_name,
+                "icon": icon_url,
+                "games": games,
+                "win": win,
+                "draw": draw,
+                "loss": loss,
+                "goals": f"{gf}-{ga}",
+                "pts": pts
+            })
+    return standings
+
+
+def _parse_terrikon_matches(table, limit: int = 15) -> List[Dict[str, Any]]:
+    matches = []
+    if not table:
+        return matches
+    rows = table.find_all("tr")
+    for tr in rows:
+        tds = tr.find_all("td")
+        if len(tds) >= 6:
+            home = tds[1].get_text(strip=True)
+            score = tds[2].get_text(strip=True)
+            away = tds[3].get_text(strip=True)
+            date = tds[5].get_text(strip=True)
+            if home and away:
+                matches.append({
+                    "home": home,
+                    "score": score,
+                    "away": away,
+                    "date": date
+                })
+    return matches[:limit]
+
+
+@app.get("/api/football/results")
+async def get_football_results(tournament: str = "laliga", force: bool = False) -> Dict[str, Any]:
+    """
+    Получить турнирную таблицу и результаты матчей с Terrikon.
+    Турниры: laliga (Ла Лига), cl (Лига Чемпионов), el (Лига Европы), nations (Лига Наций).
+    """
+    global _football_cache, _football_cache_time
+    now = time.time()
+    t_key = tournament.lower().strip()
+    if t_key not in ["laliga", "cl", "el", "nations"]:
+        t_key = "laliga"
+
+    last_time = _football_cache_time.get(t_key, 0.0)
+    if not force and t_key in _football_cache and (now - last_time) < 900:
+        return _football_cache[t_key]
+
+    urls_map = {
+        "laliga": {
+            "url": "https://terrikon.com/football/spain/championship/",
+            "title": "Ла Лига (Испания)",
+            "flag": "🇪🇸"
+        },
+        "cl": {
+            "url": "https://terrikon.com/champions-league",
+            "title": "Лига Чемпионов УЕФА",
+            "flag": "⭐"
+        },
+        "el": {
+            "url": "https://terrikon.com/europa-league",
+            "title": "Лига Европы УЕФА",
+            "flag": "🏆"
+        },
+        "nations": {
+            "url": "https://terrikon.com/nations-league",
+            "title": "Лига Наций УЕФА",
+            "flag": "🌍"
+        }
+    }
+
+    t_info = urls_map[t_key]
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "ru-RU,ru;q=0.9,en-US,en;q=0.8",
+    }
+
+    standings = []
+    matches = []
+    groups = []
+
+    try:
+        async with httpx.AsyncClient(headers=headers, timeout=20.0, follow_redirects=True) as client:
+            resp = await client.get(t_info["url"])
+            if resp.status_code == 200:
+                soup = BeautifulSoup(resp.text, "html.parser")
+                
+                # Check for multiple group tables (e.g. Nations League)
+                group_tables = soup.find_all("table", class_="grouptable")
+                if len(group_tables) > 1:
+                    for idx, g_tab in enumerate(group_tables[:4]):
+                        # Find preceding title
+                        prev_heading = g_tab.find_previous(["h2", "h3", "div", "b"])
+                        g_title = prev_heading.get_text(strip=True) if prev_heading else f"Группа {idx + 1}"
+                        g_items = _parse_terrikon_standings(g_tab)
+                        if g_items:
+                            groups.append({
+                                "group": g_title,
+                                "standings": g_items
+                            })
+                    if groups and groups[0]["standings"]:
+                        standings = groups[0]["standings"]
+                elif len(group_tables) == 1:
+                    standings = _parse_terrikon_standings(group_tables[0])
+
+                # Matches
+                match_tables = soup.find_all("table", class_="gameresult")
+                for m_tab in match_tables:
+                    parsed_m = _parse_terrikon_matches(m_tab)
+                    if parsed_m:
+                        matches.extend(parsed_m)
+                        if len(matches) >= 15:
+                            break
+                matches = matches[:15]
+
+        result_payload = {
+            "tournament": t_key,
+            "title": t_info["title"],
+            "flag": t_info["flag"],
+            "url": t_info["url"],
+            "standings": standings,
+            "matches": matches,
+            "groups": groups,
+            "updated_at": datetime.now(timezone.utc).strftime("%d.%m.%Y %H:%M UTC")
+        }
+
+        if standings or matches or groups:
+            _football_cache[t_key] = result_payload
+            _football_cache_time[t_key] = now
+            return result_payload
+
+    except Exception as e:
+        print(f"Error fetching football results from Terrikon ({t_key}): {e}")
+
+    if t_key in _football_cache:
+        return _football_cache[t_key]
+
+    return {
+        "tournament": t_key,
+        "title": t_info["title"],
+        "flag": t_info["flag"],
+        "url": t_info["url"],
+        "standings": [],
+        "matches": [],
+        "groups": [],
+        "updated_at": datetime.now(timezone.utc).strftime("%d.%m.%Y %H:%M UTC")
+    }
+
 
 @app.get("/api/news")
 async def get_news_feed(
@@ -420,6 +615,9 @@ async def get_news_feed(
         title_lower = (art.title or "").lower()
         content_lower = (art.cleaned_content or raw_text).lower()
 
+        is_football = any(k in source_combined for k in ["marca", "primera", "sportsru", "fabrizio", "terrikon", "uefa", "футбол", "football"]) or \
+                      (raw_cat and ("футбол" in raw_cat.lower() or "football" in raw_cat.lower())) or \
+                      any(k in title_lower for k in FOOTBALL_INDICATORS)
         is_f1 = any(k in source_combined for k in ["formula 1", "formula1", "f1", "формула-1"]) or \
                 (raw_cat and raw_cat.lower() == "f1") or \
                 any(k in title_lower for k in F1_INDICATORS)
@@ -427,7 +625,9 @@ async def get_news_feed(
         is_gaming = any(k in source_combined for k in ["csgo", "cs3", "clashroyalepin", "hltv", "game", "киберспорт"]) or \
                     any(k in title_lower for k in GAMING_INDICATORS)
 
-        if is_f1:
+        if is_football:
+            cat_name = "Футбол"
+        elif is_f1:
             cat_name = "F1"
         elif is_ukraine:
             cat_name = "Украина"
@@ -440,6 +640,8 @@ async def get_news_feed(
                 cat_name = "CS2"
             elif cat_name.lower() in ["игры & киберспорт", "игры и киберспорт", "gaming", "cs2"]:
                 cat_name = "CS2"
+            elif cat_name.lower() in ["футбол", "football"]:
+                cat_name = "Футбол"
             elif cat_name.lower() in ["it & аналитика", "it-аналитик", "development", "общие технологии", "general tech", "technology", "it"]:
                 cat_name = "IT"
         else:
@@ -496,7 +698,22 @@ async def get_news_feed(
                 if "Champion" not in matched_kws:
                     matched_kws.append("Champion")
 
-        is_priority = (len(matched_kws) > 0 or is_final_or_winner or has_ukr_priority or has_f1_priority) and not is_meme_or_ad and not is_operational_alert
+        has_football_priority = (cat_name == "Футбол") and any(kw in text_for_check for kw in FOOTBALL_PRIORITY)
+        if has_football_priority:
+            if any(k in text_for_check for k in ["месси", "messi"]):
+                if "Месси" not in matched_kws:
+                    matched_kws.append("Месси")
+            if any(k in text_for_check for k in ["барселона", "barcelona", "барса", "barca"]):
+                if "Барселона" not in matched_kws:
+                    matched_kws.append("Барселона")
+            if any(k in text_for_check for k in ["испания", "spain", "испан"]):
+                if "Испания" not in matched_kws:
+                    matched_kws.append("Испания")
+            if any(k in text_for_check for k in ["интер майами", "inter miami", "майами"]):
+                if "Интер Майами" not in matched_kws:
+                    matched_kws.append("Интер Майами")
+
+        is_priority = (len(matched_kws) > 0 or is_final_or_winner or has_ukr_priority or has_f1_priority or has_football_priority) and not is_meme_or_ad and not is_operational_alert
 
 
         score = float(art.importance_score or 5.0)
@@ -653,6 +870,8 @@ async def delete_category_news(
                 cat_ids.append(c.id)
             elif ("f1" in t_low or "формул" in t_low or "formula" in t_low) and ("f1" in c_name_low or "формул" in c_name_low):
                 cat_ids.append(c.id)
+            elif ("футбол" in t_low or "football" in t_low or "soccer" in t_low) and ("футбол" in c_name_low or "football" in c_name_low):
+                cat_ids.append(c.id)
             elif "swiss" in t_low and "swiss" in c_name_low:
                 cat_ids.append(c.id)
 
@@ -681,6 +900,12 @@ async def delete_category_news(
             conditions.append(Article.source.has(Source.url.ilike("%NovynaUKR%")))
         elif "f1" in t_low or "formula" in t_low:
             conditions.append(Article.source.has(Source.url.ilike("%formula1.com%")))
+        elif "футбол" in t_low or "football" in t_low:
+            conditions.append(Article.source.has(Source.url.ilike("%marca%")))
+            conditions.append(Article.source.has(Source.url.ilike("%as.com%")))
+            conditions.append(Article.source.has(Source.url.ilike("%sportsru%")))
+            conditions.append(Article.source.has(Source.url.ilike("%fabriziorom%")))
+            conditions.append(Article.source.has(Source.url.ilike("%terrikon%")))
         elif "swiss" in t_low:
             conditions.append(Article.source.has(Source.name.ilike("%rts%")))
             conditions.append(Article.source.has(Source.name.ilike("%blick%")))
