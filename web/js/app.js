@@ -1454,9 +1454,15 @@
       if (data.groups && data.groups.length > 0) {
         let groupsToRender = data.groups;
         if (activeFootballTournament === 'nations' && selectedNationsTier !== 'all') {
+          const tierLetter = selectedNationsTier.toUpperCase();
           groupsToRender = data.groups.filter(g => {
-            const grpName = (g.group || '').toUpperCase();
-            return grpName.includes(` ${selectedNationsTier}`) || grpName.includes(` ${selectedNationsTier.toLowerCase()}`) || grpName.includes(`${selectedNationsTier}1`) || grpName.includes(`${selectedNationsTier}2`) || grpName.includes(`${selectedNationsTier}3`) || grpName.includes(`${selectedNationsTier}4`);
+            const raw = (g.group || '').toUpperCase();
+            // Match Russian or Latin letters A, B, C, D
+            if (tierLetter === 'A') return /[АA][1-4]/.test(raw) || raw.includes(' А') || raw.includes(' A');
+            if (tierLetter === 'B') return /[ВB][1-4]/.test(raw) || raw.includes(' В') || raw.includes(' B');
+            if (tierLetter === 'C') return /[СC][1-4]/.test(raw) || raw.includes(' С') || raw.includes(' C');
+            if (tierLetter === 'D') return /[DД][1-4]/.test(raw) || raw.includes(' D') || raw.includes(' Д');
+            return true;
           });
         }
 
@@ -1501,6 +1507,8 @@
         }
       });
 
+      // Automatically switch to standings view if user was on matches view
+      switchFootballView('standings');
       renderFootballContent();
     };
 

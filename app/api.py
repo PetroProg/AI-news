@@ -547,15 +547,19 @@ async def get_football_results(tournament: str = "laliga", force: bool = False) 
                 elif len(group_tables) == 1:
                     standings = _parse_terrikon_standings(group_tables[0])
 
-                # Matches
+                # Matches: collect up to 60 matches from all match tables
                 match_tables = soup.find_all("table", class_="gameresult")
+                seen_pairs = set()
                 for m_tab in match_tables:
-                    parsed_m = _parse_terrikon_matches(m_tab)
-                    if parsed_m:
-                        matches.extend(parsed_m)
-                        if len(matches) >= 15:
-                            break
-                matches = matches[:15]
+                    parsed_m = _parse_terrikon_matches(m_tab, limit=50)
+                    for m in parsed_m:
+                        pair_key = (m["home"], m["away"], m["date"])
+                        if pair_key not in seen_pairs:
+                            seen_pairs.add(pair_key)
+                            matches.append(m)
+                    if len(matches) >= 60:
+                        break
+                matches = matches[:60]
 
         result_payload = {
             "tournament": t_key,
