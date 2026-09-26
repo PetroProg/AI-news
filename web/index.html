@@ -1097,6 +1097,15 @@
                 </button>
               </div>
 
+              <!-- Nations League Tier Filter (Shown ONLY on Nations League) -->
+              <div id="nations-tier-filter-bar" style="display: none;" class="p-1 rounded-xl bg-slate-950/80 border border-emerald-500/20 grid grid-cols-5 gap-1 text-[10px]">
+                <button type="button" id="nations-tier-all" onclick="filterNationsTier('all')" class="py-1 px-1.5 rounded-lg font-bold bg-emerald-600 text-white text-center">Все</button>
+                <button type="button" id="nations-tier-A" onclick="filterNationsTier('A')" class="py-1 px-1.5 rounded-lg text-slate-400 hover:text-white text-center">Лига A</button>
+                <button type="button" id="nations-tier-B" onclick="filterNationsTier('B')" class="py-1 px-1.5 rounded-lg text-slate-400 hover:text-white text-center">Лига B</button>
+                <button type="button" id="nations-tier-C" onclick="filterNationsTier('C')" class="py-1 px-1.5 rounded-lg text-slate-400 hover:text-white text-center">Лига C</button>
+                <button type="button" id="nations-tier-D" onclick="filterNationsTier('D')" class="py-1 px-1.5 rounded-lg text-slate-400 hover:text-white text-center">Лига D</button>
+              </div>
+
               <!-- View Switcher (Table vs Matches) -->
               <div class="flex items-center justify-between text-xs px-1">
                 <div class="flex items-center gap-1">

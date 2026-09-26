@@ -1435,6 +1435,8 @@
       }
     }
 
+    let selectedNationsTier = 'all'; // 'all' | 'A' | 'B' | 'C' | 'D'
+
     function renderFootballContent() {
       const tourn = activeFootballTournament || 'laliga';
       const data = footballResultsData[tourn];
@@ -1450,10 +1452,26 @@
 
       // Check if tournament has group tables (Nations League or multi-group)
       if (data.groups && data.groups.length > 0) {
-        container.innerHTML = data.groups.map(g => `
-          <div class="space-y-1.5 mb-3">
-            <div class="text-[11px] font-bold text-emerald-400 bg-slate-900/90 px-2 py-1 rounded-lg border border-emerald-500/20 flex items-center justify-between">
-              <span>${g.group}</span>
+        let groupsToRender = data.groups;
+        if (activeFootballTournament === 'nations' && selectedNationsTier !== 'all') {
+          groupsToRender = data.groups.filter(g => {
+            const grpName = (g.group || '').toUpperCase();
+            return grpName.includes(` ${selectedNationsTier}`) || grpName.includes(` ${selectedNationsTier.toLowerCase()}`) || grpName.includes(`${selectedNationsTier}1`) || grpName.includes(`${selectedNationsTier}2`) || grpName.includes(`${selectedNationsTier}3`) || grpName.includes(`${selectedNationsTier}4`);
+          });
+        }
+
+        if (groupsToRender.length === 0) {
+          container.innerHTML = `<div class="text-xs text-slate-400 p-4 text-center">Нет данных для выбранной лиги</div>`;
+          return;
+        }
+
+        container.innerHTML = groupsToRender.map(g => `
+          <div class="space-y-1.5 mb-3.5">
+            <div class="text-[11px] font-bold text-emerald-300 bg-slate-900/90 px-2.5 py-1 rounded-xl border border-emerald-500/30 flex items-center justify-between shadow-sm">
+              <span class="flex items-center gap-1.5">
+                <span>🏆</span>
+                <span>${cleanText(g.group)}</span>
+              </span>
               <span class="text-[9px] text-slate-400 font-mono">Очки</span>
             </div>
             ${renderStandingsList(g.standings)}
@@ -1470,6 +1488,21 @@
 
       container.innerHTML = renderStandingsList(standings);
     }
+
+    window.filterNationsTier = function(tier) {
+      selectedNationsTier = tier;
+      ['all', 'A', 'B', 'C', 'D'].forEach(t => {
+        const btn = document.getElementById(`nations-tier-${t}`);
+        if (!btn) return;
+        if (t === tier) {
+          btn.className = 'py-1 px-1.5 rounded-lg font-bold bg-emerald-600 text-white text-center shadow-sm';
+        } else {
+          btn.className = 'py-1 px-1.5 rounded-lg text-slate-400 hover:text-white text-center';
+        }
+      });
+
+      renderFootballContent();
+    };
 
     function renderStandingsList(standings) {
       return standings.map((item, idx) => {
@@ -1581,6 +1614,11 @@
           btn.className = 'py-1.5 px-2 rounded-xl text-[11px] font-semibold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1';
         }
       });
+
+      const tierBar = document.getElementById('nations-tier-filter-bar');
+      if (tierBar) {
+        tierBar.style.display = (tourn === 'nations') ? 'grid' : 'none';
+      }
 
       loadFootballResults();
     };

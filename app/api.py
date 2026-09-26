@@ -525,10 +525,17 @@ async def get_football_results(tournament: str = "laliga", force: bool = False) 
                 # Check for multiple group tables (e.g. Nations League)
                 group_tables = soup.find_all("table", class_="grouptable")
                 if len(group_tables) > 1:
-                    for idx, g_tab in enumerate(group_tables[:4]):
-                        # Find preceding title
-                        prev_heading = g_tab.find_previous(["h2", "h3", "div", "b"])
-                        g_title = prev_heading.get_text(strip=True) if prev_heading else f"Группа {idx + 1}"
+                    for idx, g_tab in enumerate(group_tables):
+                        # Find preceding h2 or h3 heading specifically (avoid div.col1/team-info text dump)
+                        prev_h = g_tab.find_previous(["h2", "h3"])
+                        if prev_h:
+                            g_title = prev_h.get_text(strip=True)
+                        else:
+                            g_title = f"Группа {idx + 1}"
+                        # Clean title e.g. "Лига Наций УЕФА 2026-27. Группа А1" -> "Группа А1"
+                        if "Группа" in g_title:
+                            g_title = "Группа " + g_title.split("Группа")[-1].strip()
+
                         g_items = _parse_terrikon_standings(g_tab)
                         if g_items:
                             groups.append({
