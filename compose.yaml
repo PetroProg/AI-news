@@ -17,6 +17,7 @@ services:
         condition: service_healthy
     volumes:
       - .:/app
+      - /var/run/tailscale:/var/run/tailscale:ro
 
   bot:
     build:
