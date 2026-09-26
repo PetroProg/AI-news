@@ -1224,10 +1224,16 @@
           </div>
         </div>
 
-        <button type="button" id="scan-network-btn" class="w-full sm:w-auto px-5 py-3 rounded-2xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-lg shadow-sky-600/30 transition-all">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><line x1="12" y1="3" x2="12" y2="12"/><line x1="12" y1="12" x2="18" y2="6"/></svg>
-          <span data-i18n="scanNetworkBtn">Scanner le réseau</span>
-        </button>
+        <div class="flex items-center gap-2.5 w-full sm:w-auto">
+          <button type="button" id="open-add-device-modal-btn" class="flex-1 sm:flex-initial px-4 py-3 rounded-2xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 font-semibold text-xs flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-emerald-950/40">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+            <span>Добавить устройство</span>
+          </button>
+          <button type="button" id="scan-network-btn" class="flex-1 sm:flex-initial px-5 py-3 rounded-2xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-lg shadow-sky-600/30 transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><line x1="12" y1="3" x2="12" y2="12"/><line x1="12" y1="12" x2="18" y2="6"/></svg>
+            <span data-i18n="scanNetworkBtn">Обновить статус</span>
+          </button>
+        </div>
       </div>
 
       <!-- Search & Category Filters -->
@@ -1550,6 +1556,88 @@
           Enregistrer
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- Add Device Modal -->
+  <div id="add-device-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md items-center justify-center p-4" style="display: none;">
+    <div class="glass-panel rounded-3xl max-w-md w-full p-6 border border-emerald-500/40 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <button type="button" id="close-add-device-modal" class="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-white transition-all">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+
+      <div class="flex items-center gap-2.5 mb-2">
+        <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+        </div>
+        <h3 class="text-xl font-bold text-white font-heading">Добавить устройство</h3>
+      </div>
+      <p class="text-xs text-slate-400 mb-4">Внесите параметры нового компьютера, телефона или сетевого хранилища (NAS).</p>
+
+      <form id="add-device-form" class="space-y-3.5 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">Имя устройства *</label>
+          <input type="text" id="add-dev-name" required placeholder="Например: Рабочий ThinkPad или Synology NAS" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">Категория</label>
+            <select id="add-dev-category" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+              <option value="computers">Компьютеры / Ноутбуки</option>
+              <option value="mobile">Смартфоны / Планшеты</option>
+              <option value="media">Медиа / ТВ / NAS</option>
+              <option value="iot">Умный дом</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">Иконка</label>
+            <select id="add-dev-icon" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+              <option value="laptop">💻 Ноутбук / ПК</option>
+              <option value="smartphone">📱 Смартфон</option>
+              <option value="server">🖥️ Сервер</option>
+              <option value="nas">🗄️ Хранилище (NAS)</option>
+              <option value="tv">📺 ТВ / Экран</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">Локальный IP (Wi-Fi/LAN)</label>
+            <input type="text" id="add-dev-ip" placeholder="192.168.178.xxx" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono focus:outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">Tailscale IP (если есть)</label>
+            <input type="text" id="add-dev-ts-ip" placeholder="100.x.y.z" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono focus:outline-none focus:border-emerald-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">MAC-адрес (опционально)</label>
+            <input type="text" id="add-dev-mac" placeholder="AA:BB:CC:DD:EE:FF" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono focus:outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">Бренд / Производитель</label>
+            <input type="text" id="add-dev-vendor" placeholder="Apple, Lenovo, Synology..." class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">Расположение / Назначение</label>
+          <input type="text" id="add-dev-location" placeholder="Кабинет, мобильный, учеба..." class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <div class="mt-5 flex justify-end gap-2 pt-2">
+          <button type="button" id="cancel-add-device-btn" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-all">
+            Отмена
+          </button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition-all">
+            Сохранить устройство
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 

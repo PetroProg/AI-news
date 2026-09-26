@@ -471,6 +471,12 @@
       if (type === 'camera') {
         return '<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z"/></svg>';
       }
+      if (type === 'server') {
+        return '<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 14.25h13.5m-13.5 0a3 3 0 01-3-3m3 3a3 3 0 003 3h7.5a3 3 0 003-3m-13.5 0V7.5m13.5 6.75V7.5m0 0a3 3 0 00-3-3m3 3a3 3 0 01-3 3H8.25a3 3 0 01-3-3m13.5 0H5.25m0 0A3 3 0 012.25 4.5M12 18.75v3m-3-3v3m6-3v3M6.75 10.5h.008v.008H6.75v-.008zm3.75 0h.008v.008H10.5v-.008z"/></svg>';
+      }
+      if (type === 'nas') {
+        return '<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 5.625c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125"/></svg>';
+      }
       return '<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>';
     }
 
@@ -575,6 +581,11 @@
       const delCategoryBtn = document.getElementById('delete-category-news-btn');
       if (delCategoryBtn) {
         delCategoryBtn.style.display = (tabId === 'news') ? 'inline-flex' : 'none';
+      }
+
+      if (tabId === 'devices') {
+        loadManagedDevices();
+        loadRouterStats();
       }
 
       if (tabId === 'vpn') {
@@ -3244,16 +3255,65 @@
     }
 
     // Render Devices
-    function updateNetworkAnalytics() {
-      const p = document.getElementById('metric-protection');
-      const a = document.getElementById('metric-attacks');
-      const s = document.getElementById('metric-speed');
-      const r = document.getElementById('metric-remote');
+    // Router & Network Analytics
+    async function loadRouterStats() {
+      try {
+        const res = await fetch('/api/router/stats');
+        if (!res.ok) return;
+        const data = await res.json();
+        const p = document.getElementById('metric-protection');
+        const a = document.getElementById('metric-attacks');
+        const s = document.getElementById('metric-speed');
+        const r = document.getElementById('metric-remote');
 
-      if (p) p.textContent = "99.8%";
-      if (a) a.textContent = state.dnsStats.threatsBlocked + " " + (state.lang === 'fr' ? 'menaces' : state.lang === 'de' ? 'Bedrohungen' : 'threats');
-      if (s) s.textContent = "500 Mb/s";
-      if (r) r.textContent = state.vpnConnected ? "WireGuard" : "Off";
+        if (p) p.textContent = "99.8%";
+        if (a) a.textContent = (state.lang === 'ru' ? '0 угроз' : '0 threats');
+        if (s) s.textContent = data.speed_down || "500 Mb/s";
+        if (r) r.textContent = data.is_online ? "FRITZ!Box" : "Offline";
+      } catch (e) {
+        console.error("Failed to load router stats:", e);
+      }
+    }
+
+    function updateNetworkAnalytics() {
+      loadRouterStats();
+    }
+
+    // Load Live Devices from Server API
+    async function loadManagedDevices() {
+      try {
+        const res = await fetch('/api/devices');
+        if (!res.ok) throw new Error("API returned " + res.status);
+        const data = await res.json();
+        if (data && Array.isArray(data.devices)) {
+          state.devices = data.devices.map(d => ({
+            id: d.id,
+            key_id: d.key_id,
+            name: d.name,
+            category: d.category || 'computers',
+            icon: d.icon || 'laptop',
+            ip: d.ip || '',
+            tailscale_ip: d.tailscale_ip || '',
+            mac: d.mac || '',
+            vendor: d.vendor || '',
+            location: d.location || '',
+            connection: d.connection || (d.ip ? 'LAN / Wi-Fi' : 'Tailscale Mesh'),
+            battery_level: d.battery_level,
+            battery_charging: d.battery_charging,
+            battery_updated_at: d.battery_updated_at,
+            is_online: d.is_online,
+            ping_ms: d.ping_ms,
+            last_seen: d.last_seen,
+            paused: false,
+            qos: 'high',
+            parental: false,
+            dataToday: d.is_online ? 'Активен' : '—'
+          }));
+          renderDevices();
+        }
+      } catch (err) {
+        console.warn("Could not fetch /api/devices, keeping current devices:", err);
+      }
     }
 
     function renderDevices() {
@@ -3261,23 +3321,24 @@
       if (!container) return;
 
       const total = state.devices.length;
+      const onlineCount = state.devices.filter(d => d.is_online).length;
       const paused = state.devices.filter(d => d.paused).length;
-      const active = total - paused;
 
       const stTotal = document.getElementById('stat-total-devices');
       const stAct = document.getElementById('stat-active-devices');
       const stPau = document.getElementById('stat-paused-devices');
 
       if (stTotal) stTotal.textContent = total;
-      if (stAct) stAct.textContent = active;
+      if (stAct) stAct.textContent = onlineCount;
       if (stPau) stPau.textContent = paused;
 
-      updateNetworkAnalytics();
-
       const filtered = state.devices.filter(d => {
-        const matchQuery = d.name.toLowerCase().includes(state.searchDeviceQuery.toLowerCase()) ||
-                           d.ip.includes(state.searchDeviceQuery) ||
-                           d.location.toLowerCase().includes(state.searchDeviceQuery.toLowerCase());
+        const q = state.searchDeviceQuery.toLowerCase();
+        const matchQuery = (d.name || '').toLowerCase().includes(q) ||
+                           (d.ip || '').includes(q) ||
+                           (d.tailscale_ip || '').includes(q) ||
+                           (d.location || '').toLowerCase().includes(q) ||
+                           (d.vendor || '').toLowerCase().includes(q);
         const matchCat = state.deviceCategoryFilter === 'all' || d.category === state.deviceCategoryFilter;
         return matchQuery && matchCat;
       });
@@ -3287,7 +3348,7 @@
       if (filtered.length === 0) {
         container.innerHTML = `
           <div class="col-span-full py-10 text-center text-slate-400 glass-panel rounded-3xl p-6">
-            <p class="text-sm font-semibold text-slate-300">Aucun appareil trouvé</p>
+            <p class="text-sm font-semibold text-slate-300">Устройств не найдено</p>
           </div>
         `;
         return;
@@ -3295,76 +3356,95 @@
 
       filtered.forEach(device => {
         const card = document.createElement('div');
-        card.className = `glass-panel rounded-3xl p-5 border transition-all ${device.paused ? 'border-rose-500/40 bg-rose-950/15' : 'border-slate-800'}`;
+        const isOnline = device.is_online && !device.paused;
+        card.className = `glass-panel rounded-3xl p-5 border transition-all ${
+          device.paused 
+            ? 'border-rose-500/40 bg-rose-950/15' 
+            : isOnline 
+            ? 'border-sky-500/30 bg-slate-900/90 shadow-lg shadow-sky-950/20' 
+            : 'border-slate-800 bg-slate-950/60 opacity-80'
+        }`;
+
+        // Battery HTML badge (special feature for Nokia 6.1 / mobile)
+        let batteryHtml = '';
+        if (device.battery_level !== null && device.battery_level !== undefined) {
+          const bLevel = device.battery_level;
+          const bColor = bLevel > 50 ? 'emerald' : (bLevel > 20 ? 'amber' : 'rose');
+          batteryHtml = `
+            <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-${bColor}-500/15 border border-${bColor}-500/30 text-${bColor}-300 text-xs font-bold shrink-0">
+              <span>${device.battery_charging ? '⚡' : '🔋'}</span>
+              <span>${bLevel}%</span>
+            </div>
+          `;
+        }
+
+        // Latency badge
+        const pingHtml = device.ping_ms 
+          ? `<span class="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">${device.ping_ms} ms</span>`
+          : '';
+
+        // Status badge
+        const statusBadge = device.paused
+          ? `<span class="badge-status px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+               <span class="w-2 h-2 rounded-full mr-1.5 bg-rose-400"></span> Пауза
+             </span>`
+          : isOnline
+          ? `<span class="badge-status px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 flex items-center gap-1">
+               <span class="w-2 h-2 rounded-full mr-1 bg-emerald-400 animate-pulse"></span> В сети ${pingHtml}
+             </span>`
+          : `<span class="badge-status px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700/60">
+               <span class="w-2 h-2 rounded-full mr-1.5 bg-slate-500"></span> Не в сети
+             </span>`;
 
         card.innerHTML = `
           <div class="flex items-start justify-between gap-3 mb-3">
             <div class="flex items-center gap-3 min-w-0">
-              <div class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${device.paused ? 'bg-rose-500/20 text-rose-400' : 'bg-sky-500/20 text-sky-400'}">
+              <div class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${isOnline ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30' : 'bg-slate-800/80 text-slate-500'}">
                 ${getDeviceIcon(device.icon)}
               </div>
               <div class="min-w-0">
-                <h4 class="font-bold text-white text-sm sm:text-base leading-snug truncate">${device.name}</h4>
-                <p class="text-[11px] text-slate-400 truncate">${device.vendor} • ${device.location}</p>
+                <div class="flex items-center gap-2">
+                  <h4 class="font-bold text-white text-sm sm:text-base leading-snug truncate">${device.name}</h4>
+                </div>
+                <p class="text-[11px] text-slate-400 truncate">${device.vendor || 'Устройство'} ${device.location ? '• ' + device.location : ''}</p>
               </div>
             </div>
 
-            <!-- Quick Internet Cut/Resume Button -->
-            <button type="button" class="toggle-pause-btn px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0 ${device.paused ? 'bg-rose-500/20 border border-rose-500/40 text-rose-300' : 'bg-slate-800/90 border border-slate-700 text-slate-200 hover:text-white'}" data-id="${device.id}">
-              ${device.paused 
-                ? '<svg class="w-3.5 h-3.5 text-rose-300" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>' 
-                : '<svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'}
-              <span>${device.paused ? t('btnResumeInternet') : t('btnPauseInternet')}</span>
-            </button>
+            ${batteryHtml}
           </div>
 
           <div class="flex flex-wrap items-center gap-2 mb-3">
-            <span class="badge-status px-2.5 py-1 rounded-full text-xs font-semibold ${device.paused ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/25'}">
-              <span class="w-2 h-2 rounded-full mr-1.5 ${device.paused ? 'bg-rose-400' : 'bg-emerald-400 animate-pulse'}"></span>
-              ${device.paused ? t('statusPaused') : t('statusOnline')}
-            </span>
+            ${statusBadge}
 
             <span class="badge-status px-2.5 py-1 rounded-full text-xs bg-slate-800/80 text-slate-300 border border-slate-700/60 flex items-center gap-1">
               ${device.connection}
             </span>
-
-            ${device.parental ? '<span class="badge-status px-2 py-0.5 rounded-full text-[11px] bg-purple-500/15 text-purple-300 border border-purple-500/30">Parental</span>' : ''}
-            ${device.qos === 'high' ? '<span class="badge-status px-2 py-0.5 rounded-full text-[11px] bg-amber-500/15 text-amber-300 border border-amber-500/30">⚡ QoS</span>' : ''}
           </div>
 
-          <div class="grid grid-cols-2 gap-2 p-3 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs mb-3">
-            <div>
-              <span class="text-slate-500 block text-[10px]">IP :</span>
-              <span class="font-mono text-slate-200 font-medium">${device.ip}</span>
+          <div class="space-y-1.5 p-3 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs mb-3 font-mono">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-500 text-[10px] font-sans">LAN IP:</span>
+              <span class="text-slate-200 font-medium">${device.ip || '—'}</span>
             </div>
-            <div class="text-right">
-              <span class="text-slate-500 block text-[10px]">${t('trafficToday')}</span>
-              <span class="font-bold text-sky-300">${device.dataToday}</span>
-            </div>
+            ${device.tailscale_ip ? `
+            <div class="flex items-center justify-between">
+              <span class="text-slate-500 text-[10px] font-sans flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span> Tailscale:
+              </span>
+              <span class="text-indigo-300 font-medium">${device.tailscale_ip}</span>
+            </div>` : ''}
           </div>
 
           <div class="flex items-center justify-between pt-1">
-            <span class="text-[10px] font-mono text-slate-500">${device.mac}</span>
+            <span class="text-[10px] font-mono text-slate-500">${device.mac || 'Tailscale Mesh'}</span>
             <button type="button" class="inspect-device-btn px-3.5 py-1.5 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 text-xs font-semibold flex items-center gap-1 transition-all" data-id="${device.id}">
-              <span>${t('btnConfigure')}</span>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/></svg>
+              <span>Настроить</span>
             </button>
           </div>
         `;
 
         container.appendChild(card);
-      });
-
-      // Attach Pause Button Events
-      container.querySelectorAll('.toggle-pause-btn').forEach(btn => {
-        btn.onclick = (e) => {
-          e.stopPropagation();
-          const id = parseInt(btn.dataset.id);
-          const dev = state.devices.find(d => d.id === id);
-          if (!dev) return;
-          dev.paused = !dev.paused;
-          renderDevices();
-          showToast(dev.paused ? t('toastPauseOn') : t('toastPauseOff'), dev.name, dev.paused ? "warning" : "success");
-        };
       });
 
       // Attach Inspect Button Events
@@ -3385,36 +3465,56 @@
       activeEditId = id;
 
       document.getElementById('modal-device-name').value = dev.name;
-      document.getElementById('modal-device-ip').textContent = dev.ip;
-      document.getElementById('modal-device-mac').textContent = dev.mac;
-      document.getElementById('modal-device-vendor').textContent = dev.vendor;
+      document.getElementById('modal-device-ip').textContent = dev.ip || dev.tailscale_ip || '—';
+      document.getElementById('modal-device-mac').textContent = dev.mac || 'Tailscale Mesh';
+      document.getElementById('modal-device-vendor').textContent = dev.vendor || '—';
       document.getElementById('modal-device-connection').textContent = dev.connection;
-      document.getElementById('modal-device-location').value = dev.location;
-      document.getElementById('modal-device-qos').value = dev.qos;
-      document.getElementById('modal-device-parental').checked = dev.parental;
-      document.getElementById('modal-device-pause-toggle').checked = dev.paused;
+      document.getElementById('modal-device-location').value = dev.location || '';
+      document.getElementById('modal-device-qos').value = dev.qos || 'high';
+      document.getElementById('modal-device-parental').checked = dev.parental || false;
+      document.getElementById('modal-device-pause-toggle').checked = dev.paused || false;
 
       const modal = document.getElementById('device-modal');
       modal.style.display = 'flex';
     }
 
     // Save Device Modal
-    document.getElementById('save-device-settings').onclick = () => {
+    document.getElementById('save-device-settings').onclick = async () => {
       if (!activeEditId) return;
       const dev = state.devices.find(d => d.id === activeEditId);
       if (!dev) return;
 
-      dev.name = document.getElementById('modal-device-name').value;
-      dev.location = document.getElementById('modal-device-location').value;
-      dev.qos = document.getElementById('modal-device-qos').value;
-      dev.parental = document.getElementById('modal-device-parental').checked;
-      dev.paused = document.getElementById('modal-device-pause-toggle').checked;
+      const newName = document.getElementById('modal-device-name').value;
+      const newLoc = document.getElementById('modal-device-location').value;
+      const newQos = document.getElementById('modal-device-qos').value;
+      const newParental = document.getElementById('modal-device-parental').checked;
+      const newPaused = document.getElementById('modal-device-pause-toggle').checked;
+
+      dev.name = newName;
+      dev.location = newLoc;
+      dev.qos = newQos;
+      dev.parental = newParental;
+      dev.paused = newPaused;
+
+      // Update to backend API if device is from database
+      try {
+        await fetch(`/api/devices/${dev.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: newName,
+            location: newLoc
+          })
+        });
+      } catch (err) {
+        console.error("Failed to persist device change:", err);
+      }
 
       const modal = document.getElementById('device-modal');
       modal.style.display = 'none';
 
       renderDevices();
-      showToast(t('toastSaved'), dev.name, "success");
+      showToast(t('toastSaved') || "Сохранено", dev.name, "success");
     };
 
     document.getElementById('close-device-modal').onclick = () => {
@@ -3422,115 +3522,76 @@
       modal.style.display = 'none';
     };
 
-    // VPN Section UI
-    function updateVpnUI() {
-      const btn = document.getElementById('vpn-main-toggle');
-      const pill = document.getElementById('vpn-status-pill');
-      const txt = document.getElementById('vpn-status-text');
-      const ip = document.getElementById('vpn-virtual-ip');
-      const ping = document.getElementById('vpn-ping');
+    // Add Device Modal Handlers
+    const openAddDevBtn = document.getElementById('open-add-device-modal-btn');
+    const addDevModal = document.getElementById('add-device-modal');
+    const closeAddDevBtn = document.getElementById('close-add-device-modal');
+    const cancelAddDevBtn = document.getElementById('cancel-add-device-btn');
+    const addDevForm = document.getElementById('add-device-form');
 
-      if (state.vpnConnected) {
-        btn.innerHTML = `
-          <span class="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span>
-          <span class="font-bold text-white">${t('vpnBtnDisconnect')}</span>
-        `;
-        btn.className = 'w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold flex items-center justify-center gap-3 shadow-lg shadow-emerald-900/30 border border-emerald-400/40 transition-all';
+    if (openAddDevBtn && addDevModal) {
+      openAddDevBtn.onclick = () => {
+        addDevModal.style.display = 'flex';
+      };
+    }
+    if (closeAddDevBtn && addDevModal) {
+      closeAddDevBtn.onclick = () => {
+        addDevModal.style.display = 'none';
+      };
+    }
+    if (cancelAddDevBtn && addDevModal) {
+      cancelAddDevBtn.onclick = () => {
+        addDevModal.style.display = 'none';
+      };
+    }
+    if (addDevForm) {
+      addDevForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const payload = {
+          name: document.getElementById('add-dev-name').value.trim(),
+          category: document.getElementById('add-dev-category').value,
+          icon: document.getElementById('add-dev-icon').value,
+          ip: document.getElementById('add-dev-ip').value.trim(),
+          tailscale_ip: document.getElementById('add-dev-ts-ip').value.trim(),
+          mac: document.getElementById('add-dev-mac').value.trim(),
+          vendor: document.getElementById('add-dev-vendor').value.trim(),
+          location: document.getElementById('add-dev-location').value.trim()
+        };
 
-        pill.className = 'badge-status px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1.5';
-        pill.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> ' + t('vpnStatusConnected');
-
-        txt.textContent = state.lang === 'fr' 
-          ? "Votre tunnel sécurisé vers la maison est actif. Accédez à vos disques et caméras comme si vous étiez dans votre salon."
-          : state.lang === 'de'
-          ? "Ihr sicherer Heimtunnel ist aktiv. Voller Zugriff auf Heimdaten wie auf der heimischen Couch."
-          : "Your secure tunnel to home is active. Access your local storage and cameras just like on your home couch.";
-
-        ip.textContent = "10.8.0.2 / 24";
-        ping.textContent = "12 ms";
-      } else {
-        btn.innerHTML = `
-          <svg class="w-5 h-5 text-sky-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9"/></svg>
-          <span class="font-bold text-white">${t('vpnBtnConnect')}</span>
-        `;
-        btn.className = 'w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-bold flex items-center justify-center gap-3 shadow-lg shadow-sky-900/30 border border-sky-400/40 transition-all';
-
-        pill.className = 'badge-status px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-1.5';
-        pill.innerHTML = '<span class="w-2 h-2 rounded-full bg-slate-500"></span> ' + t('vpnStatusDisconnected');
-
-        txt.textContent = state.lang === 'fr'
-          ? "Le tunnel distant est désactivé. Vos appareils locaux ne sont pas accessibles depuis l'extérieur."
-          : state.lang === 'de'
-          ? "Der Fernzugriff ist deaktiviert. Heimgeräte sind von außen nicht erreichbar."
-          : "Remote tunnel is disconnected. Local home devices are not accessible from outside.";
-
-        ip.textContent = "—";
-        ping.textContent = "—";
-      }
-
-      updateNetworkAnalytics();
-      renderCanvasChart();
+        try {
+          const res = await fetch('/api/devices', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (res.ok) {
+            showToast("Устройство добавлено", payload.name, "success");
+            addDevModal.style.display = 'none';
+            addDevForm.reset();
+            await loadManagedDevices();
+          } else {
+            showToast("Ошибка сохранения", "Сервер вернул ошибку", "danger");
+          }
+        } catch (err) {
+          console.error("Failed to add device:", err);
+          showToast("Ошибка сети", err.message, "danger");
+        }
+      };
     }
 
-    document.getElementById('vpn-main-toggle').onclick = () => {
-      state.vpnConnected = !state.vpnConnected;
-      updateVpnUI();
-      showToast(state.vpnConnected ? t('toastVpnOn') : t('toastVpnOff'), state.vpnConnected ? "WireGuard 10.8.0.2" : "", state.vpnConnected ? "success" : "info");
-    };
-
-    // QR Code Modal
-    document.getElementById('show-qr-btn').onclick = () => {
-      const q = document.getElementById('qr-modal');
-      q.style.display = 'flex';
-    };
-    document.getElementById('close-qr-modal').onclick = () => {
-      const q = document.getElementById('qr-modal');
-      q.style.display = 'none';
-    };
-
-    // Radar Modal
-    document.getElementById('scan-network-btn').onclick = () => {
-      const r = document.getElementById('radar-scan-modal');
-      const f = document.getElementById('radar-found-box');
-      r.style.display = 'flex';
-      f.style.display = 'none';
-
-      document.getElementById('radar-status-text').textContent = t('radarScanning');
-
-      setTimeout(() => {
-        f.style.display = 'block';
-        document.getElementById('radar-status-text').textContent = t('radarFoundTitle');
-      }, 2000);
-    };
-
-    document.getElementById('close-radar-modal').onclick = () => {
-      const r = document.getElementById('radar-scan-modal');
-      r.style.display = 'none';
-    };
-
-    document.getElementById('add-discovered-device-btn').onclick = () => {
-      state.devices.push({
-        id: Date.now(),
-        name: "Capteur Aqara Zigbee",
-        category: "iot",
-        icon: "hub",
-        ip: "192.168.1.189",
-        mac: "54:EF:44:A1:09:BB",
-        connection: "Wi-Fi 2.4 GHz",
-        dataToday: "2.4 MB",
-        paused: false,
-        qos: "normal",
-        parental: false,
-        vendor: "Aqara",
-        location: "Entrée"
-      });
-
-      const r = document.getElementById('radar-scan-modal');
-      r.style.display = 'none';
-
-      renderDevices();
-      showToast(t('toastSaved'), "Capteur Aqara Zigbee", "success");
-    };
+    // Refresh / Scan network button
+    const scanNetBtn = document.getElementById('scan-network-btn');
+    if (scanNetBtn) {
+      scanNetBtn.onclick = async () => {
+        scanNetBtn.disabled = true;
+        scanNetBtn.classList.add('opacity-70');
+        showToast("Проверка сети", "Опрос статуса Tailscale и локального пинга...", "info");
+        await Promise.all([loadManagedDevices(), loadRouterStats()]);
+        scanNetBtn.disabled = false;
+        scanNetBtn.classList.remove('opacity-70');
+        showToast("Сеть обновлена", "Статусы всех устройств актуализированы", "success");
+      };
+    }
 
     // Standalone Canvas Traffic Chart
     let chartPoints = [35, 52, 78, 110, 85, 62, 94, 120, 95, 88];
@@ -3792,4 +3853,6 @@
     switchTab('news');
     updateDeleteCategoryBtn();
     loadLiveNews();
+    loadManagedDevices();
+    loadRouterStats();
   })();
