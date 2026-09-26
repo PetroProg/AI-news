@@ -1033,6 +1033,105 @@
             </div>
           </div>
         </aside>
+
+        <!-- Aside Sidebar: Football (Terrikon Tournaments & Results) -->
+        <aside id="football-results-aside" style="display: none;" class="order-1 lg:order-2 lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto pr-1 w-full aside-collapsible">
+          <div class="glass-panel p-5 rounded-3xl border border-emerald-500/25 bg-gradient-to-b from-slate-900/95 via-slate-950/95 to-slate-900/90 shadow-2xl relative overflow-hidden space-y-4">
+            <div class="absolute -right-8 -top-8 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="absolute -left-8 -bottom-8 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+            <!-- Header with Title & Mobile Toggle -->
+            <div class="flex items-center justify-between border-b border-slate-800/80 pb-3 relative z-10">
+              <div>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 w-fit mb-1">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>Футбол • Terrikon Live</span>
+                </span>
+                <h3 class="text-sm font-black text-white font-heading flex items-center gap-1.5">
+                  <span id="football-header-title">⚽ Результаты & Таблицы</span>
+                </h3>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span id="football-updated-date" class="text-[10px] font-mono text-slate-400 bg-slate-900/80 px-2 py-1 rounded-lg border border-slate-800">Live</span>
+                <button id="football-refresh-btn" type="button" onclick="loadFootballResults(true)" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 hover:text-emerald-300 transition-colors border border-slate-700" title="Обновить результаты с Terrikon.com">
+                  <svg id="football-refresh-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+                </button>
+                <button type="button" onclick="toggleMobileAside('football-results-aside')" class="lg:hidden px-2 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-1 transition-all" title="Свернуть / Развернуть">
+                  <span class="aside-toggle-text text-[10px]">Свернуть</span>
+                  <svg class="w-3.5 h-3.5 aside-collapse-arrow transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="aside-collapsible-body space-y-3.5">
+              
+              <!-- Quick Sub-Filter Tags (Месси, Барселона, Испания, Интер Майами) -->
+              <div class="p-2.5 rounded-2xl bg-slate-950/70 border border-emerald-500/20 space-y-1.5">
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1">
+                    <span>⭐</span> <span>Приоритетные новости:</span>
+                  </span>
+                  <button type="button" onclick="filterFootballByTag('all')" class="text-[10px] text-slate-400 hover:text-white underline">Все новости</button>
+                </div>
+                <div class="flex flex-wrap gap-1.5">
+                  <button type="button" onclick="filterFootballByTag('месси')" class="football-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30" data-football-tag="месси">🐐 Месси</button>
+                  <button type="button" onclick="filterFootballByTag('барселона')" class="football-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30" data-football-tag="барселона">🔵🔴 Барселона</button>
+                  <button type="button" onclick="filterFootballByTag('испания')" class="football-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30" data-football-tag="испания">🇪🇸 Испания</button>
+                  <button type="button" onclick="filterFootballByTag('интер майами')" class="football-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30" data-football-tag="интер майами">🦩 Интер Майами</button>
+                </div>
+              </div>
+
+              <!-- Switcher Tabs: 4 Tournaments -->
+              <div class="glass-panel p-1 rounded-2xl border border-slate-800 bg-slate-950/90 grid grid-cols-4 gap-1 shadow-md">
+                <button type="button" id="football-tourn-laliga" onclick="switchFootballTournament('laliga')" class="py-1.5 px-2 rounded-xl text-[11px] font-bold transition-all bg-emerald-600 text-white shadow-md flex items-center justify-center gap-1" title="Ла Лига">
+                  <span>🇪🇸</span> <span class="truncate">Ла Лига</span>
+                </button>
+                <button type="button" id="football-tourn-cl" onclick="switchFootballTournament('cl')" class="py-1.5 px-2 rounded-xl text-[11px] font-semibold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1" title="Лига Чемпионов">
+                  <span>⭐</span> <span class="truncate">ЛЧ</span>
+                </button>
+                <button type="button" id="football-tourn-el" onclick="switchFootballTournament('el')" class="py-1.5 px-2 rounded-xl text-[11px] font-semibold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1" title="Лига Европы">
+                  <span>🏆</span> <span class="truncate">ЛЕ</span>
+                </button>
+                <button type="button" id="football-tourn-nations" onclick="switchFootballTournament('nations')" class="py-1.5 px-2 rounded-xl text-[11px] font-semibold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1" title="Лига Наций">
+                  <span>🌍</span> <span class="truncate">Л. Наций</span>
+                </button>
+              </div>
+
+              <!-- View Switcher (Table vs Matches) -->
+              <div class="flex items-center justify-between text-xs px-1">
+                <div class="flex items-center gap-1">
+                  <button type="button" id="football-subtab-standings" onclick="switchFootballView('standings')" class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-800 text-emerald-400 border border-slate-700">Таблица</button>
+                  <button type="button" id="football-subtab-matches" onclick="switchFootballView('matches')" class="px-2.5 py-1 rounded-lg text-[10px] font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60">Матчи</button>
+                </div>
+                <span id="football-tournament-badge" class="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">Ла Лига</span>
+              </div>
+
+              <!-- Content Block: Standings -->
+              <div id="football-block-standings" class="space-y-1.5 max-h-[360px] sm:max-h-[440px] lg:max-h-[520px] overflow-y-auto pr-1 scrollbar-thin">
+                <div class="text-xs text-slate-400 p-4 text-center">Загрузка турнирной таблицы...</div>
+              </div>
+
+              <!-- Content Block: Matches -->
+              <div id="football-block-matches" style="display: none;" class="space-y-1.5 max-h-[360px] sm:max-h-[440px] lg:max-h-[520px] overflow-y-auto pr-1 scrollbar-thin">
+                <div class="text-xs text-slate-400 p-4 text-center">Загрузка результатов матчей...</div>
+              </div>
+
+              <!-- Official Links Bar -->
+              <div class="pt-2.5 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+                <span class="text-slate-400 flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>Источник:</span>
+                </span>
+                <div class="flex items-center gap-2">
+                  <a id="football-source-link" href="https://terrikon.com/football/spain/championship/" target="_blank" rel="noopener noreferrer" class="font-bold text-emerald-400 hover:text-emerald-300 inline-flex items-center gap-0.5 hover:underline transition-colors" title="Открыть Terrikon">
+                    <span>Terrikon.com ↗</span>
+                  </a>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </aside>
       </div>
 
     </section>
