@@ -1,7 +1,7 @@
 from datetime import datetime, timezone, timedelta
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 import re
 import httpx
 try:
@@ -613,6 +613,108 @@ async def delete_news_article(
     if not deleted:
         raise HTTPException(status_code=404, detail="Новость не найдена в базе данных")
     return {"success": True, "deleted_id": article_id, "message": "Новость успешно удалена из базы данных"}
+
+
+@app.delete("/api/news/category/{category_slug_or_name}")
+async def delete_category_news(
+    category_slug_or_name: str,
+    session: AsyncSession = Depends(get_db_session),
+) -> Dict[str, Any]:
+    """
+    Удалить из базы данных все новости выбранной категории (или все новости, если передан 'all').
+    Также удаляет локальные медиафайлы.
+    """
+    target = category_slug_or_name.strip()
+    is_all = target.lower() in ["all", "все"]
+
+    # Gather matching category IDs
+    cat_ids = []
+    if not is_all:
+        cat_stmt = select(Category)
+        cat_res = await session.execute(cat_stmt)
+        categories = cat_res.scalars().all()
+        t_low = target.lower()
+
+        for c in categories:
+            c_name_low = (c.name or "").lower()
+            c_slug_low = (c.slug or "").lower()
+            # Match directly or by common aliases
+            if t_low in [c_name_low, c_slug_low]:
+                cat_ids.append(c.id)
+            elif (t_low == "it" or "it" in t_low or "разработ" in t_low or "программир" in t_low) and ("it" in c_name_low or "аналитик" in c_name_low):
+                cat_ids.append(c.id)
+            elif (t_low == "cs2" or "cs" in t_low or "игры" in t_low or "киберспорт" in t_low) and ("cs" in c_name_low or "игры" in c_name_low):
+                cat_ids.append(c.id)
+            elif ("украин" in t_low or "ukraine" in t_low) and "украин" in c_name_low:
+                cat_ids.append(c.id)
+            elif ("ai" in t_low or "нейро" in t_low) and ("ai" in c_name_low or "нейро" in c_name_low):
+                cat_ids.append(c.id)
+            elif ("linux" in t_low or "devops" in t_low) and ("linux" in c_name_low or "devops" in c_name_low):
+                cat_ids.append(c.id)
+            elif ("f1" in t_low or "формул" in t_low or "formula" in t_low) and ("f1" in c_name_low or "формул" in c_name_low):
+                cat_ids.append(c.id)
+            elif "swiss" in t_low and "swiss" in c_name_low:
+                cat_ids.append(c.id)
+
+    # Build Article selection
+    if is_all:
+        stmt = select(Article)
+    else:
+        conditions = []
+        if cat_ids:
+            conditions.append(Article.category_id.in_(cat_ids))
+        
+        # Also match unassigned/source-inferred articles if matching category
+        t_low = target.lower()
+        if "it" in t_low:
+            conditions.append(Article.source.has(Source.url.ilike("%habr%")))
+            conditions.append(Article.source.has(Source.url.ilike("%tproger%")))
+            conditions.append(Article.source.has(Source.name.ilike("%golang%")))
+            conditions.append(Article.source.has(Source.name.ilike("%rust%")))
+            conditions.append(Article.source.has(Source.name.ilike("%proglib%")))
+        elif "cs" in t_low or "игры" in t_low:
+            conditions.append(Article.source.has(Source.url.ilike("%csgo%")))
+            conditions.append(Article.source.has(Source.url.ilike("%cs3%")))
+            conditions.append(Article.source.has(Source.url.ilike("%clashroyalepin%")))
+        elif "украин" in t_low or "ukraine" in t_low:
+            conditions.append(Article.source.has(Source.name.ilike("%NovynaUKR%")))
+            conditions.append(Article.source.has(Source.url.ilike("%NovynaUKR%")))
+        elif "f1" in t_low or "formula" in t_low:
+            conditions.append(Article.source.has(Source.url.ilike("%formula1.com%")))
+        elif "swiss" in t_low:
+            conditions.append(Article.source.has(Source.name.ilike("%rts%")))
+            conditions.append(Article.source.has(Source.name.ilike("%blick%")))
+            conditions.append(Article.source.has(Source.name.ilike("%20minutes%")))
+
+        if not conditions:
+            return {"success": True, "deleted_count": 0, "category": target, "message": "Категория не найдена или уже пуста"}
+        stmt = select(Article).options(selectinload(Article.source)).where(or_(*conditions))
+
+    res = await session.execute(stmt)
+    articles_to_delete = res.scalars().all()
+
+    if not articles_to_delete:
+        return {"success": True, "deleted_count": 0, "category": target, "message": "В данной категории нет новостей для удаления"}
+
+    all_media_to_delete: Set[str] = set()
+    from app.services.cleanup import extract_media_filenames, remove_media_files
+
+    for art in articles_to_delete:
+        raw_text = (art.raw_content or "") + " " + (art.cleaned_content or "")
+        all_media_to_delete.update(extract_media_filenames(raw_text))
+        await session.delete(art)
+
+    await session.commit()
+
+    if all_media_to_delete:
+        remove_media_files(all_media_to_delete)
+
+    return {
+        "success": True,
+        "deleted_count": len(articles_to_delete),
+        "category": target,
+        "message": f"Удалено {len(articles_to_delete)} новостей из категории '{target}'"
+    }
 
 
 @app.post("/api/news/cleanup")
