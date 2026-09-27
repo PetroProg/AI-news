@@ -3776,7 +3776,7 @@
             if (!hist.points || hist.points.length === 0) {
               listEl.innerHTML = `
                 <div class="p-3 text-center text-slate-400 text-[11px] rounded-xl bg-slate-900 border border-slate-800">
-                  Пока нет сохраненных точек за последние 24ч.<br>Следующий замер через 5 минут.
+                  Пока нет сохраненных точек за последние 24ч.<br>Дневной интервал замеров — каждые 30 минут (с 08:00 до 20:00).
                 </div>
               `;
             } else {
