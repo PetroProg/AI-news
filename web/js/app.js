@@ -3817,10 +3817,6 @@
       document.getElementById('modal-device-mac').textContent = dev.mac || 'Tailscale Mesh';
       document.getElementById('modal-device-vendor').textContent = dev.vendor || '—';
       document.getElementById('modal-device-connection').textContent = dev.connection;
-      document.getElementById('modal-device-location').value = dev.location || '';
-      document.getElementById('modal-device-qos').value = dev.qos || 'high';
-      document.getElementById('modal-device-parental').checked = dev.parental || false;
-      document.getElementById('modal-device-pause-toggle').checked = dev.paused || false;
 
       const modal = document.getElementById('device-modal');
       modal.style.display = 'flex';
@@ -3833,16 +3829,7 @@
       if (!dev) return;
 
       const newName = document.getElementById('modal-device-name').value;
-      const newLoc = document.getElementById('modal-device-location').value;
-      const newQos = document.getElementById('modal-device-qos').value;
-      const newParental = document.getElementById('modal-device-parental').checked;
-      const newPaused = document.getElementById('modal-device-pause-toggle').checked;
-
       dev.name = newName;
-      dev.location = newLoc;
-      dev.qos = newQos;
-      dev.parental = newParental;
-      dev.paused = newPaused;
 
       // Update to backend API if device is from database
       try {
@@ -3850,8 +3837,7 @@
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            name: newName,
-            location: newLoc
+            name: newName
           })
         });
       } catch (err) {
