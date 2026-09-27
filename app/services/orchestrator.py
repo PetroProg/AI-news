@@ -135,7 +135,7 @@ class PipelineOrchestrator:
             await processing.process_collected_articles()
 
             # 5. AI Summarization Phase (batch of top unsummarized articles)
-            gpu_timeout = 15 if was_already_online else 150
+            gpu_timeout = 60 if was_already_online else 150
             logger.info("Verifying AI GPU worker reachability (timeout: %ds)...", gpu_timeout)
             gpu_online = await self.wait_for_gpu_node(timeout_seconds=gpu_timeout)
 
