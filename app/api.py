@@ -803,9 +803,9 @@ async def get_football_results(tournament: str = "laliga", force: bool = False) 
                         if pair_key not in seen_pairs:
                             seen_pairs.add(pair_key)
                             matches.append(m)
-                    if len(matches) >= 60:
+                    if len(matches) >= 250:
                         break
-                matches = matches[:60]
+                matches = matches[:250]
 
         result_payload = {
             "tournament": t_key,
