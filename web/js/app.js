@@ -1590,17 +1590,19 @@
         if (statusEl) {
           statusEl.textContent = 'Live';
         }
-        if (headerTitle) {
+        if (headerTitle && activeFootballTournament === tourn) {
           headerTitle.textContent = `${data.flag || '⚽'} ${data.title || 'Футбол'}`;
         }
-        if (badgeEl) {
-          badgeEl.textContent = data.title || 'Ла Лига';
+        if (badgeEl && activeFootballTournament === tourn) {
+          badgeEl.textContent = data.title || 'Футбол';
         }
-        if (sourceLink && data.url) {
+        if (sourceLink && data.url && activeFootballTournament === tourn) {
           sourceLink.href = data.url;
         }
 
-        renderFootballContent();
+        if (activeFootballTournament === tourn) {
+          renderFootballContent();
+        }
       } catch (err) {
         console.error('Failed to load football results:', err);
         const standingsContainer = document.getElementById('football-block-standings');
@@ -1637,6 +1639,20 @@
       const tourn = activeFootballTournament || 'laliga';
       const data = footballResultsData[tourn];
       if (!data) return;
+
+      const headerTitle = document.getElementById('football-header-title');
+      const badgeEl = document.getElementById('football-tournament-badge');
+      const sourceLink = document.getElementById('football-source-link');
+
+      if (headerTitle) {
+        headerTitle.textContent = `${data.flag || '⚽'} ${data.title || 'Футбол'}`;
+      }
+      if (badgeEl) {
+        badgeEl.textContent = data.title || 'Футбол';
+      }
+      if (sourceLink && data.url) {
+        sourceLink.href = data.url;
+      }
 
       renderFootballStandings(data);
 
