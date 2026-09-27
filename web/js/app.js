@@ -3476,14 +3476,26 @@
         if (!res.ok) return;
         const data = await res.json();
         const p = document.getElementById('metric-protection');
+        const pSub = document.getElementById('metric-protection-sub');
         const a = document.getElementById('metric-attacks');
+        const aSub = document.getElementById('metric-attacks-sub');
         const s = document.getElementById('metric-speed');
+        const sSub = document.getElementById('metric-speed-sub');
         const r = document.getElementById('metric-remote');
+        const rSub = document.getElementById('metric-remote-sub');
 
-        if (p) p.textContent = "99.8%";
-        if (a) a.textContent = (state.lang === 'ru' ? '0 угроз' : '0 threats');
-        if (s) s.textContent = data.speed_down || "500 Mb/s";
+        if (p) p.textContent = data.uptime || "10д 22ч";
+        if (pSub) pSub.textContent = "petroprog • Ubuntu Server";
+        
+        const activeOnline = state.devices ? state.devices.filter(d => d.is_online).length : (data.tailscale_online || 3);
+        if (a) a.textContent = `${activeOnline} в сети`;
+        if (aSub) aSub.textContent = `Пиров: ${data.tailscale_peers || 4} • Mesh`;
+
+        if (s) s.textContent = `↓ ${data.traffic_rx_gb || 5.1} GB`;
+        if (sSub) sSub.textContent = `↑ ${data.traffic_tx_gb || 0.7} GB (wlp2s0)`;
+
         if (r) r.textContent = data.is_online ? "FRITZ!Box" : "Offline";
+        if (rSub) rSub.textContent = data.is_online ? `192.168.178.1 • ${data.ping_ms || 2} ms` : "192.168.178.1 • Отключен";
       } catch (e) {
         console.error("Failed to load router stats:", e);
       }
@@ -3524,6 +3536,7 @@
             dataToday: d.is_online ? 'Активен' : '—'
           }));
           renderDevices();
+          loadRouterStats();
         }
       } catch (err) {
         console.warn("Could not fetch /api/devices, keeping current devices:", err);
@@ -3579,35 +3592,35 @@
             : 'border-slate-800 bg-slate-950/60 opacity-80'
         }`;
 
-        // Battery HTML badge (special feature for Nokia 6.1 / mobile)
+        // Battery HTML badge (special feature for Nokia 6.1 / mobile with History Click)
         let batteryHtml = '';
         if (device.battery_level !== null && device.battery_level !== undefined) {
           const bLevel = device.battery_level;
           const bColor = bLevel > 50 ? 'emerald' : (bLevel > 20 ? 'amber' : 'rose');
           batteryHtml = `
-            <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-${bColor}-500/15 border border-${bColor}-500/30 text-${bColor}-300 text-xs font-bold shrink-0">
+            <button type="button" class="btn-open-battery-history flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-${bColor}-500/15 hover:bg-${bColor}-500/25 border border-${bColor}-500/30 text-${bColor}-300 text-xs font-bold shrink-0 transition-colors cursor-pointer" data-id="${device.id}" title="Посмотреть историю разряда за 24 часа">
               <span>${device.battery_charging ? '⚡' : '🔋'}</span>
               <span>${bLevel}%</span>
-            </div>
+            </button>
           `;
         }
 
         // Latency badge
         const pingHtml = device.ping_ms 
-          ? `<span class="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">${device.ping_ms} ms</span>`
-          : '';
+          ? `<span id="ping-badge-${device.id}" class="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">${device.ping_ms} ms</span>`
+          : `<span id="ping-badge-${device.id}" class="text-[10px] font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 hidden"></span>`;
 
         // Status badge
         const statusBadge = device.paused
-          ? `<span class="badge-status px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+          ? `<span id="status-badge-${device.id}" class="badge-status px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30">
                <span class="w-2 h-2 rounded-full mr-1.5 bg-rose-400"></span> Пауза
              </span>`
           : isOnline
-          ? `<span class="badge-status px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 flex items-center gap-1">
+          ? `<span id="status-badge-${device.id}" class="badge-status px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 flex items-center gap-1">
                <span class="w-2 h-2 rounded-full mr-1 bg-emerald-400 animate-pulse"></span> В сети ${pingHtml}
              </span>`
-          : `<span class="badge-status px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700/60">
-               <span class="w-2 h-2 rounded-full mr-1.5 bg-slate-500"></span> Не в сети
+          : `<span id="status-badge-${device.id}" class="badge-status px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700/60">
+               <span class="w-2 h-2 rounded-full mr-1.5 bg-slate-500"></span> Не в сети ${pingHtml}
              </span>`;
 
         card.innerHTML = `
@@ -3651,10 +3664,16 @@
 
           <div class="flex items-center justify-between pt-1">
             <span class="text-[10px] font-mono text-slate-500">${device.mac || 'Tailscale Mesh'}</span>
-            <button type="button" class="inspect-device-btn px-3.5 py-1.5 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 text-xs font-semibold flex items-center gap-1 transition-all" data-id="${device.id}">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/></svg>
-              <span>Настроить</span>
-            </button>
+            <div class="flex items-center gap-2">
+              <button type="button" class="btn-ping-device px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer" data-id="${device.id}" title="Проверить пинг устройства сейчас">
+                <svg class="w-3.5 h-3.5 ping-icon-${device.id}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
+                <span>Пинг</span>
+              </button>
+              <button type="button" class="inspect-device-btn px-3 py-1.5 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer" data-id="${device.id}">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/></svg>
+                <span>Настроить</span>
+              </button>
+            </div>
           </div>
         `;
 
@@ -3669,6 +3688,121 @@
           openDeviceModal(id);
         };
       });
+
+      // Attach Quick Ping Events
+      container.querySelectorAll('.btn-ping-device').forEach(btn => {
+        btn.onclick = async (e) => {
+          e.stopPropagation();
+          const id = parseInt(btn.dataset.id);
+          const icon = btn.querySelector(`.ping-icon-${id}`);
+          if (icon) icon.classList.add('animate-spin');
+          btn.disabled = true;
+
+          try {
+            const res = await fetch(`/api/devices/${id}/ping`, { method: 'POST' });
+            if (res.ok) {
+              const pingData = await res.json();
+              const dev = state.devices.find(d => d.id === id);
+              if (dev) {
+                dev.is_online = pingData.is_online;
+                dev.ping_ms = pingData.ping_ms;
+              }
+              const pBadge = document.getElementById(`ping-badge-${id}`);
+              const sBadge = document.getElementById(`status-badge-${id}`);
+
+              if (pingData.is_online) {
+                if (pBadge) {
+                  pBadge.textContent = `${pingData.ping_ms} ms`;
+                  pBadge.className = 'text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20';
+                  pBadge.classList.remove('hidden');
+                }
+                if (sBadge) {
+                  sBadge.className = 'badge-status px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 flex items-center gap-1';
+                  sBadge.innerHTML = `<span class="w-2 h-2 rounded-full mr-1 bg-emerald-400 animate-pulse"></span> В сети ${pBadge ? pBadge.outerHTML : ''}`;
+                }
+                showToast("Пинг успешен", `${pingData.device}: онлайн (${pingData.ping_ms} ms)`, "success");
+              } else {
+                if (pBadge) pBadge.classList.add('hidden');
+                if (sBadge) {
+                  sBadge.className = 'badge-status px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700/60';
+                  sBadge.innerHTML = `<span class="w-2 h-2 rounded-full mr-1.5 bg-slate-500"></span> Не в сети`;
+                }
+                showToast("Устройство оффлайн", `${pingData.device}: нет отклика`, "warning");
+              }
+            }
+          } catch (err) {
+            console.error("Ping error:", err);
+            showToast("Ошибка пинга", "Не удалось связаться с сервером", "danger");
+          } finally {
+            if (icon) icon.classList.remove('animate-spin');
+            btn.disabled = false;
+          }
+        };
+      });
+
+      // Attach Battery History Modal Opener
+      container.querySelectorAll('.btn-open-battery-history').forEach(btn => {
+        btn.onclick = async (e) => {
+          e.stopPropagation();
+          openBatteryHistoryModal();
+        };
+      });
+    }
+
+    async function openBatteryHistoryModal() {
+      const modal = document.getElementById('battery-history-modal');
+      const curEl = document.getElementById('battery-modal-current');
+      const countEl = document.getElementById('battery-modal-points-count');
+      const listEl = document.getElementById('battery-history-list');
+
+      if (!modal) return;
+      modal.style.display = 'flex';
+
+      const nokia = state.devices.find(d => d.key_id === 'nokia_afk');
+      if (curEl && nokia) {
+        curEl.textContent = `${nokia.battery_level || '--'}%`;
+      }
+
+      if (listEl) {
+        listEl.innerHTML = `<div class="text-slate-500 text-center py-4 text-[11px]">Загрузка замеров...</div>`;
+      }
+
+      try {
+        const res = await fetch('/api/devices/nokia/battery/history');
+        if (res.ok) {
+          const hist = await res.json();
+          if (countEl) countEl.textContent = hist.count;
+          if (listEl) {
+            if (!hist.points || hist.points.length === 0) {
+              listEl.innerHTML = `
+                <div class="p-3 text-center text-slate-400 text-[11px] rounded-xl bg-slate-900 border border-slate-800">
+                  Пока нет сохраненных точек за последние 24ч.<br>Следующий замер через 5 минут.
+                </div>
+              `;
+            } else {
+              listEl.innerHTML = hist.points.slice().reverse().map(pt => `
+                <div class="flex items-center justify-between p-2 rounded-xl bg-slate-900/90 border border-slate-800">
+                  <span class="text-slate-400 font-mono text-[11px]">${pt.time}</span>
+                  <div class="flex items-center gap-2">
+                    <span class="text-slate-400 text-[10px]">${pt.charging ? '⚡ Зарядка' : '🔋 Батарея'}</span>
+                    <span class="font-bold text-xs ${pt.level > 50 ? 'text-emerald-400' : (pt.level > 20 ? 'text-amber-400' : 'text-rose-400')}">${pt.level}%</span>
+                  </div>
+                </div>
+              `).join('');
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load battery history:", err);
+      }
+    }
+
+    const closeBatteryHistBtn = document.getElementById('close-battery-history-modal');
+    if (closeBatteryHistBtn) {
+      closeBatteryHistBtn.onclick = () => {
+        const modal = document.getElementById('battery-history-modal');
+        if (modal) modal.style.display = 'none';
+      };
     }
 
     // Device Inspector Modal
