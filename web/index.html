@@ -1167,58 +1167,59 @@
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         
         <!-- Card 1: Network Protection -->
+        <!-- Card 1: Network Protection & Server Uptime -->
         <div class="glass-panel p-4 sm:p-5 rounded-3xl border border-slate-800">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate" data-i18n="netProtection">Protection Réseau</span>
+            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Аптайм Сервера</span>
             <div class="w-7 h-7 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
             </div>
           </div>
-          <div id="metric-protection" class="text-xl sm:text-2xl font-extrabold text-white font-heading">99.8%</div>
-          <div class="text-[11px] text-emerald-400 mt-1 flex items-center gap-1 font-medium truncate" data-i18n="netProtectionSub">
-            Tous les boucliers actifs
+          <div id="metric-protection" class="text-xl sm:text-2xl font-extrabold text-white font-heading">10д 22ч</div>
+          <div id="metric-protection-sub" class="text-[11px] text-emerald-400 mt-1 flex items-center gap-1 font-medium truncate">
+            petroprog • Ubuntu Server
           </div>
         </div>
 
-        <!-- Card 2: Threats Blocked -->
+        <!-- Card 2: LAN & Mesh Connected Devices -->
         <div class="glass-panel p-4 sm:p-5 rounded-3xl border border-slate-800">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate" data-i18n="attacksBlocked">Menaces Bloquées</span>
-            <div class="w-7 h-7 rounded-xl bg-rose-500/15 text-rose-400 flex items-center justify-center shrink-0">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0-10.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285zM12 15.75h.007v.008H12v-.008z"/></svg>
+            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Активные Пиры</span>
+            <div class="w-7 h-7 rounded-xl bg-sky-500/15 text-sky-400 flex items-center justify-center shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><line x1="12" y1="3" x2="12" y2="12"/><line x1="12" y1="12" x2="18" y2="6"/></svg>
             </div>
           </div>
-          <div id="metric-attacks" class="text-xl sm:text-2xl font-extrabold text-white font-heading">27 menaces</div>
-          <div class="text-[11px] text-rose-400 mt-1 flex items-center gap-1 font-medium truncate" data-i18n="attacksBlockedSub">
-            0 intrusion
+          <div id="metric-attacks" class="text-xl sm:text-2xl font-extrabold text-white font-heading">3 в сети</div>
+          <div id="metric-attacks-sub" class="text-[11px] text-sky-400 mt-1 flex items-center gap-1 font-medium truncate">
+            LAN + Tailscale Mesh
           </div>
         </div>
 
-        <!-- Card 3: Internet Speed -->
+        <!-- Card 3: Network Traffic & Speed -->
         <div class="glass-panel p-4 sm:p-5 rounded-3xl border border-slate-800">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate" data-i18n="internetSpeed">Débit Internet</span>
-            <div class="w-7 h-7 rounded-xl bg-sky-500/15 text-sky-400 flex items-center justify-center shrink-0">
+            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Трафик Сервера</span>
+            <div class="w-7 h-7 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
             </div>
           </div>
-          <div id="metric-speed" class="text-xl sm:text-2xl font-extrabold text-white font-heading">500 Mb/s</div>
-          <div class="text-[11px] text-sky-400 mt-1 flex items-center gap-1 font-medium truncate" data-i18n="internetSpeedSub">
-            Fibre optique (8 ms)
+          <div id="metric-speed" class="text-xl sm:text-2xl font-extrabold text-white font-heading">↓ 5.1 GB</div>
+          <div id="metric-speed-sub" class="text-[11px] text-emerald-400 mt-1 flex items-center gap-1 font-medium truncate">
+            ↑ 0.7 GB (wlp2s0)
           </div>
         </div>
 
-        <!-- Card 4: Remote Access -->
+        <!-- Card 4: Remote Gateway Access -->
         <div class="glass-panel p-4 sm:p-5 rounded-3xl border border-slate-800">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate" data-i18n="remoteAccess">Accès à distance</span>
+            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Шлюз Сети</span>
             <div class="w-7 h-7 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center shrink-0">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-.778.099-1.533.284-2.253"/></svg>
             </div>
           </div>
-          <div id="metric-remote" class="text-xl sm:text-2xl font-extrabold text-white font-heading">WireGuard</div>
-          <div class="text-[11px] text-indigo-300 mt-1 flex items-center gap-1 font-medium truncate" data-i18n="remoteAccessSub">
-            WireGuard prêt
+          <div id="metric-remote" class="text-xl sm:text-2xl font-extrabold text-white font-heading">FRITZ!Box</div>
+          <div id="metric-remote-sub" class="text-[11px] text-indigo-300 mt-1 flex items-center gap-1 font-medium truncate">
+            192.168.178.1 • 7 ms
           </div>
         </div>
 
@@ -1687,6 +1688,44 @@
         <button type="button" id="add-discovered-device-btn" class="w-full mt-2 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition-all" data-i18n="radarAddBtn">
           Autoriser et ajouter à la maison
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nokia Battery History Modal -->
+  <div id="battery-history-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md items-center justify-center p-4" style="display: none;">
+    <div class="glass-panel rounded-3xl max-w-md w-full p-6 border border-emerald-500/40 shadow-2xl relative">
+      <button type="button" id="close-battery-history-modal" class="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-white transition-all">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+
+      <div class="flex items-center gap-2.5 mb-2">
+        <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-white font-heading">Nokia 6.1 • История батареи</h3>
+          <p class="text-[11px] text-slate-400">График разряда и зарядки за 24 часа</p>
+        </div>
+      </div>
+
+      <div id="battery-history-stats" class="my-3 p-3 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between text-xs">
+        <div>
+          <span class="text-slate-400 text-[10px] block">Текущий заряд:</span>
+          <span id="battery-modal-current" class="text-emerald-400 font-bold font-mono text-sm">--%</span>
+        </div>
+        <div>
+          <span class="text-slate-400 text-[10px] block">Точек замера:</span>
+          <span id="battery-modal-points-count" class="text-white font-bold font-mono">0</span>
+        </div>
+        <div>
+          <span class="text-slate-400 text-[10px] block">Интервал:</span>
+          <span class="text-sky-300 font-mono font-bold">5 мин</span>
+        </div>
+      </div>
+
+      <div class="space-y-1.5 max-h-60 overflow-y-auto pr-1 scrollbar-thin font-mono text-xs" id="battery-history-list">
+        <div class="text-slate-500 text-center py-4 text-[11px]">Загрузка истории...</div>
       </div>
     </div>
   </div>

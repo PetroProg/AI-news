@@ -14,6 +14,7 @@ from app.services.ingestion import IngestionService
 from app.services.processing import ProcessingService
 from app.services.summarizer import SummarizerService
 from app.services.report import ReportBuilderService
+from app.ai.client import OllamaClient
 from app.bot.utils import send_wake_on_lan, send_remote_sleep, split_message
 
 logger = logging.getLogger("news_ai.orchestrator")
@@ -142,16 +143,41 @@ class PipelineOrchestrator:
                 summarizer = SummarizerService(session=session)
                 await summarizer.summarize_pending_articles(limit=30)
             else:
-                logger.warning("AI GPU worker did not respond within %ds. Skipping summarization for this run.", gpu_timeout)
-                if self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
-                    try:
-                        await self.bot.send_message(
-                            chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
-                            text=f"⚠️ *Предупреждение*: GPU-нода Ollama не ответила за {gpu_timeout} сек. Саммаризация пропущена.",
-                            parse_mode="Markdown"
-                        )
-                    except Exception:
-                        pass
+                logger.warning("AI GPU worker did not respond within %ds. Attempting fallback to local Ollama (qwen2.5:0.5b)...", gpu_timeout)
+                # Try fallback to local Ollama on host
+                local_available = False
+                try:
+                    async with httpx.AsyncClient(timeout=3.0) as client:
+                        resp = await client.get("http://localhost:11434/api/tags")
+                        local_available = (resp.status_code == 200)
+                except Exception:
+                    local_available = False
+
+                if local_available:
+                    logger.info("Local Ollama fallback is ONLINE. Summarizing with local model...")
+                    local_ai = OllamaClient(base_url="http://localhost:11434", model="qwen2.5:0.5b", timeout=120.0)
+                    summarizer = SummarizerService(session=session, ai_client=local_ai)
+                    await summarizer.summarize_pending_articles(limit=15)
+                    if self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
+                        try:
+                            await self.bot.send_message(
+                                chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
+                                text=f"⚠️ *Предупреждение*: GPU-нода не ответила за {gpu_timeout} сек. Дайджест составлен на локальной резервной модели.",
+                                parse_mode="Markdown"
+                            )
+                        except Exception:
+                            pass
+                else:
+                    logger.warning("Local Ollama also unavailable. Skipping summarization for this run.")
+                    if self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
+                        try:
+                            await self.bot.send_message(
+                                chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
+                                text=f"⚠️ *Предупреждение*: GPU-нода Ollama не ответила за {gpu_timeout} сек. Саммаризация пропущена.",
+                                parse_mode="Markdown"
+                            )
+                        except Exception:
+                            pass
 
             # 6. Report Compilation Phase
             builder = ReportBuilderService(session=session)
