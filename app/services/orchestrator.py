@@ -140,6 +140,15 @@ class PipelineOrchestrator:
             gpu_online = await self.wait_for_gpu_node(timeout_seconds=gpu_timeout)
 
             if gpu_online:
+                if self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
+                    try:
+                        await self.bot.send_message(
+                            chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
+                            text="🟢 *GPU-нода подключена!* Начинаю суммаризацию на RTX 3060...",
+                            parse_mode="Markdown"
+                        )
+                    except Exception:
+                        pass
                 summarizer = SummarizerService(session=session)
                 await summarizer.summarize_pending_articles(limit=30)
             else:
