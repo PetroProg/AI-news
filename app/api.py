@@ -1373,7 +1373,7 @@ class DeviceUpdatePayload(BaseModel):
     notes: Optional[str] = None
 
 
-async def _async_ping(ip: str, timeout_sec: float = 0.8) -> tuple[bool, Optional[int]]:
+async def _async_ping(ip: str, timeout_sec: float = 2.0) -> tuple[bool, Optional[int]]:
     """Fast async ping checking if device or gateway is reachable and returns latency in ms."""
     if not ip or ip.strip() == "":
         return False, None
