@@ -533,12 +533,12 @@
         if (key && t(key)) el.placeholder = t(key);
       });
 
-      renderCategoryPills();
-      renderNews();
-      renderDevices();
-      updateVpnUI();
-      renderDnsLog();
-      updateNetworkAnalytics();
+      try { renderCategoryPills(); } catch (e) { console.error('Error rendering category pills:', e); }
+      try { renderNews(); } catch (e) { console.error('Error rendering news:', e); }
+      try { renderDevices(); } catch (e) { console.error('Error rendering devices:', e); }
+      try { if (typeof updateVpnUI === 'function') updateVpnUI(); } catch (e) { console.error('Error updating VPN UI:', e); }
+      try { renderDnsLog(); } catch (e) { console.error('Error rendering DNS log:', e); }
+      try { updateNetworkAnalytics(); } catch (e) { console.error('Error updating network analytics:', e); }
     }
 
     // Tab Switching
@@ -1181,11 +1181,12 @@
     // ==========================================
     let f1ResultsData = null;
     let selectedF1Tag = 'all';
-    let activeF1Tab = 'drivers';
+    let activeF1Tab = 'top10';
     let lastF1ResultsFetch = 0;
 
     async function loadF1Results(force = false) {
       const statusEl = document.getElementById('f1-updated-date');
+      const top10Container = document.getElementById('f1-block-top10');
       const driversContainer = document.getElementById('f1-block-drivers');
       const racesContainer = document.getElementById('f1-block-races');
       const refreshIcon = document.getElementById('f1-refresh-icon');
@@ -1213,6 +1214,9 @@
         renderF1Results();
       } catch (err) {
         console.error('Failed to load F1 results:', err);
+        if (top10Container && !f1ResultsData) {
+          top10Container.innerHTML = `<div class="p-3 text-center text-xs text-rose-400 bg-rose-950/20 rounded-xl border border-rose-900/40">Ошибка загрузки Топ-10 гонки</div>`;
+        }
         if (driversContainer && !f1ResultsData) {
           driversContainer.innerHTML = `<div class="p-3 text-center text-xs text-rose-400 bg-rose-950/20 rounded-xl border border-rose-900/40">Ошибка загрузки зачета пилотов</div>`;
         }
@@ -1228,8 +1232,174 @@
 
     function renderF1Results() {
       if (!f1ResultsData) return;
+      renderF1Top10(f1ResultsData.latest_race);
       renderF1Drivers(f1ResultsData.drivers || []);
       renderF1Races(f1ResultsData.races || []);
+      renderF1Top10Banner(f1ResultsData.latest_race);
+    }
+
+    function renderF1Top10(latestRace) {
+      const container = document.getElementById('f1-block-top10');
+      if (!container) return;
+
+      if (!latestRace || !latestRace.top10 || latestRace.top10.length === 0) {
+        container.innerHTML = `<div class="text-xs text-slate-400 p-4 text-center">Нет данных о результатах последнего Гран-при</div>`;
+        return;
+      }
+
+      const gpTitle = cleanText(latestRace.grand_prix || 'Гран-при');
+
+      const itemsHtml = latestRace.top10.map((d, idx) => {
+        const pos = d.pos || (idx + 1);
+        let rankBadge = `<span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold font-mono bg-slate-800 text-slate-300 border border-slate-700">${pos}</span>`;
+        if (pos == 1) {
+          rankBadge = `<span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold font-mono bg-amber-500 text-slate-950 border border-amber-300 shadow-sm shadow-amber-500/50">🥇</span>`;
+        } else if (pos == 2) {
+          rankBadge = `<span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold font-mono bg-slate-300 text-slate-900 border border-white shadow-sm">🥈</span>`;
+        } else if (pos == 3) {
+          rankBadge = `<span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold font-mono bg-amber-700 text-amber-100 border border-amber-600 shadow-sm">🥉</span>`;
+        }
+
+        const isRedBull = (d.team || '').toLowerCase().includes('red bull');
+        const isVerstappen = (d.driver || '').toLowerCase().includes('verstappen');
+        const isMercedes = (d.team || '').toLowerCase().includes('mercedes');
+        const isFerrari = (d.team || '').toLowerCase().includes('ferrari');
+
+        let cardClass = 'bg-slate-950/60 border-slate-800/80 hover:border-red-500/50 hover:bg-slate-900/60';
+        if (isRedBull || isVerstappen) {
+          cardClass = 'bg-red-950/20 border-red-500/40 hover:border-red-400 shadow-sm shadow-red-500/10';
+        } else if (isMercedes) {
+          cardClass = 'bg-cyan-950/20 border-cyan-500/30 hover:border-cyan-400';
+        } else if (isFerrari) {
+          cardClass = 'bg-rose-950/20 border-rose-500/30 hover:border-rose-400';
+        }
+
+        const pts = d.points ? `<span class="font-mono text-xs font-black text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20">+${d.points} PTS</span>` : '';
+        const driverName = cleanText(d.driver || 'Пилот');
+        const teamName = cleanText(d.team || 'Команда');
+        const timeDiff = d.time ? `<span class="font-mono text-[10px] text-emerald-400 font-semibold">${d.time}</span>` : '';
+
+        return `
+          <div class="p-2.5 rounded-2xl border transition-all ${cardClass}">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2 min-w-0">
+                ${rankBadge}
+                <div class="min-w-0">
+                  <div class="text-xs font-bold text-white flex items-center gap-1.5 truncate">
+                    <span>${driverName}</span>
+                    ${isVerstappen ? '<span class="text-[9px] bg-red-600/30 text-red-300 border border-red-500/40 px-1 rounded font-bold">1</span>' : ''}
+                  </div>
+                  <div class="text-[10px] text-slate-400 truncate flex items-center gap-1">
+                    <span>${teamName}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="flex flex-col items-end gap-0.5 shrink-0">
+                ${pts}
+                ${timeDiff}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = `
+        <div class="mb-2 px-2.5 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-between">
+          <span class="text-[11px] font-bold text-red-300 flex items-center gap-1">
+            <span>🏁</span> <span>${gpTitle}</span>
+          </span>
+          <span class="text-[10px] font-mono text-slate-400">Финишный протокол</span>
+        </div>
+        ${itemsHtml}
+      `;
+    }
+
+    function renderF1Top10Banner(latestRace) {
+      const banner = document.getElementById('f1-latest-race-banner');
+      if (!banner) return;
+
+      const targetCat = (state.newsCategoryFilter || '').toLowerCase();
+      const isF1 = targetCat === 'f1' || targetCat.includes('формул') || targetCat.includes('formula');
+
+      if (!isF1 || !latestRace || !latestRace.top10 || latestRace.top10.length === 0) {
+        banner.style.display = 'none';
+        banner.innerHTML = '';
+        return;
+      }
+
+      const gpTitle = cleanText(latestRace.grand_prix || 'Гран-при');
+      const winner = latestRace.top10[0] || {};
+      const winnerName = cleanText(winner.driver || 'Победитель');
+      const winnerTeam = cleanText(winner.team || '');
+
+      banner.style.display = 'block';
+      banner.innerHTML = `
+        <div class="glass-panel p-5 rounded-3xl border border-red-500/30 bg-gradient-to-r from-red-950/40 via-slate-900/90 to-slate-950/90 shadow-2xl relative overflow-hidden">
+          <div class="absolute -right-8 -top-8 w-40 h-40 bg-red-600/15 rounded-full blur-3xl pointer-events-none"></div>
+          
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3 mb-3.5 relative z-10">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-500/25 text-red-300 border border-red-500/40 flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                  <span>Последний турнир F1</span>
+                </span>
+                <span class="text-xs font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20">Топ-10 финиша</span>
+              </div>
+              <h3 class="text-base sm:text-lg font-black text-white font-heading flex items-center gap-2">
+                <span>🏁</span> <span>Гран-при ${gpTitle}</span>
+              </h3>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <span class="text-xs text-slate-300 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-800 flex items-center gap-1.5">
+                <span>🏆 1-е место:</span>
+                <strong class="text-amber-300 font-bold">${winnerName}</strong>
+                <span class="text-slate-500 text-[11px]">(${winnerTeam})</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Top 10 Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-2 relative z-10">
+            ${latestRace.top10.map((d, idx) => {
+              const pos = d.pos || (idx + 1);
+              let posBadge = `<span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold font-mono bg-slate-800 text-slate-300 border border-slate-700">${pos}</span>`;
+              if (pos == 1) posBadge = `<span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold font-mono bg-amber-500 text-slate-950 border border-amber-300 shadow-sm shadow-amber-500/50">🥇</span>`;
+              else if (pos == 2) posBadge = `<span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold font-mono bg-slate-300 text-slate-900 border border-white shadow-sm">🥈</span>`;
+              else if (pos == 3) posBadge = `<span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold font-mono bg-amber-700 text-amber-100 border border-amber-600 shadow-sm">🥉</span>`;
+
+              const isRedBull = (d.team || '').toLowerCase().includes('red bull');
+              const isVerstappen = (d.driver || '').toLowerCase().includes('verstappen');
+              const isMercedes = (d.team || '').toLowerCase().includes('mercedes');
+              const isFerrari = (d.team || '').toLowerCase().includes('ferrari');
+
+              let rowClass = 'bg-slate-900/70 border-slate-800/80 hover:bg-slate-850';
+              if (isRedBull || isVerstappen) rowClass = 'bg-red-950/30 border-red-500/40 shadow-sm shadow-red-500/10';
+              else if (isMercedes) rowClass = 'bg-cyan-950/25 border-cyan-500/30';
+              else if (isFerrari) rowClass = 'bg-rose-950/25 border-rose-500/30';
+
+              return `
+                <div class="p-2 rounded-xl border flex items-center justify-between gap-2 transition-all ${rowClass}">
+                  <div class="flex items-center gap-2 min-w-0">
+                    ${posBadge}
+                    <div class="min-w-0">
+                      <div class="text-xs font-bold text-white truncate flex items-center gap-1">
+                        <span>${cleanText(d.driver || '')}</span>
+                        ${isVerstappen ? '<span class="text-[9px] bg-red-600/40 text-red-300 border border-red-500/50 px-1 rounded font-bold">1</span>' : ''}
+                      </div>
+                      <div class="text-[10px] text-slate-400 truncate">${cleanText(d.team || '')}</div>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-1.5 shrink-0 text-right">
+                    ${d.points ? `<span class="font-mono text-[11px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">+${d.points}</span>` : ''}
+                    <span class="font-mono text-[10px] text-emerald-400 font-semibold">${d.time || ''}</span>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
     }
 
     function renderF1Drivers(drivers) {
@@ -1304,7 +1474,10 @@
         return;
       }
 
-      container.innerHTML = races.map((r, idx) => {
+      // Races already sorted latest first from server
+      const sortedRaces = [...races];
+
+      container.innerHTML = sortedRaces.map((r, idx) => {
         const gpName = cleanText(r.grand_prix || 'Гран-при');
         const date = r.date || '';
         const winner = cleanText(r.winner || '—');
@@ -1339,25 +1512,23 @@
 
     window.switchF1Tab = function(tab) {
       activeF1Tab = tab;
+      const bTop10 = document.getElementById('f1-block-top10');
       const bDrivers = document.getElementById('f1-block-drivers');
       const bRaces = document.getElementById('f1-block-races');
+      const tabTop10 = document.getElementById('f1-tab-top10');
       const tabDrivers = document.getElementById('f1-tab-drivers');
       const tabRaces = document.getElementById('f1-tab-races');
 
-      const activeClass = 'flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all bg-red-600 text-white shadow-md flex items-center justify-center gap-1.5';
-      const inactiveClass = 'flex-1 py-1.5 px-3 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1.5';
+      const activeClass = 'flex-1 py-1.5 px-2 rounded-xl text-xs font-bold transition-all bg-red-600 text-white shadow-md flex items-center justify-center gap-1';
+      const inactiveClass = 'flex-1 py-1.5 px-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1';
 
-      if (tab === 'races') {
-        if (bDrivers) bDrivers.style.display = 'none';
-        if (bRaces) bRaces.style.display = 'block';
-        if (tabDrivers) tabDrivers.className = inactiveClass;
-        if (tabRaces) tabRaces.className = activeClass;
-      } else {
-        if (bDrivers) bDrivers.style.display = 'block';
-        if (bRaces) bRaces.style.display = 'none';
-        if (tabDrivers) tabDrivers.className = activeClass;
-        if (tabRaces) tabRaces.className = inactiveClass;
-      }
+      if (bTop10) bTop10.style.display = (tab === 'top10') ? 'block' : 'none';
+      if (bDrivers) bDrivers.style.display = (tab === 'drivers') ? 'block' : 'none';
+      if (bRaces) bRaces.style.display = (tab === 'races') ? 'block' : 'none';
+
+      if (tabTop10) tabTop10.className = (tab === 'top10') ? activeClass : inactiveClass;
+      if (tabDrivers) tabDrivers.className = (tab === 'drivers') ? activeClass : inactiveClass;
+      if (tabRaces) tabRaces.className = (tab === 'races') ? activeClass : inactiveClass;
     };
 
     window.filterF1ByTag = function(tag) {
@@ -1380,6 +1551,7 @@
     };
 
     window.loadF1Results = loadF1Results;
+    window.renderF1Top10Banner = renderF1Top10Banner;
 
     // ==========================================
     // FOOTBALL TOURNAMENTS & RESULTS LOGIC (Terrikon)
@@ -1448,13 +1620,46 @@
 
     let selectedNationsTier = 'all'; // 'all' | 'A' | 'B' | 'C' | 'D'
 
+    function getFilteredNationsGroups(groups, tier) {
+      if (!groups || groups.length === 0 || tier === 'all') return groups || [];
+      const tierLetter = tier.toUpperCase();
+      return groups.filter(g => {
+        const raw = (g.group || '').toUpperCase();
+        if (tierLetter === 'A') return /[АA][1-4]/.test(raw) || raw.includes(' А') || raw.includes(' A');
+        if (tierLetter === 'B') return /[ВB][1-4]/.test(raw) || raw.includes(' В') || raw.includes(' B');
+        if (tierLetter === 'C') return /[СC][1-4]/.test(raw) || raw.includes(' С') || raw.includes(' C');
+        if (tierLetter === 'D') return /[DД][1-4]/.test(raw) || raw.includes(' D') || raw.includes(' Д');
+        return true;
+      });
+    }
+
     function renderFootballContent() {
       const tourn = activeFootballTournament || 'laliga';
       const data = footballResultsData[tourn];
       if (!data) return;
 
       renderFootballStandings(data);
-      renderFootballMatches(data.matches || []);
+
+      let matchesToRender = data.matches || [];
+      if (tourn === 'nations' && selectedNationsTier !== 'all' && data.groups && data.groups.length > 0) {
+        const filteredGroups = getFilteredNationsGroups(data.groups, selectedNationsTier);
+        const tierTeams = new Set();
+        filteredGroups.forEach(g => {
+          (g.standings || []).forEach(s => {
+            if (s.team) {
+              tierTeams.add(cleanText(s.team).toLowerCase());
+            }
+          });
+        });
+
+        matchesToRender = matchesToRender.filter(m => {
+          const home = cleanText(m.home || '').toLowerCase();
+          const away = cleanText(m.away || '').toLowerCase();
+          return tierTeams.has(home) || tierTeams.has(away);
+        });
+      }
+
+      renderFootballMatches(matchesToRender);
     }
 
     function renderFootballStandings(data) {
@@ -1463,19 +1668,7 @@
 
       // Check if tournament has group tables (Nations League or multi-group)
       if (data.groups && data.groups.length > 0) {
-        let groupsToRender = data.groups;
-        if (activeFootballTournament === 'nations' && selectedNationsTier !== 'all') {
-          const tierLetter = selectedNationsTier.toUpperCase();
-          groupsToRender = data.groups.filter(g => {
-            const raw = (g.group || '').toUpperCase();
-            // Match Russian or Latin letters A, B, C, D
-            if (tierLetter === 'A') return /[АA][1-4]/.test(raw) || raw.includes(' А') || raw.includes(' A');
-            if (tierLetter === 'B') return /[ВB][1-4]/.test(raw) || raw.includes(' В') || raw.includes(' B');
-            if (tierLetter === 'C') return /[СC][1-4]/.test(raw) || raw.includes(' С') || raw.includes(' C');
-            if (tierLetter === 'D') return /[DД][1-4]/.test(raw) || raw.includes(' D') || raw.includes(' Д');
-            return true;
-          });
-        }
+        let groupsToRender = getFilteredNationsGroups(data.groups, activeFootballTournament === 'nations' ? selectedNationsTier : 'all');
 
         if (groupsToRender.length === 0) {
           container.innerHTML = `<div class="text-xs text-slate-400 p-4 text-center">Нет данных для выбранной лиги</div>`;
@@ -1518,8 +1711,6 @@
         }
       });
 
-      // Automatically switch to standings view if user was on matches view
-      switchFootballView('standings');
       renderFootballContent();
     };
 
@@ -2406,9 +2597,9 @@
       }
       if (mainCol) {
         if (isIT || isAll || isGaming || isUkraine || isAI || isLinux || isF1 || isFootball) {
-          mainCol.className = 'order-2 lg:order-1 lg:col-span-7 xl:col-span-8 space-y-6 w-full';
+          mainCol.className = 'order-1 lg:order-1 lg:col-span-7 xl:col-span-8 space-y-6 w-full';
         } else {
-          mainCol.className = 'order-2 lg:order-1 lg:col-span-12 space-y-6 w-full';
+          mainCol.className = 'order-1 lg:order-1 lg:col-span-12 space-y-6 w-full';
         }
       }
 
@@ -2480,14 +2671,15 @@
         return false;
       }
 
-      // Safeguard: Never display untranslated Ukrainian content in the news feed
-      const rawSummary = (item.summaries && item.summaries[state.lang]) || item.summary || '';
-      if (/[ієїґІЄЇҐ]/.test(item.title || '') || /[ієїґІЄЇҐ]/.test(rawSummary)) {
+      // Safeguard: Never display untranslated Ukrainian characters in Russian interface
+      const curLang = state.lang || 'ru';
+      const rawSummary = (item.summaries && (item.summaries[curLang] || item.summaries.ru || item.summaries.en || item.summaries.fr)) || item.summary || item.short_summary || '';
+      if (curLang === 'ru' && (/[ієїґІЄЇҐ]/.test(item.title || '') || /[ієїґІЄЇҐ]/.test(rawSummary))) {
         return false;
       }
 
       // Require a valid AI summary
-      const hasSummary = Boolean((item.summaries && item.summaries[state.lang]) || item.summary);
+      const hasSummary = Boolean(rawSummary);
       if (!hasSummary) {
         return false;
       }
@@ -2553,8 +2745,8 @@
         if (isGamingItem) return false;
 
         if (score < 7.0) return false;
-        const hasSummary = Boolean((item.summaries && item.summaries[state.lang]) || item.summary);
-        if (!hasSummary) return false;
+        const itSummary = (item.summaries && (item.summaries[curLang] || item.summaries.ru || item.summaries.en || item.summaries.fr)) || item.summary || item.short_summary || '';
+        if (!itSummary) return false;
 
         // Language Sub-Filter
         if (targetLang && targetLang !== 'all') {
@@ -2921,6 +3113,14 @@
       if (!container) return;
       container.innerHTML = '';
 
+      // Update F1 Latest Grand Prix Top 10 Results banner
+      if (f1ResultsData && f1ResultsData.latest_race) {
+        renderF1Top10Banner(f1ResultsData.latest_race);
+      } else {
+        const banner = document.getElementById('f1-latest-race-banner');
+        if (banner) banner.style.display = 'none';
+      }
+
       const isAll = (state.newsCategoryFilter === 'all' || state.newsCategoryFilter === 'Все' || !state.newsCategoryFilter);
 
       // In "Все" tab: gather and render the express digest aside (6.0 <= score < 8.0)
@@ -3020,7 +3220,7 @@
           ) && (category === 'Украина' || ((article.source || '') + (article.url || '')).toLowerCase().includes('novynaukr')));
 
         const priorityBadge = isPriority
-          ? `<span class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-amber-500/30 backdrop-blur-md text-amber-300 border border-amber-400/60 shadow-lg shadow-amber-500/25 flex items-center gap-1 animate-pulse">⭐ Приоритет</span>`
+          ? `<span class="p-1 rounded-xl text-[11px] font-bold bg-amber-500/30 backdrop-blur-md text-amber-300 border border-amber-400/60 shadow-lg shadow-amber-500/25 flex items-center justify-center animate-pulse" title="Приоритет">⭐</span>`
           : '';
 
         const isHighQuality = Number(score) >= 7.0;
@@ -3089,9 +3289,8 @@
                 <span>${getCategoryEmoji(category)}</span>
                 <span>${category}</span>
               </span>
-              <button type="button" class="btn-open-video-zoom px-2.5 py-1 rounded-xl text-[11px] font-bold bg-rose-600/90 hover:bg-rose-500 text-white border border-rose-500/50 shadow-lg flex items-center gap-1 cursor-pointer pointer-events-auto transition-colors" title="Приблизить видео">
-                <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                <span>ВИДЕО</span>
+              <button type="button" class="btn-open-video-zoom p-1.5 rounded-xl bg-rose-600/90 hover:bg-rose-500 text-white border border-rose-500/50 shadow-lg flex items-center justify-center cursor-pointer pointer-events-auto transition-colors" title="Смотреть видео">
+                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
               </button>
               ${priorityBadge}
               ${practiceBadge}
@@ -3100,9 +3299,8 @@
 
             <!-- Top Right Zoom Button for Video -->
             <div class="absolute top-3 right-3 z-10">
-              <button type="button" class="btn-open-video-zoom px-2.5 py-1 rounded-xl bg-slate-950/85 hover:bg-sky-600 text-sky-300 hover:text-white border border-sky-400/30 hover:border-sky-300 shadow-xl flex items-center gap-1.5 text-xs font-semibold backdrop-blur-md transition-all cursor-pointer" title="Приблизить видео">
+              <button type="button" class="btn-open-video-zoom p-1.5 rounded-xl bg-slate-950/85 hover:bg-sky-600 text-sky-300 hover:text-white border border-sky-400/30 hover:border-sky-300 shadow-xl flex items-center justify-center backdrop-blur-md transition-all cursor-pointer" title="Увеличить">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15"/></svg>
-                <span>Увеличить</span>
               </button>
             </div>
 
@@ -3593,6 +3791,49 @@
       };
     }
 
+    // VPN UI Management
+    function updateVpnUI() {
+      const pill = document.getElementById('vpn-status-pill');
+      const text = document.getElementById('vpn-status-text');
+      const btn = document.getElementById('vpn-main-toggle');
+
+      if (state.vpnConnected) {
+        if (pill) {
+          pill.className = 'badge-status px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1.5';
+          pill.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> ${t('vpnStatusConnected')}`;
+        }
+        if (text) text.textContent = t('vpnDesc');
+        if (btn) {
+          btn.className = 'w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold flex items-center justify-center gap-3 shadow-lg shadow-emerald-900/30 border border-emerald-400/40 transition-all';
+          btn.innerHTML = `<span class="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span> <span class="font-bold text-white">${t('vpnBtnDisconnect')}</span>`;
+        }
+      } else {
+        if (pill) {
+          pill.className = 'badge-status px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-1.5';
+          pill.innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-500"></span> ${t('vpnStatusDisconnected')}`;
+        }
+        if (text) text.textContent = t('vpnDesc');
+        if (btn) {
+          btn.className = 'w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 text-white font-bold flex items-center justify-center gap-3 border border-slate-600 transition-all';
+          btn.innerHTML = `<span class="w-3 h-3 rounded-full bg-slate-400"></span> <span class="font-bold text-white">${t('vpnBtnConnect')}</span>`;
+        }
+      }
+    }
+
+    const vpnToggleBtn = document.getElementById('vpn-main-toggle');
+    if (vpnToggleBtn) {
+      vpnToggleBtn.onclick = () => {
+        state.vpnConnected = !state.vpnConnected;
+        updateVpnUI();
+        if (state.vpnConnected) {
+          showToast(t('toastVpnOn'), "10.8.0.2", "success");
+        } else {
+          showToast(t('toastVpnOff'), "", "warning");
+        }
+        renderCanvasChart();
+      };
+    }
+
     // Standalone Canvas Traffic Chart
     let chartPoints = [35, 52, 78, 110, 85, 62, 94, 120, 95, 88];
     function renderCanvasChart() {
@@ -3849,10 +4090,10 @@
     }
 
     // Initialize Default View
-    setLanguage('ru');
-    switchTab('news');
-    updateDeleteCategoryBtn();
-    loadLiveNews();
-    loadManagedDevices();
-    loadRouterStats();
+    try { setLanguage('ru'); } catch (e) { console.error('Error during setLanguage:', e); }
+    try { switchTab('news'); } catch (e) { console.error('Error during switchTab:', e); }
+    try { updateDeleteCategoryBtn(); } catch (e) { console.error('Error during updateDeleteCategoryBtn:', e); }
+    try { loadLiveNews(); } catch (e) { console.error('Error during loadLiveNews:', e); }
+    try { loadManagedDevices(); } catch (e) { console.error('Error during loadManagedDevices:', e); }
+    try { loadRouterStats(); } catch (e) { console.error('Error during loadRouterStats:', e); }
   })();

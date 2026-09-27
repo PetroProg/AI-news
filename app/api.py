@@ -226,6 +226,199 @@ async def serve_index():
     return "<h1>Error: web/index.html not found on server</h1>"
 
 
+@app.get("/battery-agent", response_class=HTMLResponse)
+async def serve_battery_agent():
+    """
+    Автономная веб-страница для мобильного устройства (Nokia 6.1 / любой смартфон).
+    Работает прямо в браузере (Chrome / Firefox / Edge / Opera).
+    Периодически считывает батарею через Web Battery API и отправляет на сервер.
+    """
+    return """<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Nokia 6.1 • Battery Monitor Agent</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.05); opacity: 0.3; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    .pulse-ring { animation: pulse-ring 3s infinite ease-in-out; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-between p-6 select-none font-sans">
+  <header class="w-full max-w-sm flex items-center justify-between pt-2">
+    <div class="flex items-center gap-2">
+      <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+      <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Agent Online</span>
+    </div>
+    <span class="text-xs font-mono text-slate-500" id="time-display">--:--:--</span>
+  </header>
+
+  <main class="w-full max-w-sm flex flex-col items-center justify-center my-auto py-8">
+    <!-- Outer Battery Ring -->
+    <div class="relative w-56 h-56 flex items-center justify-center mb-8">
+      <div class="absolute inset-0 rounded-full border-4 border-slate-800/80"></div>
+      <div id="glow-ring" class="absolute inset-0 rounded-full border-4 border-emerald-500/40 pulse-ring"></div>
+      
+      <div class="flex flex-col items-center justify-center z-10 text-center">
+        <span id="bolt-icon" class="text-3xl mb-1 transition-all duration-300">⚡</span>
+        <div class="flex items-baseline justify-center">
+          <span id="battery-percent" class="text-6xl font-black font-mono tracking-tight text-white">--</span>
+          <span class="text-2xl font-bold text-slate-400 ml-1">%</span>
+        </div>
+        <span id="charging-status" class="text-xs font-bold uppercase tracking-wider mt-2 px-3 py-1 rounded-full bg-slate-800 text-slate-300">
+          Определение...
+        </span>
+      </div>
+    </div>
+
+    <!-- Details Card -->
+    <div class="w-full bg-slate-900/80 border border-slate-800/80 rounded-2xl p-4 space-y-3 shadow-xl">
+      <div class="flex items-center justify-between text-xs">
+        <span class="text-slate-400">Устройство:</span>
+        <span class="font-bold text-slate-200">Nokia 6.1 (Android)</span>
+      </div>
+      <div class="flex items-center justify-between text-xs">
+        <span class="text-slate-400">Сервер:</span>
+        <span class="font-mono text-sky-400" id="server-target">192.168.178.65:8000</span>
+      </div>
+      <div class="flex items-center justify-between text-xs">
+        <span class="text-slate-400">Синхронизация:</span>
+        <span class="font-mono text-emerald-400" id="last-sync">Ожидание первого опроса...</span>
+      </div>
+      <div class="flex items-center justify-between text-xs border-t border-slate-800/80 pt-2">
+        <span class="text-slate-400">Интервал:</span>
+        <span class="text-slate-300">Каждые 60 сек</span>
+      </div>
+    </div>
+
+    <!-- Manual Force Button -->
+    <button type="button" id="force-sync-btn" onclick="triggerSync()" class="mt-6 w-full py-3.5 px-4 rounded-xl bg-sky-500 hover:bg-sky-400 active:scale-95 text-white font-bold text-sm shadow-lg shadow-sky-500/20 transition-all flex items-center justify-center gap-2">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+      <span>Отправить статус сейчас</span>
+    </button>
+  </main>
+
+  <footer class="w-full max-w-sm text-center pb-2">
+    <p class="text-[11px] text-slate-500 leading-relaxed">
+      💡 Держите эту вкладку открытой или закрепите в браузере.<br>Экран можно заблокировать или уменьшить яркость.
+    </p>
+  </footer>
+
+  <script>
+    let batteryInstance = null;
+
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('time-display').textContent = now.toLocaleTimeString();
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    document.getElementById('server-target').textContent = window.location.host;
+
+    async function sendBatteryToServer(level, charging) {
+      try {
+        const url = `/api/devices/nokia/battery?level=${encodeURIComponent(level)}&charging=${encodeURIComponent(charging)}`;
+        const res = await fetch(url, { method: 'POST' });
+        if (res.ok) {
+          const nowStr = new Date().toLocaleTimeString();
+          document.getElementById('last-sync').textContent = `Успешно в ${nowStr}`;
+          document.getElementById('last-sync').className = 'font-mono text-emerald-400';
+        } else {
+          document.getElementById('last-sync').textContent = `Ошибка сервера (${res.status})`;
+          document.getElementById('last-sync').className = 'font-mono text-rose-400';
+        }
+      } catch (err) {
+        document.getElementById('last-sync').textContent = 'Нет связи с сервером';
+        document.getElementById('last-sync').className = 'font-mono text-rose-400';
+      }
+    }
+
+    function updateUi(level, charging) {
+      document.getElementById('battery-percent').textContent = level;
+      const statusEl = document.getElementById('charging-status');
+      const boltEl = document.getElementById('bolt-icon');
+      const glowRing = document.getElementById('glow-ring');
+
+      if (charging) {
+        statusEl.textContent = 'Подключено к зарядке';
+        statusEl.className = 'text-xs font-bold uppercase tracking-wider mt-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+        boltEl.textContent = '⚡';
+        boltEl.className = 'text-3xl mb-1 text-emerald-400 animate-bounce';
+        glowRing.className = 'absolute inset-0 rounded-full border-4 border-emerald-500/40 pulse-ring';
+      } else {
+        statusEl.textContent = level <= 20 ? 'Низкий заряд' : 'Работа от батареи';
+        statusEl.className = level <= 20
+          ? 'text-xs font-bold uppercase tracking-wider mt-2 px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30'
+          : 'text-xs font-bold uppercase tracking-wider mt-2 px-3 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700';
+        boltEl.textContent = '🔋';
+        boltEl.className = 'text-3xl mb-1 text-slate-300';
+        glowRing.className = level <= 20
+          ? 'absolute inset-0 rounded-full border-4 border-rose-500/40 pulse-ring'
+          : 'absolute inset-0 rounded-full border-4 border-sky-500/30';
+      }
+    }
+
+    async function checkAndSend() {
+      if (batteryInstance) {
+        const level = Math.round(batteryInstance.level * 100);
+        const charging = Boolean(batteryInstance.charging);
+        updateUi(level, charging);
+        await sendBatteryToServer(level, charging);
+      } else {
+        // Fallback prompt if Battery API is restricted
+        document.getElementById('charging-status').textContent = 'Web Battery API недоступен в этом браузере';
+      }
+    }
+
+    async function triggerSync() {
+      const btn = document.getElementById('force-sync-btn');
+      btn.disabled = true;
+      btn.classList.add('opacity-70');
+      await checkAndSend();
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.classList.remove('opacity-70');
+      }, 1000);
+    }
+
+    if ('getBattery' in navigator) {
+      navigator.getBattery().then(bat => {
+        batteryInstance = bat;
+        checkAndSend();
+
+        bat.addEventListener('levelchange', () => {
+          checkAndSend();
+        });
+        bat.addEventListener('chargingchange', () => {
+          checkAndSend();
+        });
+
+        // Periodic heartbeat every 60 seconds
+        setInterval(checkAndSend, 60000);
+      }).catch(err => {
+        console.warn('Battery API error:', err);
+        document.getElementById('charging-status').textContent = 'Доступ к батарее заблокирован';
+      });
+    } else {
+      document.getElementById('charging-status').textContent = 'Используйте Google Chrome или Edge';
+    }
+
+    // WakeLock to prevent phone screen from fully sleeping if desired
+    if ('wakeLock' in navigator) {
+      navigator.wakeLock.request('screen').catch(() => {});
+    }
+  </script>
+</body>
+</html>"""
+
+
+
 @app.get("/api/hltv/ranking")
 async def get_hltv_ranking(force: bool = False) -> Dict[str, Any]:
     """Получить актуальный топ-20 команд HLTV Valve Ranking (CS2) с автообновлением и кэшированием."""
@@ -332,10 +525,13 @@ async def get_f1_results(force: bool = False) -> Dict[str, Any]:
 
     races = []
     drivers = []
+    latest_race = None
 
     try:
         async with httpx.AsyncClient(headers=headers, timeout=20.0, follow_redirects=True) as client:
             # 1. Fetch Races
+            last_race_href = ""
+            last_gp_title = ""
             try:
                 resp_r = await client.get("https://www.formula1.com/en/results/2026/races")
                 if resp_r.status_code == 200:
@@ -346,22 +542,69 @@ async def get_f1_results(force: bool = False) -> Dict[str, Any]:
                             tds = [td.get_text(separator=" ", strip=True) for td in tr.find_all("td")]
                             if len(tds) >= 6:
                                 gp_clean = re.sub(r"^Flag of\s+", "", tds[0], flags=re.IGNORECASE).strip()
-                                # Clean redundant country repeat e.g. "Australia Australia" -> "Australia"
                                 parts = gp_clean.split()
                                 if len(parts) == 2 and parts[0].lower() == parts[1].lower():
                                     gp_clean = parts[0]
+                                a_el = tr.find("a")
+                                race_href = a_el["href"] if a_el and a_el.has_attr("href") else ""
+                                if race_href:
+                                    last_race_href = race_href
+                                    last_gp_title = gp_clean
                                 races.append({
                                     "grand_prix": gp_clean,
                                     "date": tds[1],
                                     "winner": tds[2],
                                     "team": tds[3],
                                     "laps": tds[4],
-                                    "time": tds[5]
+                                    "time": tds[5],
+                                    "url": f"https://www.formula1.com{race_href}" if race_href.startswith("/") else race_href
                                 })
             except Exception as e_r:
                 print(f"Error fetching F1 races: {e_r}")
 
-            # 2. Fetch Drivers
+            # 2. Fetch Latest Race Detailed Top 10 Results
+            if last_race_href:
+                try:
+                    last_race_url = f"https://www.formula1.com{last_race_href}" if last_race_href.startswith("/") else last_race_href
+                    resp_detail = await client.get(last_race_url)
+                    if resp_detail.status_code == 200:
+                        soup_detail = BeautifulSoup(resp_detail.text, "html.parser")
+                        t_detail = soup_detail.find("table")
+                        if t_detail:
+                            top10_list = []
+                            for tr in t_detail.find_all("tr")[1:11]:
+                                tds = [td.get_text(separator=" ", strip=True) for td in tr.find_all("td")]
+                                # F1 race result table columns: [Pos, No, Driver, Team, Laps, Time/Retired, Pts]
+                                if len(tds) >= 7:
+                                    top10_list.append({
+                                        "pos": tds[0],
+                                        "no": tds[1],
+                                        "driver": tds[2],
+                                        "team": tds[3],
+                                        "laps": tds[4],
+                                        "time": tds[5],
+                                        "points": tds[6]
+                                    })
+                                elif len(tds) >= 6:
+                                    top10_list.append({
+                                        "pos": tds[0],
+                                        "no": tds[1] if len(tds) > 1 else "",
+                                        "driver": tds[2] if len(tds) > 2 else tds[1],
+                                        "team": tds[3] if len(tds) > 3 else tds[2],
+                                        "laps": tds[4] if len(tds) > 4 else "",
+                                        "time": tds[5] if len(tds) > 5 else "",
+                                        "points": ""
+                                    })
+                            if top10_list:
+                                latest_race = {
+                                    "grand_prix": last_gp_title,
+                                    "url": last_race_url,
+                                    "top10": top10_list
+                                }
+                except Exception as e_last:
+                    print(f"Error fetching F1 last race top 10: {e_last}")
+
+            # 3. Fetch Drivers
             try:
                 resp_d = await client.get("https://www.formula1.com/en/results/2026/drivers")
                 if resp_d.status_code == 200:
@@ -382,9 +625,12 @@ async def get_f1_results(force: bool = False) -> Dict[str, Any]:
                 print(f"Error fetching F1 drivers: {e_d}")
 
         if races or drivers:
+            # Latest race at the top
+            races.reverse()
             _f1_races_cache = {
                 "races": races,
                 "drivers": drivers,
+                "latest_race": latest_race,
                 "races_url": "https://www.formula1.com/en/results/2026/races",
                 "drivers_url": "https://www.formula1.com/en/results/2026/drivers",
                 "season": "2026",
