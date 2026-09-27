@@ -223,27 +223,14 @@
     /* Mobile Screen Rules (< 768px) */
     @media (max-width: 767px) {
       .news-card-mobile-header {
-        display: flex !important;
+        display: none !important;
       }
       
       .news-card-body {
-        display: none !important;
-      }
-
-      .news-card.is-expanded .news-card-mobile-header {
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(15, 23, 42, 0.85);
-      }
-
-      .news-card.is-expanded .news-card-expand-icon {
-        transform: rotate(180deg);
-        color: #38bdf8;
-      }
-
-      .news-card.is-expanded .news-card-body {
         display: flex !important;
         flex-direction: column !important;
-        animation: fadeInNewsBody 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        flex: 1 1 0% !important;
+        height: 100% !important;
       }
 
       /* Compact aside team list max height on small screens */

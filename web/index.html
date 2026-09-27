@@ -22,7 +22,7 @@
     }
   </script>
 
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=2026_09_26_rev7">
 </head>
 <body class="antialiased selection:bg-sky-500 selection:text-white">
 
@@ -160,7 +160,12 @@
       <div id="news-layout-wrapper" class="flex flex-col lg:grid lg:grid-cols-12 gap-6 items-start">
         
         <!-- Center Main Column (News Feed) -->
-        <div id="news-main-column" class="order-2 lg:order-1 lg:col-span-7 xl:col-span-8 space-y-6 w-full">
+        <div id="news-main-column" class="order-1 lg:order-1 lg:col-span-7 xl:col-span-8 space-y-6 w-full">
+          <!-- F1 Latest Grand Prix Top 10 Results Banner (Shown only on F1 category) -->
+          <div id="f1-latest-race-banner" style="display: none;" class="w-full">
+            <!-- Dynamically populated by renderF1Top10Banner() -->
+          </div>
+
           <div id="news-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <!-- Injected dynamically by JavaScript -->
           </div>
@@ -993,18 +998,26 @@
                 </div>
               </div>
 
-              <!-- Switcher Tabs: Races vs Drivers -->
+              <!-- Switcher Tabs: Top 10 vs Drivers vs Races -->
               <div class="glass-panel p-1 rounded-2xl border border-slate-800 bg-slate-950/90 flex items-center gap-1 shadow-md">
-                <button type="button" id="f1-tab-drivers" onclick="switchF1Tab('drivers')" class="flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all bg-red-600 text-white shadow-md flex items-center justify-center gap-1.5">
-                  <span>🏎️</span> <span>Пилоты (Drivers)</span>
+                <button type="button" id="f1-tab-top10" onclick="switchF1Tab('top10')" class="flex-1 py-1.5 px-2 rounded-xl text-xs font-bold transition-all bg-red-600 text-white shadow-md flex items-center justify-center gap-1">
+                  <span>🏆</span> <span>Топ-10 гонки</span>
                 </button>
-                <button type="button" id="f1-tab-races" onclick="switchF1Tab('races')" class="flex-1 py-1.5 px-3 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1.5">
-                  <span>🏁</span> <span>Гран-при (Races)</span>
+                <button type="button" id="f1-tab-drivers" onclick="switchF1Tab('drivers')" class="flex-1 py-1.5 px-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1">
+                  <span>🏎️</span> <span>Пилоты</span>
+                </button>
+                <button type="button" id="f1-tab-races" onclick="switchF1Tab('races')" class="flex-1 py-1.5 px-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1">
+                  <span>🏁</span> <span>Гран-при</span>
                 </button>
               </div>
 
+              <!-- Content Tab 0: LATEST GRAND PRIX TOP 10 -->
+              <div id="f1-block-top10" class="space-y-1.5 max-h-[360px] sm:max-h-[440px] lg:max-h-[520px] overflow-y-auto pr-1 scrollbar-thin">
+                <div class="text-xs text-slate-400 p-4 text-center">Загрузка Топ-10 последней гонки...</div>
+              </div>
+
               <!-- Content Tab 1: DRIVERS STANDINGS -->
-              <div id="f1-block-drivers" class="space-y-1.5 max-h-[360px] sm:max-h-[440px] lg:max-h-[520px] overflow-y-auto pr-1 scrollbar-thin">
+              <div id="f1-block-drivers" style="display: none;" class="space-y-1.5 max-h-[360px] sm:max-h-[440px] lg:max-h-[520px] overflow-y-auto pr-1 scrollbar-thin">
                 <div class="text-xs text-slate-400 p-4 text-center">Загрузка зачета пилотов...</div>
               </div>
 
@@ -1471,7 +1484,7 @@
   <nav class="mobile-bottom-bar mobile-nav items-center justify-around px-2 py-2">
     <button type="button" class="nav-tab mobile-tab flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-xl text-sky-400 bg-sky-500/15 font-bold" data-tab="news">
       <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z"/></svg>
-      <span class="text-[11px]" data-i18n="tabNews">Actualités</span>
+      <span class="text-[11px]" data-i18n="tabNews">Новости</span>
     </button>
     <button type="button" class="nav-tab mobile-tab flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-xl text-slate-400 font-medium" data-tab="devices">
       <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"/></svg>
@@ -1751,6 +1764,6 @@
   <!-- STANDALONE JAVASCRIPT (ZERO DEPENDENCIES) -->
   <!-- ========================================== -->
 
-  <script src="js/app.js?v=f1_2026_03"></script>
+  <script src="js/app.js?v=2026_09_27_icons_fmatches_v1"></script>
 </body>
 </html>
