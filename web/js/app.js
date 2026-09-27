@@ -3633,7 +3633,7 @@
                 <div class="flex items-center gap-2">
                   <h4 class="font-bold text-white text-sm sm:text-base leading-snug truncate">${device.name}</h4>
                 </div>
-                <p class="text-[11px] text-slate-400 truncate">${device.vendor || 'Устройство'} ${device.location ? '• ' + device.location : ''}</p>
+                <p class="text-[11px] text-slate-400 truncate">${device.vendor || 'Устройство'}</p>
               </div>
             </div>
 
