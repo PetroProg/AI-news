@@ -27,21 +27,35 @@ class PipelineOrchestrator:
         self.bot = bot
 
     async def is_pc_already_online(self) -> bool:
-        """Checks if the GPU node / Ollama is already reachable before sending WoL."""
+        """Checks if the GPU node / Ollama or the Windows PC is already reachable before sending WoL."""
         url = f"{settings.OLLAMA_BASE_URL}/api/tags"
         try:
             async with httpx.AsyncClient(timeout=2.5) as client:
                 resp = await client.get(url)
-                return resp.status_code == 200
+                if resp.status_code == 200:
+                    return True
+        except Exception:
+            pass
+
+        # Check if Windows PC SSH port 22 is open (PC is awake and reachable)
+        try:
+            _, writer = await asyncio.wait_for(
+                asyncio.open_connection(settings.WINDOWS_SSH_HOST, 22),
+                timeout=2.5,
+            )
+            writer.close()
+            await writer.wait_closed()
+            return True
         except Exception:
             return False
 
     async def wait_for_gpu_node(self, timeout_seconds: int = 90) -> bool:
-        """Pings Ollama on the remote PC via Tailscale until it responds or times out."""
+        """Pings Ollama on remote PC. If not responding, triggers Ollama supervisor via SSH."""
         logger.info("Checking AI GPU worker availability at %s...", settings.OLLAMA_BASE_URL)
         url = f"{settings.OLLAMA_BASE_URL}/api/tags"
-        
+
         start_time = asyncio.get_event_loop().time()
+        ssh_attempted = False
         while (asyncio.get_event_loop().time() - start_time) < timeout_seconds:
             try:
                 async with httpx.AsyncClient(timeout=3.0) as client:
@@ -51,6 +65,25 @@ class PipelineOrchestrator:
                         return True
             except Exception:
                 pass
+
+            # If Ollama is not up yet after first check, trigger start via SSH
+            if not ssh_attempted:
+                ssh_attempted = True
+                try:
+                    logger.info("Ollama HTTP not yet responding, triggering remote Ollama supervisor via SSH...")
+                    import asyncssh
+                    async with asyncssh.connect(
+                        settings.WINDOWS_SSH_HOST,
+                        username=settings.WINDOWS_SSH_USER,
+                        client_keys=[settings.WINDOWS_SSH_KEY_PATH],
+                        known_hosts=None,
+                        connect_timeout=4.0,
+                    ) as conn:
+                        await conn.run(r'explorer.exe "C:\Users\Admin\AppData\Local\Programs\Ollama\run_ollama_hidden.vbs"')
+                        logger.info("Remote Ollama supervisor triggered via SSH.")
+                except Exception as exc:
+                    logger.debug("Remote SSH trigger note: %s", exc)
+
             await asyncio.sleep(3.0)
 
         logger.warning("AI GPU Worker did not respond within %ds. Will proceed with fallback/local.", timeout_seconds)
