@@ -1517,7 +1517,7 @@ async def get_managed_devices(session: AsyncSession = Depends(get_db_session)) -
         if dev.get("battery_updated_at"):
             try:
                 b_time = datetime.fromisoformat(dev["battery_updated_at"])
-                if (datetime.now(timezone.utc) - b_time).total_seconds() < 900:
+                if (datetime.now(timezone.utc) - b_time).total_seconds() < 2400:
                     is_battery_fresh = True
             except Exception:
                 pass
