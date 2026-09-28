@@ -1884,10 +1884,12 @@ async def get_nokia_battery_history(session: AsyncSession = Depends(get_db_sessi
 
     points = []
     for r in rows:
+        iso_str = r[2].isoformat() if r[2] else ""
         points.append({
             "level": r[0],
             "charging": r[1],
-            "time": r[2].strftime("%H:%M")
+            "recorded_at": iso_str,
+            "time": iso_str
         })
 
     return {
