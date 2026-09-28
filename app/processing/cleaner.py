@@ -79,13 +79,49 @@ class ContentCleaner:
         return cls._normalize_text(text)
 
     @classmethod
+    def sanitize_html_entities(cls, text: str) -> str:
+        """Fully unescape HTML entities and fix broken spacing like '& #039 ;' or '& #39 ;'."""
+        if not text:
+            return ""
+        for _ in range(3):
+            new_t = html.unescape(text)
+            if new_t == text:
+                break
+            text = new_t
+
+        # Fix malformed spaced numeric entities
+        text = re.sub(r'&\s*#0*39\s*;?', "'", text)
+        text = re.sub(r'&\s*#x0*27\s*;?', "'", text)
+        text = re.sub(r'&\s*#0*34\s*;?', '"', text)
+        text = re.sub(r'&\s*#0*38\s*;?', '&', text)
+        text = re.sub(r'&\s*#0*60\s*;?', '<', text)
+        text = re.sub(r'&\s*#0*62\s*;?', '>', text)
+        text = re.sub(r'&\s*#8217\s*;?', "'", text)
+        text = re.sub(r'&\s*#8216\s*;?', "'", text)
+        text = re.sub(r'&\s*#8220\s*;?', '"', text)
+        text = re.sub(r'&\s*#8221\s*;?', '"', text)
+        text = re.sub(r'&\s*#8230\s*;?', '...', text)
+        text = re.sub(r'&\s*#8211\s*;?', '–', text)
+        text = re.sub(r'&\s*#8212\s*;?', '—', text)
+        text = re.sub(r'&\s*nbsp\s*;?', ' ', text)
+        text = re.sub(r'&\s*quot\s*;?', '"', text)
+        text = re.sub(r'&\s*amp\s*;?', '&', text)
+
+        # Fix French elisions like "d ' " -> "d'" or "l ' " -> "l'"
+        text = re.sub(r"\b([cdjlmnstCDJLMNST]|qu|Qu)\s*['’]\s*", r"\1'", text)
+        return text
+
+    @classmethod
     def clean_title(cls, raw_title: str) -> str:
         """Clean titles from markdown artifacts, all emojis, country flags/codes, and noise."""
         if not raw_title:
             return "Новость"
         
+        # 0. Sanitize all HTML entities & malformed entities with spaces
+        title = cls.sanitize_html_entities(raw_title)
+
         # 1. Strip telegram markdown tags
-        title = cls.TG_MARKDOWN_RE.sub("", raw_title)
+        title = cls.TG_MARKDOWN_RE.sub("", title)
 
         # 2. Strip all emojis, flags, symbols, and pictographs
         title = cls.EMOJI_SYMBOLS_RE.sub("", title)

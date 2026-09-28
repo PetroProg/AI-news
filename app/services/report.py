@@ -1,3 +1,4 @@
+import re
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
@@ -109,13 +110,22 @@ class ReportBuilderService:
 
             lines.append(f"*{icon} {clean_cat}*")
 
-            for art in cat_articles[:8]:
+            # Limit to top 4 most important items per category for compact mobile reading
+            for art in cat_articles[:4]:
+                clean_t = ContentCleaner.clean_title(art.title)
                 safe_title = (
-                    art.title.replace("*", "")
+                    clean_t.replace("*", "")
                     .replace("_", "")
                     .replace("`", "")
                     .strip()
                 )
+                # Clean dangling quote/punctuation before trailing dots
+                if safe_title.endswith("..."):
+                    base = safe_title[:-3].strip()
+                    base = re.sub(r"\s+[«\"“'(\w]{1,4}$", "", base)
+                    safe_title = re.sub(r"[,\-—:;«\"“'(]+$", "", base).strip()
+                    if not safe_title.endswith((".", "!", "?")):
+                        safe_title += "..."
 
                 lines.append(f"• {safe_title}")
 
