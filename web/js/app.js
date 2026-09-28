@@ -1675,6 +1675,22 @@
         });
       }
 
+      // Filter out matches without a result (unplayed / scheduled / "-:-")
+      matchesToRender = matchesToRender.filter(m => {
+        if (!m || !m.score) return false;
+        const s = m.score.trim();
+        return s !== '-:-' && s !== 'vs' && /\d+/.test(s);
+      });
+
+      // Sort from newest to oldest, keeping live matches at the very top
+      matchesToRender.sort((a, b) => {
+        if (a.is_live && !b.is_live) return -1;
+        if (!a.is_live && b.is_live) return 1;
+        const tsA = a.ts || parseFootballMatchDate(a.date);
+        const tsB = b.ts || parseFootballMatchDate(b.date);
+        return tsB - tsA;
+      });
+
       renderFootballMatches(matchesToRender);
     }
 
@@ -1783,12 +1799,22 @@
       }).join('');
     }
 
+    function parseFootballMatchDate(dStr) {
+      if (!dStr) return 0;
+      const match = dStr.match(/(\d{1,2})\.(\d{1,2})\.(\d{2,4})(?:\s+(\d{1,2}):(\d{2}))?/);
+      if (!match) return 0;
+      let [, day, mon, yr, hr, min] = match;
+      let y = parseInt(yr, 10);
+      if (y < 100) y += 2000;
+      return new Date(y, parseInt(mon, 10) - 1, parseInt(day, 10), hr ? parseInt(hr, 10) : 12, min ? parseInt(min, 10) : 0).getTime();
+    }
+
     function renderFootballMatches(matches) {
       const container = document.getElementById('football-block-matches');
       if (!container) return;
 
       if (!matches || matches.length === 0) {
-        container.innerHTML = `<div class="text-xs text-slate-400 p-4 text-center">Нет данных о последних матчах</div>`;
+        container.innerHTML = `<div class="text-xs text-slate-400 p-4 text-center">Нет завершенных или текущих матчей</div>`;
         return;
       }
 
@@ -1797,25 +1823,41 @@
         const score = m.score || 'vs';
         const away = cleanText(m.away || '—');
         const date = m.date || '';
+        const isLive = Boolean(m.is_live);
 
         const isBarcaMatch = (home + ' ' + away).toLowerCase().includes('барселона');
-        const cardClass = isBarcaMatch 
-          ? 'bg-rose-950/30 border-rose-500/50' 
-          : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700';
+        const cardClass = isLive 
+          ? 'bg-emerald-950/25 border-emerald-500/50 shadow-sm shadow-emerald-950/40 ring-1 ring-emerald-500/20' 
+          : (isBarcaMatch ? 'bg-rose-950/30 border-rose-500/50' : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700');
+
+        const scoreClass = isLive
+          ? 'text-emerald-300 bg-emerald-950/70 border-emerald-500/40 font-black animate-pulse'
+          : 'text-emerald-400 bg-slate-900/80 border-slate-800 font-black';
 
         return `
           <div class="p-2.5 rounded-2xl border transition-all ${cardClass}">
             <div class="flex items-center justify-between text-[10px] text-slate-400 mb-1 font-mono">
-              <span class="flex items-center gap-1 font-bold text-slate-300">
-                <span>⚽</span> <span>Матч</span>
-              </span>
+              <div class="flex items-center gap-1.5">
+                <span class="flex items-center gap-1 font-bold text-slate-300">
+                  <span>⚽</span> <span>Матч</span>
+                </span>
+                ${isLive ? `
+                  <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 tracking-wide uppercase">
+                    <span class="relative flex h-1.5 w-1.5">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                    </span>
+                    В игре
+                  </span>
+                ` : ''}
+              </div>
               <span class="bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">${date}</span>
             </div>
             <div class="flex items-center justify-between text-xs py-1">
               <div class="w-2/5 font-semibold text-right truncate ${home.toLowerCase().includes('барселона') ? 'text-amber-300 font-bold' : 'text-white'}">
                 ${home}
               </div>
-              <div class="w-1/5 text-center font-mono font-black text-xs text-emerald-400 bg-slate-900/80 py-0.5 px-1.5 rounded border border-slate-800 shrink-0">
+              <div class="w-1/5 text-center font-mono ${scoreClass} text-xs py-0.5 px-1.5 rounded border shrink-0">
                 ${score}
               </div>
               <div class="w-2/5 font-semibold text-left truncate ${away.toLowerCase().includes('барселона') ? 'text-amber-300 font-bold' : 'text-white'}">

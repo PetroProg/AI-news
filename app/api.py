@@ -690,24 +690,58 @@ def _parse_terrikon_standings(table) -> List[Dict[str, Any]]:
     return standings
 
 
-def _parse_terrikon_matches(table, limit: int = 15) -> List[Dict[str, Any]]:
+def _parse_match_timestamp(date_str: str) -> float:
+    """Parses Terrikon date string e.g. '28.09.26 19:00' or '25.09.26' into timestamp for sorting."""
+    if not date_str:
+        return 0.0
+    import re
+    from datetime import datetime
+    m = re.search(r'(\d{1,2})\.(\d{1,2})\.(\d{2,4})(?:\s+(\d{1,2}):(\d{2}))?', date_str)
+    if not m:
+        return 0.0
+    d, mo, y = int(m.group(1)), int(m.group(2)), int(m.group(3))
+    if y < 100:
+        y += 2000
+    h = int(m.group(4)) if m.group(4) else 12
+    mi = int(m.group(5)) if m.group(5) else 0
+    try:
+        return datetime(y, mo, d, h, mi).timestamp()
+    except Exception:
+        return 0.0
+
+
+def _parse_terrikon_matches(table, limit: int = 100) -> List[Dict[str, Any]]:
     matches = []
     if not table:
         return matches
     rows = table.find_all("tr")
     for tr in rows:
+        tr_classes = tr.get("class", [])
+        # 'wait' means match is not started / unplayed
+        if "wait" in tr_classes:
+            continue
         tds = tr.find_all("td")
         if len(tds) >= 6:
             home = tds[1].get_text(strip=True)
             score = tds[2].get_text(strip=True)
             away = tds[3].get_text(strip=True)
-            date = tds[5].get_text(strip=True)
+            date_str = tds[5].get_text(strip=True)
+            
+            # Exclude matches without result (unplayed / scheduled / "-:-")
+            if not score or "-:-" in score or not any(c.isdigit() for c in score):
+                continue
+
+            # Live match check: 'run' or 'live' class on tr, or 'play'
+            is_live = "run" in tr_classes or "live" in tr_classes or any("play" in c for c in tr_classes)
+
             if home and away:
                 matches.append({
                     "home": home,
                     "score": score,
                     "away": away,
-                    "date": date
+                    "date": date_str,
+                    "is_live": is_live,
+                    "ts": _parse_match_timestamp(date_str)
                 })
     return matches[:limit]
 
@@ -793,19 +827,20 @@ async def get_football_results(tournament: str = "laliga", force: bool = False) 
                 elif len(group_tables) == 1:
                     standings = _parse_terrikon_standings(group_tables[0])
 
-                # Matches: collect up to 60 matches from all match tables
+                # Matches: collect completed and live matches
                 match_tables = soup.find_all("table", class_="gameresult")
                 seen_pairs = set()
                 for m_tab in match_tables:
-                    parsed_m = _parse_terrikon_matches(m_tab, limit=50)
+                    parsed_m = _parse_terrikon_matches(m_tab, limit=100)
                     for m in parsed_m:
                         pair_key = (m["home"], m["away"], m["date"])
                         if pair_key not in seen_pairs:
                             seen_pairs.add(pair_key)
                             matches.append(m)
-                    if len(matches) >= 250:
-                        break
-                matches = matches[:250]
+
+                # Sort from newest to oldest, keeping LIVE matches at the very top
+                matches.sort(key=lambda m: (1 if m.get("is_live") else 0, m.get("ts", 0.0)), reverse=True)
+                matches = matches[:150]
 
         result_payload = {
             "tournament": t_key,
