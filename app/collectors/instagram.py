@@ -95,14 +95,25 @@ class InstagramCollector(BaseCollector):
                         text_only = item.get("title") or f"Publication de @{self.username}"
                         text_only = html.unescape(text_only)
 
-                    # Clean title: take first sentence or up to 140 chars
-                    lines = [l.strip() for l in text_only.split("\n") if l.strip()]
-                    first_line = lines[0] if lines else text_only
-                    # Strip leading non-alphanumeric noise
-                    title = ContentCleaner.clean_title(first_line)
-                    title = html.unescape(title).strip()
-                    if len(title) > 140:
-                        title = title[:137] + "..."
+                    # Clean title: extract concise first sentence or truncate at word boundary
+                    text_only = ContentCleaner.sanitize_html_entities(text_only)
+                    lines_txt = [l.strip() for l in text_only.split("\n") if l.strip()]
+                    first_line = lines_txt[0] if lines_txt else text_only
+
+                    # Try to extract first complete sentence
+                    m_sent = re.match(r"^([^.!?\n]+[.!?])(?:\s|$)", first_line)
+                    if m_sent and 25 <= len(m_sent.group(1).strip()) <= 110:
+                        title = m_sent.group(1).strip()
+                    else:
+                        title = first_line
+
+                    title = ContentCleaner.clean_title(title)
+                    if len(title) > 105:
+                        words = title[:100].split(" ")
+                        title = " ".join(words[:-1]).strip()
+                        title = re.sub(r"[,\-—:;«\"“'(]+$", "", title).strip()
+                        if not title.endswith((".", "!", "?")):
+                            title += "..."
 
                     # Published timestamp
                     pub_str = item.get("date_modified") or item.get("date_published")
