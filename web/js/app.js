@@ -1265,7 +1265,7 @@
               <button type="button" onclick="filterUkraineByTag('all')" class="ukraine-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${currentTag === 'all' ? 'bg-sky-500 text-white border border-sky-400 shadow-md shadow-sky-500/20' : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/50'}" data-ukr-tag="all">Все проверенные</button>
               <button type="button" onclick="filterUkraineByTag('дніпро')" class="ukraine-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${currentTag === 'дніпро' ? 'bg-sky-500 text-white border border-sky-400 shadow-md shadow-sky-500/20' : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/50'}" data-ukr-tag="дніпро">🎯 Дніпро</button>
               <button type="button" onclick="filterUkraineByTag('oon_nato')" class="ukraine-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${currentTag === 'oon_nato' ? 'bg-sky-500 text-white border border-sky-400 shadow-md shadow-sky-500/20' : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/50'}" data-ukr-tag="oon_nato">🏛️ ООН / НАТО</button>
-              <button type="button" onclick="filterUkraineByTag('tck')" class="ukraine-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${currentTag === 'tck' ? 'bg-sky-500 text-white border border-sky-400 shadow-md shadow-sky-500/20' : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/50'}" data-ukr-tag="tck">🪖 ТЦК</button>
+              <button type="button" onclick="filterUkraineByTag('tck')" class="ukraine-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${currentTag === 'tck' ? 'bg-sky-500 text-white border border-sky-400 shadow-md shadow-sky-500/20' : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/50'}" data-ukr-tag="tck">🎖️ ТЦК</button>
               <button type="button" onclick="filterUkraineByTag('energy')" class="ukraine-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${currentTag === 'energy' ? 'bg-sky-500 text-white border border-sky-400 shadow-md shadow-sky-500/20' : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/50'}" data-ukr-tag="energy">⚡ Энергетика</button>
               <button type="button" onclick="filterUkraineByTag('pvo')" class="ukraine-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${currentTag === 'pvo' ? 'bg-sky-500 text-white border border-sky-400 shadow-md shadow-sky-500/20' : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/50'}" data-ukr-tag="pvo">🛡️ Сводка ПВО</button>
             </div>
@@ -3748,10 +3748,18 @@
         if (device.battery_level !== null && device.battery_level !== undefined) {
           const bLevel = device.battery_level;
           const bColor = bLevel > 50 ? 'emerald' : (bLevel > 20 ? 'amber' : 'rose');
+          let bTimeStr = '';
+          if (device.battery_updated_at) {
+            try {
+              const d = new Date(device.battery_updated_at);
+              bTimeStr = ' • ' + d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            } catch (e) {}
+          }
           batteryHtml = `
-            <button type="button" class="btn-open-battery-history flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-${bColor}-500/15 hover:bg-${bColor}-500/25 border border-${bColor}-500/30 text-${bColor}-300 text-xs font-bold shrink-0 transition-colors cursor-pointer" data-id="${device.id}" title="Посмотреть историю разряда за 24 часа">
+            <button type="button" class="btn-open-battery-history flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-${bColor}-500/15 hover:bg-${bColor}-500/25 border border-${bColor}-500/30 text-${bColor}-300 text-xs font-bold shrink-0 transition-colors cursor-pointer" data-id="${device.id}" title="История разряда за 24ч (обновлено ${bTimeStr.replace(' • ', '')})">
               <span>${device.battery_charging ? '⚡' : '🔋'}</span>
               <span>${bLevel}%</span>
+              ${bTimeStr ? `<span class="text-[10px] opacity-75 font-normal">${bTimeStr}</span>` : ''}
             </button>
           `;
         }
@@ -3911,7 +3919,14 @@
 
       const nokia = state.devices.find(d => d.key_id === 'nokia_afk');
       if (curEl && nokia) {
-        curEl.textContent = `${nokia.battery_level || '--'}%`;
+        let lastTimeStr = '';
+        if (nokia.battery_updated_at) {
+          try {
+            const d = new Date(nokia.battery_updated_at);
+            lastTimeStr = ` (${d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })})`;
+          } catch (e) {}
+        }
+        curEl.textContent = `${nokia.battery_level || '--'}%${lastTimeStr}`;
       }
 
       if (listEl) {
@@ -3931,15 +3946,37 @@
                 </div>
               `;
             } else {
-              listEl.innerHTML = hist.points.slice().reverse().map(pt => `
+              listEl.innerHTML = hist.points.slice().reverse().map(pt => {
+                let timeDisplay = pt.time || '';
+                const rawIso = pt.recorded_at || pt.time;
+                if (rawIso && (rawIso.includes('T') || rawIso.includes('-') || rawIso.includes(':'))) {
+                  try {
+                    const d = new Date(rawIso);
+                    if (!isNaN(d.getTime())) {
+                      const now = new Date();
+                      const isToday = d.toDateString() === now.toDateString();
+                      const yesterday = new Date(now);
+                      yesterday.setDate(now.getDate() - 1);
+                      const isYesterday = d.toDateString() === yesterday.toDateString();
+
+                      const timeStr = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+                      const datePrefix = isToday ? '' : (isYesterday ? 'Вчера, ' : d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }) + ', ');
+                      timeDisplay = `${datePrefix}${timeStr}`;
+                    }
+                  } catch (e) {
+                    timeDisplay = pt.time;
+                  }
+                }
+                return `
                 <div class="flex items-center justify-between p-2 rounded-xl bg-slate-900/90 border border-slate-800">
-                  <span class="text-slate-400 font-mono text-[11px]">${pt.time}</span>
+                  <span class="text-slate-400 font-mono text-[11px]">${timeDisplay}</span>
                   <div class="flex items-center gap-2">
                     <span class="text-slate-400 text-[10px]">${pt.charging ? '⚡ Зарядка' : '🔋 Батарея'}</span>
                     <span class="font-bold text-xs ${pt.level > 50 ? 'text-emerald-400' : (pt.level > 20 ? 'text-amber-400' : 'text-rose-400')}">${pt.level}%</span>
                   </div>
                 </div>
-              `).join('');
+              `;
+              }).join('');
             }
           }
         }
