@@ -13,7 +13,7 @@ logger = logging.getLogger("news_ai.collectors.rss")
 class RSSCollector(BaseCollector):
     """Collector for RSS, Atom, and RDF feeds using httpx and feedparser."""
 
-    DEFAULT_USER_AGENT = "PersonalNewsAI/0.1 (+https://github.com/PetroProg/AI-news)"
+    DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 (PersonalNewsAI/0.1)"
     DEFAULT_TIMEOUT_SECONDS = 15.0
 
     def __init__(

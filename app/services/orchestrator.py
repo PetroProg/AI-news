@@ -124,6 +124,8 @@ class PipelineOrchestrator:
                 ("OpenNET Linux News", "https://www.opennet.ru/opennews/opennews_all.rss"),
                 ("ByteByteGo: System Design", "https://www.youtube.com/feeds/videos.xml?channel_id=UCZgt6AzoyjslHTC9dz0UoTw"),
                 ("Fireship: Code & Tech", "https://www.youtube.com/feeds/videos.xml?channel_id=UCsBjURrPoezykLs9EqgamOA"),
+                ("Украинская правда", "https://www.pravda.com.ua/rss/"),
+                ("LIGA.net", "https://news.liga.net/ua/all/rss.xml"),
             ]
             for name, feed_url in rss_sources:
                 try:

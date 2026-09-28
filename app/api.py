@@ -876,6 +876,23 @@ async def get_football_results(tournament: str = "laliga", force: bool = False) 
     }
 
 
+
+OPERATIONAL_ALERT_KEYWORDS = [
+    "мониторинг", "моніторинг",
+    "курсом на", "курс на", "напрямку", "в напрямку", "в сторону", "в направлении",
+    "летить дрон", "летит дрон", "бпла на", "шахед на", "шахеды на", "шахеди на",
+    "загроза балістики", "угроза баллистики", "пуски баллистики", "пуски ракет",
+    "чисто в", "відбій", "отбой", "пуски шахедів", "пуски шахедов",
+    "звуки взрывов", "звуки вибухів", "слышны взрывы", "чути вибухи", "гучно в",
+    "столб дыма", "стовп диму", "прилёт", "прилет", "приліт",
+    "в небе над", "в небі над", "зафиксирован пуск", "зафіксовано пуск",
+    "по информации мониторинга", "за інформацією моніторингу",
+    "реактивных бпла", "реактивні бпла", "реактивного шахеда", "реактивного «шахеда»",
+    "стрельба с массовым выстрелом", "тела людей лежат на дороге", "несколько нарядов полиции прибыли",
+    "взлёт дрон", "взлет дрон"
+]
+
+
 @app.get("/api/news")
 async def get_news_feed(
     limit: int = 100,
@@ -907,17 +924,28 @@ async def get_news_feed(
         title_lower = (art.title or "").lower()
         content_lower = (art.cleaned_content or raw_text).lower()
 
+        # Off-topic checks for tech / world news
+        is_it_ai_offtopic = any(k in title_lower or k in content_lower for k in ["билл гейтс", "штучного интеллект", "искусственного интеллект", "нейросеть", "chatgpt", "openai", "deepseek", "llm"])
+        is_world_offtopic = any(k in title_lower for k in ["вучич", "сербия", "сербии", "сербию", "белград", "военные нато случайно обстреляли"]) and not any(k in title_lower for k in ["украин", "киев", "днепр", "всу", "зеленск"])
+
         is_football = any(k in source_combined for k in ["marca", "primera", "sportsru", "fabrizio", "terrikon", "uefa", "футбол", "football"]) or \
                       (raw_cat and ("футбол" in raw_cat.lower() or "football" in raw_cat.lower())) or \
                       any(k in title_lower for k in FOOTBALL_INDICATORS)
         is_f1 = any(k in source_combined for k in ["formula 1", "formula1", "f1", "формула-1"]) or \
                 (raw_cat and raw_cat.lower() == "f1") or \
                 any(k in title_lower for k in F1_INDICATORS)
-        is_ukraine = any(k in source_combined for k in ["novynaukr", "украин", "украина", "україна"]) or (raw_cat and "украин" in raw_cat.lower())
         is_gaming = any(k in source_combined for k in ["csgo", "cs3", "clashroyalepin", "hltv", "game", "киберспорт"]) or \
                     any(k in title_lower for k in GAMING_INDICATORS)
+        is_ukraine = not is_it_ai_offtopic and not is_world_offtopic and (
+            any(k in source_combined for k in ["pravda.com.ua", "liga.net", "novynaukr", "украин", "украина", "україна"]) or 
+            (raw_cat and "украин" in raw_cat.lower())
+        )
 
-        if is_football:
+        if is_it_ai_offtopic:
+            cat_name = "AI & Нейросети"
+        elif is_world_offtopic:
+            cat_name = "Мир"
+        elif is_football:
             cat_name = "Футбол"
         elif is_f1:
             cat_name = "F1"
@@ -927,7 +955,6 @@ async def get_news_feed(
             cat_name = "CS2"
         elif raw_cat:
             cat_name = raw_cat
-            # Safety check: if assigned to IT but contains gaming keywords, correct to gaming
             if ("аналитик" in raw_cat.lower() or "dev" in raw_cat.lower() or "it" in raw_cat.lower()) and any(k in title_lower for k in GAMING_INDICATORS):
                 cat_name = "CS2"
             elif cat_name.lower() in ["игры & киберспорт", "игры и киберспорт", "gaming", "cs2"]:
@@ -951,12 +978,8 @@ async def get_news_feed(
             matched_kws.append("финал")
 
         is_operational_alert = False
-        if cat_name == "Украина":
-            is_operational_alert = any(ping in text_for_check for ping in [
-                "курсом на", "курс на", "напрямку", "в напрямку", "в сторону", "в направлении",
-                "летить дрон", "летит дрон", "тривога в", "тревога в", "загроза балістики", "угроза баллистики",
-                "чисто в", "відбій", "отбой", "пуски шахедів", "пуски шахедов"
-            ]) and len(text_for_check) < 300
+        if cat_name == "Украина" or any(k in source_combined for k in ["novynaukr"]):
+            is_operational_alert = any(ping in text_for_check for ping in OPERATIONAL_ALERT_KEYWORDS) or len(content_lower) < 180
 
         has_ukr_priority = (cat_name == "Украина") and not is_operational_alert and any(kw in text_for_check for kw in [
             "дніпро", "днепр", "дніпров", "оон", "нато", "nato", "тцк", "блекаут", "блэкаут",
@@ -1018,6 +1041,11 @@ async def get_news_feed(
         elif is_priority and score >= 6.0 and score < 8.5:
             score = 8.5
 
+        # Tactical operational alerts are suppressed from the main cards feed.
+        # They are aggregated into the top AI-Digest banner and the live aside sidebar.
+        if is_operational_alert:
+            continue
+
         # Strict rule: user is not interested in news below 5.1
         if score < 5.1:
             continue
@@ -1030,6 +1058,12 @@ async def get_news_feed(
         # Require a valid AI summary
         if not art.summary or not art.summary.short_summary:
             continue
+
+        # Quality filter for Ukraine category: minimum substance in summary
+        if cat_name == "Украина":
+            summary_txt = (art.summary.short_summary or "").strip()
+            if len(summary_txt) < 40:
+                continue
 
         news_items.append({
             "id": art.id,

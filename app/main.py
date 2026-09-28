@@ -28,6 +28,16 @@ RSS_FEEDS = [
         "url": "https://www.opennet.ru/opennews/opennews_all.rss",
         "lang": "ru",
     },
+    {
+        "name": "Украинская правда",
+        "url": "https://www.pravda.com.ua/rss/",
+        "lang": "uk",
+    },
+    {
+        "name": "LIGA.net",
+        "url": "https://news.liga.net/ua/all/rss.xml",
+        "lang": "uk",
+    },
 ]
 
 TELEGRAM_CHANNELS = [

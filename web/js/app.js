@@ -1099,6 +1099,9 @@
         }
       });
 
+      if (typeof renderUkraineDigestBanner === 'function') {
+        renderUkraineDigestBanner();
+      }
       renderNews();
     };
 
@@ -1116,6 +1119,8 @@
         if (res.ok) {
           const data = await res.json();
           lastUkraineSummaryFetch = Date.now();
+          ukraineAttacksData = data;
+          renderUkraineDigestBanner();
 
           const badgeEl = document.getElementById('attack-window-badge');
           const summaryEl = document.getElementById('attack-summary-text');
@@ -1176,7 +1181,106 @@
     }
     window.loadUkraineAttacksSummary = loadUkraineAttacksSummary;
  
-    // ==========================================
+    
+    let ukraineAttacksData = null;
+
+    function renderUkraineDigestBanner() {
+      const bannerEl = document.getElementById('ukraine-ai-digest-banner');
+      if (!bannerEl) return;
+
+      const isUkraine = (state.newsCategoryFilter === 'Украина' || 
+                         (state.newsCategoryFilter && state.newsCategoryFilter.toLowerCase().includes('украин')));
+
+      if (!isUkraine) {
+        bannerEl.style.display = 'none';
+        return;
+      }
+
+      if (!ukraineAttacksData) {
+        bannerEl.style.display = 'none';
+        loadUkraineAttacksSummary();
+        return;
+      }
+
+      bannerEl.style.display = 'block';
+      const data = ukraineAttacksData;
+      const bCount = (data.stats && ((data.stats.ballistics_signals || 0) + (data.stats.missiles_signals || 0))) || 0;
+      const dCount = (data.stats && data.stats.drones_signals) || 0;
+      const pvoCount = (data.stats && data.stats.air_defense_signals) || 0;
+      const totalAlerts = (data.stats && data.stats.total_alerts) || 0;
+      const windowStr = data.attack_window || 'За последние 24 часа';
+      const summaryText = data.summary_text || 'Оперативная обстановка в регионах стабильная.';
+      const hotspots = data.hotspots || [];
+
+      const currentTag = selectedUkraineTag || 'all';
+
+      bannerEl.innerHTML = `
+        <div class="glass-panel rounded-3xl p-5 md:p-6 border border-sky-500/30 bg-gradient-to-br from-slate-900/90 via-slate-950/90 to-sky-950/20 shadow-2xl relative overflow-hidden group">
+          <div class="absolute -right-20 -top-20 w-64 h-64 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div class="flex items-center gap-2.5">
+              <span class="p-2 rounded-2xl bg-sky-500/20 border border-sky-400/40 text-xl flex items-center justify-center shadow-lg shadow-sky-500/20">🛡️</span>
+              <div>
+                <h3 class="text-base md:text-lg font-black text-white tracking-wide flex items-center gap-2">
+                  <span>AI-Сводка безопасности: главное за сутки</span>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Синтезировано ИИ</span>
+                </h3>
+                <p class="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
+                  <span class="inline-block w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                  <span>Окно анализа: <strong class="text-slate-200 font-mono">${windowStr}</strong></span>
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 flex-wrap">
+              <div class="px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-700/60 flex items-center gap-2 text-xs" title="Баллистические и ракетные угрозы">
+                <span class="text-amber-400 font-bold">🚀 Баллистика / Ракеты:</span>
+                <span class="font-mono font-bold text-white text-sm">${bCount}</span>
+              </div>
+              <div class="px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-700/60 flex items-center gap-2 text-xs" title="Ударные дроны Shahed">
+                <span class="text-sky-400 font-bold">🛸 БПЛА / Шахеды:</span>
+                <span class="font-mono font-bold text-white text-sm">${dCount}</span>
+              </div>
+              <div class="px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-700/60 flex items-center gap-2 text-xs" title="Перехваты силами ПВО">
+                <span class="text-emerald-400 font-bold">🛡️ ПВО перехватов:</span>
+                <span class="font-mono font-bold text-white text-sm">${pvoCount}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800/80 mb-4 text-xs md:text-sm text-slate-200 leading-relaxed">
+            <p class="font-medium text-slate-300">${summaryText}</p>
+            ${hotspots.length > 0 ? `
+              <div class="mt-2.5 pt-2.5 border-t border-slate-800/60 flex items-center gap-1.5 flex-wrap text-xs">
+                <span class="text-slate-400 font-medium">Ключевые направления:</span>
+                ${hotspots.map(h => `<span class="px-2 py-0.5 rounded-lg bg-sky-500/15 text-sky-300 border border-sky-500/30 text-[11px] font-semibold">📍 ${h}</span>`).join('')}
+              </div>
+            ` : ''}
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-800/50">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">Фильтр новостей:</span>
+              <button type="button" onclick="filterUkraineByTag('all')" class="ukraine-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${currentTag === 'all' ? 'bg-sky-500 text-white border border-sky-400 shadow-md shadow-sky-500/20' : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/50'}" data-ukr-tag="all">Все проверенные</button>
+              <button type="button" onclick="filterUkraineByTag('дніпро')" class="ukraine-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${currentTag === 'дніпро' ? 'bg-sky-500 text-white border border-sky-400 shadow-md shadow-sky-500/20' : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/50'}" data-ukr-tag="дніпро">🎯 Дніпро</button>
+              <button type="button" onclick="filterUkraineByTag('oon_nato')" class="ukraine-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${currentTag === 'oon_nato' ? 'bg-sky-500 text-white border border-sky-400 shadow-md shadow-sky-500/20' : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/50'}" data-ukr-tag="oon_nato">🏛️ ООН / НАТО</button>
+              <button type="button" onclick="filterUkraineByTag('tck')" class="ukraine-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${currentTag === 'tck' ? 'bg-sky-500 text-white border border-sky-400 shadow-md shadow-sky-500/20' : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/50'}" data-ukr-tag="tck">🪖 ТЦК</button>
+              <button type="button" onclick="filterUkraineByTag('energy')" class="ukraine-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${currentTag === 'energy' ? 'bg-sky-500 text-white border border-sky-400 shadow-md shadow-sky-500/20' : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/50'}" data-ukr-tag="energy">⚡ Энергетика</button>
+              <button type="button" onclick="filterUkraineByTag('pvo')" class="ukraine-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${currentTag === 'pvo' ? 'bg-sky-500 text-white border border-sky-400 shadow-md shadow-sky-500/20' : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/50'}" data-ukr-tag="pvo">🛡️ Сводка ПВО</button>
+            </div>
+
+            <a href="#ukraine-signals-list" onclick="document.getElementById('ukraine-attacks-aside')?.scrollIntoView({behavior:'smooth'})" class="text-xs text-sky-400 hover:text-sky-300 font-semibold flex items-center gap-1 hover:underline transition-all">
+              <span>📡 Хроника сигналов (${totalAlerts})</span>
+              <span>→</span>
+            </a>
+          </div>
+        </div>
+      `;
+    }
+    window.renderUkraineDigestBanner = renderUkraineDigestBanner;
+
+// ==========================================
     // F1 2026 STANDINGS & RACES RESULTS LOGIC
     // ==========================================
     let f1ResultsData = null;
@@ -2829,8 +2933,8 @@
       // 5. Strict Quality Filter & Tag Filter for Ukraine:
       const isUkraineCategory = targetCatLower === 'украина' || targetCatLower.includes('украин') || targetCatLower.includes('україна') || targetCatLower.includes('ukraine');
       if (isUkraineCategory) {
-        // Suppress micro-alerts: do not show tactical drone/alert spams in main news feed (they are in the Attacks Aside)
-        if (item.is_operational_alert && score < 6.0) {
+        // Suppress micro-alerts completely from main card feed (they are in the top digest and aside)
+        if (item.is_operational_alert) {
           return false;
         }
 
@@ -3177,6 +3281,11 @@
       } else {
         const banner = document.getElementById('f1-latest-race-banner');
         if (banner) banner.style.display = 'none';
+      }
+
+      // Update Ukraine 24h AI Digest Banner
+      if (typeof renderUkraineDigestBanner === 'function') {
+        renderUkraineDigestBanner();
       }
 
       const isAll = (state.newsCategoryFilter === 'all' || state.newsCategoryFilter === 'Все' || !state.newsCategoryFilter);
