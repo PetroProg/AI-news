@@ -1003,26 +1003,18 @@
                 </div>
               </div>
 
-              <!-- Switcher Tabs: Top 10 vs Drivers vs Races -->
+              <!-- Switcher Tabs: Drivers Standings vs Grand Prix Races -->
               <div class="glass-panel p-1 rounded-2xl border border-slate-800 bg-slate-950/90 flex items-center gap-1 shadow-md">
-                <button type="button" id="f1-tab-top10" onclick="switchF1Tab('top10')" class="flex-1 py-1.5 px-2 rounded-xl text-xs font-bold transition-all bg-red-600 text-white shadow-md flex items-center justify-center gap-1">
-                  <span>🏆</span> <span>Топ-10 гонки</span>
-                </button>
-                <button type="button" id="f1-tab-drivers" onclick="switchF1Tab('drivers')" class="flex-1 py-1.5 px-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1">
+                <button type="button" id="f1-tab-drivers" onclick="switchF1Tab('drivers')" class="flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all bg-red-600 text-white shadow-md flex items-center justify-center gap-1.5">
                   <span>🏎️</span> <span>Пилоты</span>
                 </button>
-                <button type="button" id="f1-tab-races" onclick="switchF1Tab('races')" class="flex-1 py-1.5 px-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1">
+                <button type="button" id="f1-tab-races" onclick="switchF1Tab('races')" class="flex-1 py-1.5 px-3 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1.5">
                   <span>🏁</span> <span>Гран-при</span>
                 </button>
               </div>
 
-              <!-- Content Tab 0: LATEST GRAND PRIX TOP 10 -->
-              <div id="f1-block-top10" class="space-y-1.5 max-h-[360px] sm:max-h-[440px] lg:max-h-[520px] overflow-y-auto pr-1 scrollbar-thin">
-                <div class="text-xs text-slate-400 p-4 text-center">Загрузка Топ-10 последней гонки...</div>
-              </div>
-
-              <!-- Content Tab 1: DRIVERS STANDINGS -->
-              <div id="f1-block-drivers" style="display: none;" class="space-y-1.5 max-h-[360px] sm:max-h-[440px] lg:max-h-[520px] overflow-y-auto pr-1 scrollbar-thin">
+              <!-- Content Tab 1: DRIVERS STANDINGS (Default view) -->
+              <div id="f1-block-drivers" class="space-y-1.5 max-h-[360px] sm:max-h-[440px] lg:max-h-[520px] overflow-y-auto pr-1 scrollbar-thin">
                 <div class="text-xs text-slate-400 p-4 text-center">Загрузка зачета пилотов...</div>
               </div>
 

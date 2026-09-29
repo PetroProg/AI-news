@@ -1285,7 +1285,7 @@
     // ==========================================
     let f1ResultsData = null;
     let selectedF1Tag = 'all';
-    let activeF1Tab = 'top10';
+    let activeF1Tab = 'drivers';
     let lastF1ResultsFetch = 0;
 
     async function loadF1Results(force = false) {
@@ -1336,7 +1336,6 @@
 
     function renderF1Results() {
       if (!f1ResultsData) return;
-      renderF1Top10(f1ResultsData.latest_race);
       renderF1Drivers(f1ResultsData.drivers || []);
       renderF1Races(f1ResultsData.races || []);
       renderF1Top10Banner(f1ResultsData.latest_race);
@@ -1615,22 +1614,19 @@
     }
 
     window.switchF1Tab = function(tab) {
+      if (tab === 'top10') tab = 'drivers';
       activeF1Tab = tab;
-      const bTop10 = document.getElementById('f1-block-top10');
       const bDrivers = document.getElementById('f1-block-drivers');
       const bRaces = document.getElementById('f1-block-races');
-      const tabTop10 = document.getElementById('f1-tab-top10');
       const tabDrivers = document.getElementById('f1-tab-drivers');
       const tabRaces = document.getElementById('f1-tab-races');
 
-      const activeClass = 'flex-1 py-1.5 px-2 rounded-xl text-xs font-bold transition-all bg-red-600 text-white shadow-md flex items-center justify-center gap-1';
-      const inactiveClass = 'flex-1 py-1.5 px-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1';
+      const activeClass = 'flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all bg-red-600 text-white shadow-md flex items-center justify-center gap-1.5';
+      const inactiveClass = 'flex-1 py-1.5 px-3 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1.5';
 
-      if (bTop10) bTop10.style.display = (tab === 'top10') ? 'block' : 'none';
       if (bDrivers) bDrivers.style.display = (tab === 'drivers') ? 'block' : 'none';
       if (bRaces) bRaces.style.display = (tab === 'races') ? 'block' : 'none';
 
-      if (tabTop10) tabTop10.className = (tab === 'top10') ? activeClass : inactiveClass;
       if (tabDrivers) tabDrivers.className = (tab === 'drivers') ? activeClass : inactiveClass;
       if (tabRaces) tabRaces.className = (tab === 'races') ? activeClass : inactiveClass;
     };
