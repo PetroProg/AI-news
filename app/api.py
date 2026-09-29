@@ -1871,7 +1871,7 @@ async def ping_single_device(device_id: int, session: AsyncSession = Depends(get
 
 @app.get("/api/devices/nokia/battery/history")
 async def get_nokia_battery_history(session: AsyncSession = Depends(get_db_session)) -> Dict[str, Any]:
-    """Получить историю разряда батареи Nokia 6.1 за последние 24 часа."""
+    """Получить историю разряда батареи Nokia 6.1 за последние 24-48 часов."""
     stmt = text("""
         SELECT percentage, is_charging, recorded_at 
         FROM battery_history 
@@ -1881,6 +1881,21 @@ async def get_nokia_battery_history(session: AsyncSession = Depends(get_db_sessi
     """)
     res = await session.execute(stmt)
     rows = res.fetchall()
+
+    is_fallback = False
+    if not rows:
+        fb_stmt = text("""
+            SELECT percentage, is_charging, recorded_at 
+            FROM battery_history 
+            WHERE device_key = 'nokia_afk' 
+            ORDER BY recorded_at DESC 
+            LIMIT 40
+        """)
+        fb_res = await session.execute(fb_stmt)
+        fb_rows = fb_res.fetchall()
+        if fb_rows:
+            rows = list(reversed(fb_rows))
+            is_fallback = True
 
     points = []
     for r in rows:
@@ -1892,10 +1907,18 @@ async def get_nokia_battery_history(session: AsyncSession = Depends(get_db_sessi
             "time": iso_str
         })
 
+    dev_stmt = text("SELECT battery_level, battery_charging, battery_updated_at FROM managed_devices WHERE key_id = 'nokia_afk'")
+    dev_res = await session.execute(dev_stmt)
+    dev_row = dev_res.fetchone()
+
     return {
         "device": "Nokia 6.1 (AFK)",
         "points": points,
-        "count": len(points)
+        "count": len(points),
+        "is_fallback": is_fallback,
+        "battery_level": dev_row[0] if dev_row else None,
+        "battery_charging": dev_row[1] if dev_row else None,
+        "battery_updated_at": dev_row[2].isoformat() if dev_row and dev_row[2] else None
     }
 
 

@@ -3694,6 +3694,35 @@
       }
     }
 
+    function formatBatteryTime(isoString) {
+      if (!isoString) return '';
+      try {
+        const d = new Date(isoString);
+        if (isNaN(d.getTime())) return '';
+        const now = new Date();
+        const diffMs = now - d;
+        const diffMins = Math.round(diffMs / 60000);
+
+        if (diffMins < 2) return 'только что';
+        if (diffMins < 60) return `${diffMins} мин назад`;
+
+        const timeStr = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        const isToday = d.toDateString() === now.toDateString();
+        if (isToday) return `сегодня ${timeStr}`;
+
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+        if (d.toDateString() === yesterday.toDateString()) {
+          return `вчера ${timeStr}`;
+        }
+
+        const dateStr = d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
+        return `${dateStr} ${timeStr}`;
+      } catch (e) {
+        return '';
+      }
+    }
+
     function renderDevices() {
       const container = document.getElementById('devices-container');
       if (!container) return;
@@ -3750,16 +3779,14 @@
           const bColor = bLevel > 50 ? 'emerald' : (bLevel > 20 ? 'amber' : 'rose');
           let bTimeStr = '';
           if (device.battery_updated_at) {
-            try {
-              const d = new Date(device.battery_updated_at);
-              bTimeStr = ' • ' + d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-            } catch (e) {}
+            const formatted = formatBatteryTime(device.battery_updated_at);
+            if (formatted) bTimeStr = ' • ' + formatted;
           }
           batteryHtml = `
-            <button type="button" class="btn-open-battery-history flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-${bColor}-500/15 hover:bg-${bColor}-500/25 border border-${bColor}-500/30 text-${bColor}-300 text-xs font-bold shrink-0 transition-colors cursor-pointer" data-id="${device.id}" title="История разряда за 24ч (обновлено ${bTimeStr.replace(' • ', '')})">
+            <button type="button" class="btn-open-battery-history flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-${bColor}-500/15 hover:bg-${bColor}-500/25 border border-${bColor}-500/30 text-${bColor}-300 text-xs font-bold shrink-0 transition-colors cursor-pointer" data-id="${device.id}" title="История разряда за 24ч (замер: ${bTimeStr.replace(' • ', '')})">
               <span>${device.battery_charging ? '⚡' : '🔋'}</span>
               <span>${bLevel}%</span>
-              ${bTimeStr ? `<span class="text-[10px] opacity-75 font-normal">${bTimeStr}</span>` : ''}
+              ${bTimeStr ? `<span class="text-[10px] opacity-80 font-normal">${bTimeStr}</span>` : ''}
             </button>
           `;
         }
@@ -3919,13 +3946,8 @@
 
       const nokia = state.devices.find(d => d.key_id === 'nokia_afk');
       if (curEl && nokia) {
-        let lastTimeStr = '';
-        if (nokia.battery_updated_at) {
-          try {
-            const d = new Date(nokia.battery_updated_at);
-            lastTimeStr = ` (${d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })})`;
-          } catch (e) {}
-        }
+        const timeFormatted = formatBatteryTime(nokia.battery_updated_at);
+        const lastTimeStr = timeFormatted ? ` (${timeFormatted})` : '';
         curEl.textContent = `${nokia.battery_level || '--'}%${lastTimeStr}`;
       }
 
@@ -3938,35 +3960,29 @@
         if (res.ok) {
           const hist = await res.json();
           if (countEl) countEl.textContent = hist.count;
+          if (curEl) {
+            const lvl = hist.battery_level !== null && hist.battery_level !== undefined ? hist.battery_level : (nokia?.battery_level || '--');
+            const timeFmt = formatBatteryTime(hist.battery_updated_at || nokia?.battery_updated_at);
+            curEl.textContent = `${lvl}%${timeFmt ? ` (${timeFmt})` : ''}`;
+          }
+
           if (listEl) {
             if (!hist.points || hist.points.length === 0) {
               listEl.innerHTML = `
                 <div class="p-3 text-center text-slate-400 text-[11px] rounded-xl bg-slate-900 border border-slate-800">
-                  Пока нет сохраненных точек за последние 24ч.<br>Дневной интервал замеров — каждые 30 минут (с 08:00 до 20:00).
+                  Пока нет сохраненных замеров.<br>Дневной интервал замеров — каждые 30 минут (с 08:00 до 20:00).
                 </div>
               `;
             } else {
-              listEl.innerHTML = hist.points.slice().reverse().map(pt => {
-                let timeDisplay = pt.time || '';
-                const rawIso = pt.recorded_at || pt.time;
-                if (rawIso && (rawIso.includes('T') || rawIso.includes('-') || rawIso.includes(':'))) {
-                  try {
-                    const d = new Date(rawIso);
-                    if (!isNaN(d.getTime())) {
-                      const now = new Date();
-                      const isToday = d.toDateString() === now.toDateString();
-                      const yesterday = new Date(now);
-                      yesterday.setDate(now.getDate() - 1);
-                      const isYesterday = d.toDateString() === yesterday.toDateString();
+              const fallbackNotice = hist.is_fallback ? `
+                <div class="p-2 mb-2 text-center text-amber-300 text-[11px] rounded-xl bg-amber-500/10 border border-amber-500/20">
+                  ⚠️ Новых замеров за 24ч не поступало. Показаны предыдущие замеры.
+                </div>
+              ` : '';
 
-                      const timeStr = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-                      const datePrefix = isToday ? '' : (isYesterday ? 'Вчера, ' : d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }) + ', ');
-                      timeDisplay = `${datePrefix}${timeStr}`;
-                    }
-                  } catch (e) {
-                    timeDisplay = pt.time;
-                  }
-                }
+              const itemsHtml = hist.points.slice().reverse().map(pt => {
+                const rawIso = pt.recorded_at || pt.time;
+                const timeDisplay = formatBatteryTime(rawIso) || pt.time || '—';
                 return `
                 <div class="flex items-center justify-between p-2 rounded-xl bg-slate-900/90 border border-slate-800">
                   <span class="text-slate-400 font-mono text-[11px]">${timeDisplay}</span>
@@ -3977,6 +3993,8 @@
                 </div>
               `;
               }).join('');
+
+              listEl.innerHTML = fallbackNotice + itemsHtml;
             }
           }
         }

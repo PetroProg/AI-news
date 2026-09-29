@@ -1,6 +1,6 @@
 import logging
 from typing import Optional
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -54,19 +54,75 @@ class SummarizerService:
         self.session = session
         self.ai_client = ai_client or OllamaClient()
 
-    async def get_or_create_category(self, name: str) -> Category:
-        """Find or create a topic category."""
-        clean_name = name.strip() or "IT"
-        slug = clean_name.lower().replace(" ", "-").replace("&", "and")
+    CATEGORY_ALIASES = {
+        "мир": "world",
+        "world": "world",
+        "новости мира": "world",
+        "международные": "world",
+        "футбол": "football",
+        "football": "football",
+        "спорт": "football",
+        "f1": "f1",
+        "формула 1": "f1",
+        "формула-1": "f1",
+        "cs": "cs2",
+        "cs2": "cs2",
+        "counter-strike": "cs2",
+        "киберспорт": "cs2",
+        "кибербезопасность": "кибербезопасность",
+        "security": "кибербезопасность",
+        "швейцария": "swiss",
+        "swiss": "swiss",
+        "украина": "украина",
+        "ukraine": "украина",
+        "it": "it",
+        "devops": "devops-and-linux",
+        "linux": "devops-and-linux",
+        "ai": "ai-and-нейросети",
+        "нейросети": "ai-and-нейросети",
+    }
 
-        stmt = select(Category).where(Category.slug == slug)
+    async def get_or_create_category(self, name: str) -> Category:
+        """Find or create a topic category, safely resolving aliases and avoiding duplicate constraints."""
+        clean_name = name.strip() or "IT"
+        lower_name = clean_name.lower()
+        slug = self.CATEGORY_ALIASES.get(lower_name, lower_name.replace(" ", "-").replace("&", "and"))
+
+        # 1. Search by slug OR by exact name OR case-insensitive name
+        stmt = select(Category).where(
+            (Category.slug == slug) | 
+            (func.lower(Category.name) == lower_name) |
+            (Category.name == clean_name)
+        )
         res = await self.session.execute(stmt)
-        category = res.scalar_one_or_none()
+        category = res.scalars().first()
 
         if not category:
-            category = Category(name=clean_name, slug=slug)
-            self.session.add(category)
-            await self.session.flush()
+            # 2. Check if alias matches any category slug
+            alias_slug = self.CATEGORY_ALIASES.get(lower_name)
+            if alias_slug:
+                stmt_alias = select(Category).where(Category.slug == alias_slug)
+                res_alias = await self.session.execute(stmt_alias)
+                category = res_alias.scalars().first()
+
+        if not category:
+            try:
+                category = Category(name=clean_name, slug=slug)
+                self.session.add(category)
+                await self.session.flush()
+            except Exception as exc:
+                logger.warning("Integrity conflict creating category '%s' (slug '%s'): %s. Re-fetching existing category...", clean_name, slug, exc)
+                await self.session.rollback()
+                stmt_fallback = select(Category).where(
+                    (Category.slug == slug) | 
+                    (func.lower(Category.name) == lower_name) |
+                    (Category.name == clean_name)
+                )
+                res_fallback = await self.session.execute(stmt_fallback)
+                category = res_fallback.scalars().first()
+                if not category:
+                    res_it = await self.session.execute(select(Category).where(Category.slug == "it"))
+                    category = res_it.scalars().first()
 
         return category
 
