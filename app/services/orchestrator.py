@@ -185,7 +185,10 @@ class PipelineOrchestrator:
                     except Exception:
                         pass
                 summarizer = SummarizerService(session=session)
-                await summarizer.summarize_pending_articles(limit=30)
+                try:
+                    await summarizer.summarize_pending_articles(limit=30)
+                except Exception as sum_err:
+                    logger.error("Error during GPU summarization: %s", sum_err, exc_info=True)
             else:
                 logger.warning("AI GPU worker did not respond within %ds. Attempting fallback to local Ollama (qwen2.5:0.5b)...", gpu_timeout)
                 # Try fallback to local Ollama on host
@@ -201,7 +204,10 @@ class PipelineOrchestrator:
                     logger.info("Local Ollama fallback is ONLINE. Summarizing with local model...")
                     local_ai = OllamaClient(base_url="http://localhost:11434", model="qwen2.5:0.5b", timeout=120.0)
                     summarizer = SummarizerService(session=session, ai_client=local_ai)
-                    await summarizer.summarize_pending_articles(limit=15)
+                    try:
+                        await summarizer.summarize_pending_articles(limit=15)
+                    except Exception as sum_err:
+                        logger.error("Error during local summarizer fallback: %s", sum_err, exc_info=True)
                     if self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
                         try:
                             await self.bot.send_message(
@@ -225,9 +231,12 @@ class PipelineOrchestrator:
 
             # 6. Report Compilation Phase
             builder = ReportBuilderService(session=session)
-            # Morning covers overnight (14h), Evening covers workday (12h)
-            hours_back = 14 if report_type == ReportType.MORNING else 12
+            # Morning covers overnight (18h), Evening covers workday (14h)
+            hours_back = 18 if report_type == ReportType.MORNING else 14
             report = await builder.build_digest(report_type=report_type, hours_back=hours_back)
+            if not report:
+                logger.info("No articles in %dh window, expanding search to 24h...", hours_back)
+                report = await builder.build_digest(report_type=report_type, hours_back=24)
 
             # 7. Dispatch to Telegram
             if report and self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
