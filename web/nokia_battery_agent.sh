@@ -5,7 +5,7 @@
 # Server: petroprog via Tailscale (100.107.4.120:8000)
 # Schedule:
 #   - 08:00 - 20:00: Send updates every 30 minutes
-#   - 20:00 - 08:00: Silent Night Mode (No transmissions, 0 network)
+#   - 20:00 - 08:00: Deep Sleep (No transmission, saves battery)
 # ========================================================
 
 SERVER_URL="http://100.107.4.120:8000/api/devices/nokia/battery"
@@ -14,15 +14,15 @@ DAY_INTERVAL=1800 # 30 minutes in seconds
 echo "=============================================="
 echo " Nokia 6.1 Battery Saver Agent Started"
 echo " Day mode (08:00-20:00): Every 30 min"
-echo " Night mode (20:00-08:00): Silent (No data sent)"
+echo " Night mode (20:00-08:00): Deep Sleep (Silent)"
 echo " Server target: $SERVER_URL"
 echo "=============================================="
 
-# Keep partial wake lock so Android kernel doesn't freeze the sleep timer when screen turns off
+# Keep partial wake lock so Android Doze doesn't freeze the process
 termux-wake-lock 2>/dev/null
 
 while true; do
-    # Current local hour (0-23)
+    # Current local hour (00-23)
     CURRENT_HOUR=$(date +"%H" | sed 's/^0//')
     [ -z "$CURRENT_HOUR" ] && CURRENT_HOUR=0
     
@@ -43,19 +43,13 @@ while true; do
                 TIMESTAMP=$(date +"%H:%M:%S")
                 RESP=$(curl -s -m 10 -X POST "${SERVER_URL}?level=${PERCENT}&charging=${CHARGING}")
                 echo "[$TIMESTAMP] Battery: ${PERCENT}%, Charging: ${CHARGING} | Result: OK"
-            else
-                echo "[$(date +"%H:%M:%S")] Could not extract battery percentage"
             fi
-        else
-            echo "[$(date +"%H:%M:%S")] termux-battery-status is empty. Ensure Termux:API is installed and granted permissions."
         fi
         
         sleep $DAY_INTERVAL
     else
         TIMESTAMP=$(date +"%H:%M:%S")
-        echo "[$TIMESTAMP] Night mode (20:00-08:00): Silent night sleep to save battery..."
-        
-        # Sleep in 30-minute intervals without any network activity
-        sleep 1800
+        echo "[$TIMESTAMP] Night window (20:00-08:00): Waiting until morning..."
+        sleep 900
     fi
 done
