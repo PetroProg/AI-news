@@ -5,7 +5,7 @@
       currentTab: 'news',
       searchDeviceQuery: '',
       deviceCategoryFilter: 'all',
-      newsCategoryFilter: 'all',
+      newsCategoryFilter: 'Украина',
       vpnConnected: true,
       selectedDns: 'pihole',
       dnsFilters: {
@@ -2040,12 +2040,12 @@
       const textSpan = document.getElementById('delete-category-btn-text');
       if (!btn || !textSpan) return;
 
-      const activeCat = state.newsCategoryFilter || 'all';
+      const activeCat = state.newsCategoryFilter || 'Украина';
       const isAll = (activeCat === 'all' || activeCat === 'Все');
       
       if (isAll) {
-        textSpan.textContent = 'Очистить все новости';
-        btn.title = 'Удалить абсолютно все новости из базы данных';
+        textSpan.textContent = 'Очистить категорию «Украина»';
+        btn.title = 'Удалить новости категории «Украина» из базы данных';
       } else {
         textSpan.textContent = `Очистить «${activeCat}»`;
         btn.title = `Удалить все новости категории «${activeCat}» из базы данных`;
@@ -2053,9 +2053,9 @@
     }
 
     async function deleteCurrentCategoryNews() {
-      const activeCat = state.newsCategoryFilter || 'all';
+      const activeCat = state.newsCategoryFilter || 'Украина';
       const isAll = (activeCat === 'all' || activeCat === 'Все');
-      const catLabel = isAll ? 'ВСЕ новости' : `новости категории «${activeCat}»`;
+      const catLabel = isAll ? 'новости категории «Украина»' : `новости категории «${activeCat}»`;
 
       const confirmed = window.confirm(`Вы уверены, что хотите удалить ${catLabel} из базы данных?\nЭто действие необратимо.`);
       if (!confirmed) return;
@@ -2680,11 +2680,13 @@
 
 
     window.setDynamicCategory = function(cat) {
-      state.newsCategoryFilter = (cat === 'all' || cat === 'Все') ? 'all' : cat;
-      const isAll = (state.newsCategoryFilter === 'all' || state.newsCategoryFilter === 'Все' || !state.newsCategoryFilter);
+      if (!cat || cat === 'all' || cat === 'Все') {
+        cat = 'Украина';
+      }
+      state.newsCategoryFilter = cat;
+      const isAll = false;
       
-      const isIT = !isAll && 
-                   (state.newsCategoryFilter === 'IT' || 
+      const isIT = (state.newsCategoryFilter === 'IT' || 
                     state.newsCategoryFilter === 'IT & Аналитика' || 
                     state.newsCategoryFilter.toLowerCase() === 'it' ||
                     state.newsCategoryFilter.toLowerCase() === 'it & аналитика' ||
@@ -2693,38 +2695,32 @@
                     state.newsCategoryFilter.toLowerCase() === 'разработка' ||
                     state.newsCategoryFilter.toLowerCase() === 'языки программирования');
 
-      const isGaming = !isAll && 
-                       (state.newsCategoryFilter === 'CS2' || 
+      const isGaming = (state.newsCategoryFilter === 'CS2' || 
                         state.newsCategoryFilter === 'Игры & Киберспорт' || 
                         state.newsCategoryFilter.toLowerCase().includes('игры') || 
                         state.newsCategoryFilter.toLowerCase().includes('киберспорт') || 
                         state.newsCategoryFilter.toLowerCase().includes('gaming') || 
                         state.newsCategoryFilter.toLowerCase().includes('cs'));
 
-      const isUkraine = !isAll && 
-                        (state.newsCategoryFilter === 'Украина' || 
+      const isUkraine = (state.newsCategoryFilter === 'Украина' || 
                          state.newsCategoryFilter.toLowerCase().includes('украин') || 
                          state.newsCategoryFilter.toLowerCase().includes('україна') || 
                          state.newsCategoryFilter.toLowerCase().includes('ukraine'));
 
-      const isAI = !isAll && 
-                   (state.newsCategoryFilter === 'AI & Нейросети' || 
+      const isAI = (state.newsCategoryFilter === 'AI & Нейросети' || 
                     state.newsCategoryFilter.toLowerCase().includes('ai') || 
                     state.newsCategoryFilter.toLowerCase().includes('нейро'));
 
-      const isLinux = !isAll && 
-                      (state.newsCategoryFilter === 'DevOps & Linux' || 
+      const isLinux = (state.newsCategoryFilter === 'DevOps & Linux' || 
                        state.newsCategoryFilter.toLowerCase().includes('devops') || 
                        state.newsCategoryFilter.toLowerCase().includes('linux'));
 
-      const isF1 = !isAll && 
-                   (state.newsCategoryFilter === 'F1' || 
+      const isF1 = (state.newsCategoryFilter === 'F1' || 
                     state.newsCategoryFilter.toLowerCase() === 'f1' ||
                     state.newsCategoryFilter.toLowerCase().includes('формула') ||
                     state.newsCategoryFilter.toLowerCase().includes('formula'));
 
-      const isFootball = !isAll && 
-                         (state.newsCategoryFilter === 'Футбол' || 
+      const isFootball = (state.newsCategoryFilter === 'Футбол' || 
                           state.newsCategoryFilter.toLowerCase() === 'футбол' ||
                           state.newsCategoryFilter.toLowerCase() === 'football' ||
                           state.newsCategoryFilter.toLowerCase().includes('футбол') ||
@@ -2742,7 +2738,7 @@
       const mainCol = document.getElementById('news-main-column');
 
       if (itAside) itAside.style.display = isIT ? 'block' : 'none';
-      if (digestAside) digestAside.style.display = isAll ? 'block' : 'none';
+      if (digestAside) digestAside.style.display = 'none';
       if (esportsAside) esportsAside.style.display = isGaming ? 'block' : 'none';
       if (ukraineAside) ukraineAside.style.display = isUkraine ? 'block' : 'none';
       if (aiAside) aiAside.style.display = isAI ? 'block' : 'none';
@@ -2754,7 +2750,7 @@
         langBar.style.display = isIT ? 'flex' : 'none';
       }
       if (mainCol) {
-        if (isIT || isAll || isGaming || isUkraine || isAI || isLinux || isF1 || isFootball) {
+        if (isIT || isGaming || isUkraine || isAI || isLinux || isF1 || isFootball) {
           mainCol.className = 'order-1 lg:order-1 lg:col-span-7 xl:col-span-8 space-y-6 w-full';
         } else {
           mainCol.className = 'order-1 lg:order-1 lg:col-span-12 space-y-6 w-full';
@@ -3048,21 +3044,19 @@
         if (countDiff !== 0) return countDiff;
         return a.localeCompare(b);
       });
-      const categories = ['Все', ...sortedCategories];
+      const categories = sortedCategories;
 
       container.innerHTML = categories.map(cat => {
-        const isAll = (cat === 'Все');
-        const count = isAll ? topAllCount : (catCounts[cat] || 0);
-        const isActive = (isAll && (state.newsCategoryFilter === 'all' || !state.newsCategoryFilter || state.newsCategoryFilter === 'Все')) ||
-                         (!isAll && state.newsCategoryFilter && state.newsCategoryFilter.toLowerCase() === cat.toLowerCase());
-        const emoji = isAll ? '📂' : getCategoryEmoji(cat);
+        const count = catCounts[cat] || 0;
+        const isActive = Boolean(state.newsCategoryFilter && state.newsCategoryFilter.toLowerCase() === cat.toLowerCase());
+        const emoji = getCategoryEmoji(cat);
 
         const activeClass = isActive
           ? 'bg-sky-500 text-white font-bold shadow-lg shadow-sky-500/25 border-sky-400'
           : 'bg-slate-900/60 hover:bg-slate-800 text-slate-300 hover:text-white border-slate-800/80 font-medium';
 
         return `
-          <button type="button" data-category="${isAll ? 'all' : cat}" onclick="setDynamicCategory('${isAll ? 'all' : cat.replace(/'/g, "\\'")}')" class="news-cat-pill px-4 py-2 rounded-2xl text-xs flex items-center gap-2 transition-all shrink-0 border ${activeClass}">
+          <button type="button" data-category="${cat}" onclick="setDynamicCategory('${cat.replace(/'/g, "\\'")}')" class="news-cat-pill px-4 py-2 rounded-2xl text-xs flex items-center gap-2 transition-all shrink-0 border ${activeClass}">
             <span>${emoji}</span>
             <span>${cat}</span>
             <span class="news-cat-pill-count text-[10px] opacity-75 bg-black/30 px-1.5 py-0.5 rounded-md font-mono">${count}</span>
@@ -3081,8 +3075,7 @@
             state.articles.forEach(a => {
               a._displayCategory = normalizeCategory(a.category, a);
             });
-            renderCategoryPills();
-            renderNews();
+            setDynamicCategory(state.newsCategoryFilter || 'Украина');
           }
         }
       } catch (err) {
@@ -3284,28 +3277,6 @@
         renderUkraineDigestBanner();
       }
 
-      const isAll = (state.newsCategoryFilter === 'all' || state.newsCategoryFilter === 'Все' || !state.newsCategoryFilter);
-
-      // In "Все" tab: gather and render the express digest aside (6.0 <= score < 8.0)
-      if (isAll) {
-        const digestArticles = state.articles.filter(item => {
-          const rawCat = (item.category || '').toLowerCase();
-          const itemCat = (item._displayCategory || normalizeCategory(item.category, item)).toLowerCase();
-          const rawTitle = (item.title || '').toLowerCase();
-          if (itemCat.includes('безопас') || itemCat.includes('cybersec') || itemCat.includes('security') ||
-              rawCat.includes('безопас') || rawCat.includes('cybersec') || rawCat.includes('security') ||
-              rawTitle.includes('уязвим') || rawTitle.includes('cve-')) {
-            return false;
-          }
-          if (item.is_operational_alert) {
-            return false;
-          }
-          const score = item.importance_score ? Number(item.importance_score) : 5.0;
-          return score >= 6.0 && score < 8.0;
-        });
-        renderAllDigestAside(digestArticles);
-      }
-
       const filtered = state.articles.filter(item => 
         isArticleEligibleForDisplay(item, state.newsCategoryFilter, state.selectedLanguage)
       );
@@ -3325,12 +3296,10 @@
 
       if (filtered.length === 0) {
         let msg = 'В этой выборке пока нет новостей.';
-        const catName = state.newsCategoryFilter || 'Все';
+        const catName = state.newsCategoryFilter || 'Украина';
         const catLower = catName.toLowerCase();
 
-        if (isAll) {
-          msg = 'В категории «Все» отображаются главные события с наивысшей важностью (оценка ≥ 8.0). Менее критичные события (6.0–8.0) собраны в экспресс-дайджесте справа.';
-        } else if (catLower === 'f1' || catLower.includes('формул') || catLower.includes('formula')) {
+        if (catLower === 'f1' || catLower.includes('формул') || catLower.includes('formula')) {
           msg = 'В категории «F1» новости отбираются по ключевым темам (Red Bull, Verstappen, Leclerc, Hamilton, Champion). Свежие результаты гонок и зачет пилотов 2026 доступны в панели справа.';
         } else if (catLower === 'it' || catLower.includes('it & аналитика') || catLower.includes('development') || catLower.includes('programming')) {
           msg = 'В этой выборке нет новостей (для IT & Аналитики действует строгий фильтр: оценка ≥ 7.0)';
@@ -3342,10 +3311,10 @@
 
         container.innerHTML = `
           <div class="col-span-full py-12 text-center text-slate-400 glass-panel rounded-3xl p-6 border border-slate-800">
-            <span class="text-3xl block mb-2">🏎️</span>
+            <span class="text-3xl block mb-2">📰</span>
             <p class="text-sm font-semibold text-slate-300 max-w-xl mx-auto leading-relaxed">${msg}</p>
-            <button type="button" onclick="filterByLanguage('all'); setDynamicCategory('all');" class="mt-3 px-4 py-2 rounded-xl bg-sky-500/20 text-sky-300 border border-sky-500/30 text-xs font-semibold hover:bg-sky-500/30 transition-all">
-              Показать все новости
+            <button type="button" onclick="filterByLanguage('all'); setDynamicCategory('Украина');" class="mt-3 px-4 py-2 rounded-xl bg-sky-500/20 text-sky-300 border border-sky-500/30 text-xs font-semibold hover:bg-sky-500/30 transition-all">
+              Перейти к категории «Украина»
             </button>
           </div>
         `;
@@ -4402,7 +4371,7 @@
     // News Category Filters
     document.querySelectorAll('.news-cat-pill').forEach(pill => {
       pill.onclick = () => {
-        setDynamicCategory(pill.dataset.category || 'all');
+        setDynamicCategory(pill.dataset.category || 'Украина');
       };
     });
 
@@ -4430,6 +4399,7 @@
     // Initialize Default View
     try { setLanguage('ru'); } catch (e) { console.error('Error during setLanguage:', e); }
     try { switchTab('news'); } catch (e) { console.error('Error during switchTab:', e); }
+    try { setDynamicCategory(state.newsCategoryFilter || 'Украина'); } catch (e) { console.error('Error during setDynamicCategory:', e); }
     try { updateDeleteCategoryBtn(); } catch (e) { console.error('Error during updateDeleteCategoryBtn:', e); }
     try { loadLiveNews(); } catch (e) { console.error('Error during loadLiveNews:', e); }
     try { loadManagedDevices(); } catch (e) { console.error('Error during loadManagedDevices:', e); }

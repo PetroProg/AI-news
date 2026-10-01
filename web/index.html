@@ -102,7 +102,7 @@
       
       <!-- Categories Filter Pills (Dynamically populated) -->
       <div id="category-pills-container" class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-        <button type="button" class="news-cat-pill px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 bg-sky-500 text-white" onclick="setDynamicCategory('all')">Все</button>
+        <button type="button" class="news-cat-pill px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 bg-sky-500 text-white" onclick="setDynamicCategory('Украина')">🇺🇦 Украина</button>
       </div>
 
       <!-- ======================================================= -->
@@ -176,41 +176,6 @@
           </div>
         </div>
 
-        <!-- Aside Sidebar: Express Digest 6.0–8.0 (Shown ONLY on "Все" tab) -->
-        <aside id="all-digest-aside" class="order-1 lg:order-2 lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto pr-1 w-full aside-collapsible">
-          <div class="glass-panel p-5 rounded-3xl border border-amber-500/25 bg-gradient-to-b from-slate-900/90 via-slate-950/90 to-slate-900/80 shadow-2xl relative overflow-hidden">
-            <div class="absolute -right-8 -top-8 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
-
-            <div class="flex items-center justify-between border-b border-slate-800/80 pb-3 mb-3 relative z-10">
-              <div>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1 w-fit mb-1">
-                  <span>⚡</span> <span>Экспресс-дайджест</span>
-                </span>
-                <h3 class="text-sm font-black text-white font-heading flex items-center gap-1.5">
-                  <span>В двух словах</span>
-                  <span class="text-slate-400 font-normal text-xs">(оценка 6.0 – 8.0)</span>
-                </h3>
-              </div>
-              <div class="flex items-center gap-2">
-                <span id="all-digest-count-badge" class="text-[10px] font-mono font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20">0 событий</span>
-                <button type="button" onclick="toggleMobileAside('all-digest-aside')" class="lg:hidden px-2 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center gap-1 transition-all" title="Свернуть / Развернуть">
-                  <span class="aside-toggle-text text-[10px]">Свернуть</span>
-                  <svg class="w-3.5 h-3.5 aside-collapse-arrow transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
-                </button>
-              </div>
-            </div>
-            
-            <div class="aside-collapsible-body space-y-3">
-              <p class="text-[11px] text-slate-400 mb-3 leading-relaxed">
-                Краткая суть важных событий дня в одной емкой фразе:
-              </p>
-
-              <div id="all-digest-items" class="space-y-2.5 max-h-[300px] sm:max-h-[380px] lg:max-h-[calc(100vh-14rem)] overflow-y-auto pr-1 scrollbar-thin">
-                <!-- Injected dynamically by JavaScript -->
-              </div>
-            </div>
-          </div>
-        </aside>
 
         <!-- Aside Sidebar: Programming Analytics & Deep Dive (Shown ONLY on IT category) -->
         <aside id="programming-analytics-aside" style="display: none;" class="order-1 lg:order-2 lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto pr-1 w-full aside-collapsible">
