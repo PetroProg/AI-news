@@ -2758,6 +2758,16 @@
       renderCategoryPills();
       renderNews();
       updateDeleteCategoryBtn();
+
+      // Ensure active category pill is smoothly centered in the scroll view
+      const pillContainer = document.getElementById('category-pills-container');
+      if (pillContainer) {
+        const activePill = pillContainer.querySelector(`[data-category="${cat}"]`);
+        if (activePill) {
+          activePill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+      }
+      setTimeout(updateCategoryScrollButtons, 350);
     };
 
     function isArticleEligibleForDisplay(item, targetCategory, targetLang) {
@@ -3020,7 +3030,148 @@
           </button>
         `;
       }).join('');
+
+      initCategoryPillsScroll();
+      requestAnimationFrame(updateCategoryScrollButtons);
     }
+
+    // ==========================================
+    // CATEGORY PILLS HORIZONTAL SCROLL CONTROLS
+    // ==========================================
+    function scrollCategoryPills(offset) {
+      const container = document.getElementById('category-pills-container');
+      if (!container) return;
+      container.scrollBy({ left: offset, behavior: 'smooth' });
+      setTimeout(updateCategoryScrollButtons, 320);
+    }
+
+    function updateCategoryScrollButtons() {
+      const container = document.getElementById('category-pills-container');
+      const leftBtn = document.getElementById('category-scroll-left-btn');
+      const rightBtn = document.getElementById('category-scroll-right-btn');
+      const fadeLeft = document.getElementById('category-scroll-fade-left');
+      const fadeRight = document.getElementById('category-scroll-fade-right');
+
+      if (!container) return;
+
+      const maxScroll = container.scrollWidth - container.clientWidth;
+      const hasOverflow = maxScroll > 8;
+
+      if (!hasOverflow) {
+        if (leftBtn) {
+          leftBtn.classList.add('opacity-0', 'pointer-events-none');
+          leftBtn.classList.remove('opacity-100', 'pointer-events-auto');
+        }
+        if (rightBtn) {
+          rightBtn.classList.add('opacity-0', 'pointer-events-none');
+          rightBtn.classList.remove('opacity-100', 'pointer-events-auto');
+        }
+        if (fadeLeft) fadeLeft.classList.add('opacity-0');
+        if (fadeRight) fadeRight.classList.add('opacity-0');
+        return;
+      }
+
+      // Left button & fade mask
+      if (container.scrollLeft > 10) {
+        if (leftBtn) {
+          leftBtn.classList.remove('opacity-0', 'pointer-events-none');
+          leftBtn.classList.add('opacity-100', 'pointer-events-auto');
+        }
+        if (fadeLeft) fadeLeft.classList.remove('opacity-0');
+      } else {
+        if (leftBtn) {
+          leftBtn.classList.add('opacity-0', 'pointer-events-none');
+          leftBtn.classList.remove('opacity-100', 'pointer-events-auto');
+        }
+        if (fadeLeft) fadeLeft.classList.add('opacity-0');
+      }
+
+      // Right button & fade mask
+      if (container.scrollLeft < maxScroll - 10) {
+        if (rightBtn) {
+          rightBtn.classList.remove('opacity-0', 'pointer-events-none');
+          rightBtn.classList.add('opacity-100', 'pointer-events-auto');
+        }
+        if (fadeRight) fadeRight.classList.remove('opacity-0');
+      } else {
+        if (rightBtn) {
+          rightBtn.classList.add('opacity-0', 'pointer-events-none');
+          rightBtn.classList.remove('opacity-100', 'pointer-events-auto');
+        }
+        if (fadeRight) fadeRight.classList.add('opacity-0');
+      }
+    }
+
+    function initCategoryPillsScroll() {
+      const container = document.getElementById('category-pills-container');
+      if (!container || container.dataset.scrollInit === 'true') {
+        updateCategoryScrollButtons();
+        return;
+      }
+      container.dataset.scrollInit = 'true';
+
+      container.addEventListener('scroll', () => {
+        updateCategoryScrollButtons();
+      }, { passive: true });
+
+      window.addEventListener('resize', () => {
+        updateCategoryScrollButtons();
+      });
+
+      // Mouse wheel horizontal scrolling (scroll wheel anywhere over pills scrolls left/right)
+      container.addEventListener('wheel', (e) => {
+        if (Math.abs(e.deltaY) > 0) {
+          e.preventDefault();
+          container.scrollLeft += e.deltaY * 1.2;
+          updateCategoryScrollButtons();
+        }
+      }, { passive: false });
+
+      // Click & Drag to scroll for desktop mouse users
+      let isDown = false;
+      let startX = 0;
+      let startScrollLeft = 0;
+      let hasDragged = false;
+
+      container.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        isDown = true;
+        hasDragged = false;
+        startX = e.pageX - container.offsetLeft;
+        startScrollLeft = container.scrollLeft;
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (!isDown) return;
+        isDown = false;
+        setTimeout(() => { hasDragged = false; }, 60);
+      });
+
+      container.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        const x = e.pageX - container.offsetLeft;
+        const walk = (x - startX) * 1.5;
+        if (Math.abs(walk) > 4) {
+          hasDragged = true;
+        }
+        container.scrollLeft = startScrollLeft - walk;
+        updateCategoryScrollButtons();
+      });
+
+      // Avoid accidental category switch click if user was dragging
+      container.addEventListener('click', (e) => {
+        if (hasDragged) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }, true);
+
+      updateCategoryScrollButtons();
+    }
+
+    window.scrollCategoryPills = scrollCategoryPills;
+    window.updateCategoryScrollButtons = updateCategoryScrollButtons;
+    window.initCategoryPillsScroll = initCategoryPillsScroll;
 
     async function loadLiveNews() {
       try {
@@ -4358,6 +4509,7 @@
     try { switchTab('news'); } catch (e) { console.error('Error during switchTab:', e); }
     try { setDynamicCategory(state.newsCategoryFilter || 'Украина'); } catch (e) { console.error('Error during setDynamicCategory:', e); }
     try { updateDeleteCategoryBtn(); } catch (e) { console.error('Error during updateDeleteCategoryBtn:', e); }
+    try { initCategoryPillsScroll(); } catch (e) { console.error('Error during initCategoryPillsScroll:', e); }
     try { loadLiveNews(); } catch (e) { console.error('Error during loadLiveNews:', e); }
     try { loadManagedDevices(); } catch (e) { console.error('Error during loadManagedDevices:', e); }
     try { loadRouterStats(); } catch (e) { console.error('Error during loadRouterStats:', e); }

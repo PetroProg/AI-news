@@ -23,6 +23,26 @@
   </script>
 
   <link rel="stylesheet" href="css/style.css?v=2026_09_26_rev7">
+  <style>
+    #category-pills-container {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(148, 163, 184, 0.25) transparent;
+      -webkit-overflow-scrolling: touch;
+    }
+    #category-pills-container::-webkit-scrollbar {
+      height: 4px;
+    }
+    #category-pills-container::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    #category-pills-container::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.25);
+      border-radius: 9999px;
+    }
+    #category-pills-container::-webkit-scrollbar-thumb:hover {
+      background: rgba(56, 189, 248, 0.6);
+    }
+  </style>
 </head>
 <body class="antialiased selection:bg-sky-500 selection:text-white">
 
@@ -100,9 +120,28 @@
     <!-- ========================================== -->
     <section id="tab-news" class="tab-content active space-y-5">
       
-      <!-- Categories Filter Pills (Dynamically populated) -->
-      <div id="category-pills-container" class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-        <button type="button" class="news-cat-pill px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 bg-sky-500 text-white" onclick="setDynamicCategory('Украина')">🇺🇦 Украина</button>
+      <!-- Categories Filter Pills Bar with Left/Right Scroll Controls -->
+      <div class="relative flex items-center group w-full my-1">
+        <!-- Left Scroll Button -->
+        <button id="category-scroll-left-btn" type="button" onclick="scrollCategoryPills(-260)" class="absolute left-0 z-20 w-8 h-8 rounded-full bg-slate-900/95 hover:bg-sky-500 text-slate-300 hover:text-white border border-slate-700/80 shadow-xl shadow-black/60 backdrop-blur-md flex items-center justify-center transition-all duration-200 opacity-0 pointer-events-none cursor-pointer focus:outline-none hover:scale-110 active:scale-95" title="Прокрутить влево" aria-label="Прокрутить влево">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+
+        <!-- Left fade mask -->
+        <div id="category-scroll-fade-left" class="pointer-events-none absolute left-0 top-0 bottom-0 w-8 sm:w-12 bg-gradient-to-r from-slate-950 via-slate-950/80 to-transparent z-10 opacity-0 transition-opacity duration-200"></div>
+
+        <!-- Pills Container -->
+        <div id="category-pills-container" class="flex items-center gap-2 overflow-x-auto py-1 px-1 scroll-smooth w-full select-none cursor-grab active:cursor-grabbing">
+          <button type="button" class="news-cat-pill px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 bg-sky-500 text-white" onclick="setDynamicCategory('Украина')">🇺🇦 Украина</button>
+        </div>
+
+        <!-- Right fade mask -->
+        <div id="category-scroll-fade-right" class="pointer-events-none absolute right-0 top-0 bottom-0 w-8 sm:w-12 bg-gradient-to-l from-slate-950 via-slate-950/80 to-transparent z-10 opacity-0 transition-opacity duration-200"></div>
+
+        <!-- Right Scroll Button -->
+        <button id="category-scroll-right-btn" type="button" onclick="scrollCategoryPills(260)" class="absolute right-0 z-20 w-8 h-8 rounded-full bg-slate-900/95 hover:bg-sky-500 text-slate-300 hover:text-white border border-slate-700/80 shadow-xl shadow-black/60 backdrop-blur-md flex items-center justify-center transition-all duration-200 opacity-0 pointer-events-none cursor-pointer focus:outline-none hover:scale-110 active:scale-95" title="Прокрутить вправо" aria-label="Прокрутить вправо">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        </button>
       </div>
 
       <!-- ======================================================= -->
@@ -1366,6 +1405,6 @@
   <!-- STANDALONE JAVASCRIPT (ZERO DEPENDENCIES) -->
   <!-- ========================================== -->
 
-  <script src="js/app.js?v=2026_10_02_tech_cat_v7"></script>
+  <script src="js/app.js?v=2026_10_02_cat_scroll_v8"></script>
 </body>
 </html>
