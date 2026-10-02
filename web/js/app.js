@@ -1121,42 +1121,6 @@
           lastUkraineSummaryFetch = Date.now();
           ukraineAttacksData = data;
           renderUkraineDigestBanner();
-
-          const badgeEl = document.getElementById('attack-window-badge');
-          const channelLinkEl = document.getElementById('attack-channel-link');
-          const summaryEl = document.getElementById('attack-summary-text');
-          const ballisticsEl = document.getElementById('attack-stat-ballistics');
-          const dronesEl = document.getElementById('attack-stat-drones');
-          const pvoEl = document.getElementById('attack-stat-pvo');
-
-          const latestSig = (data.recent_signals && data.recent_signals.length > 0) ? data.recent_signals[0] : null;
-
-          if (badgeEl) {
-            const attackTime = (latestSig && latestSig.time) ? latestSig.time : (data.attack_window || 'За последние 24ч');
-            badgeEl.textContent = attackTime;
-            if (data.attack_window) {
-              badgeEl.title = `Период активности: ${data.attack_window}`;
-            }
-          }
-          if (channelLinkEl) {
-            channelLinkEl.href = (latestSig && latestSig.url) ? latestSig.url : 'https://t.me/NovynaUKR';
-            if (latestSig && (latestSig.title || latestSig.summary)) {
-              channelLinkEl.title = cleanText(latestSig.title || latestSig.summary);
-            }
-          }
-          if (summaryEl) {
-            summaryEl.textContent = data.summary_text || 'Оперативная обстановка стабильная.';
-          }
-          if (ballisticsEl) {
-            const bCount = (data.stats && ((data.stats.ballistics_signals || 0) + (data.stats.missiles_signals || 0))) || 0;
-            ballisticsEl.textContent = bCount;
-          }
-          if (dronesEl) {
-            dronesEl.textContent = (data.stats && data.stats.drones_signals) || 0;
-          }
-          if (pvoEl) {
-            pvoEl.textContent = (data.stats && data.stats.air_defense_signals) || 0;
-          }
         }
       } catch (err) {
         console.warn('Ошибка загрузки сводки атак Украины:', err);
@@ -1194,10 +1158,12 @@
       const bCount = (data.stats && ((data.stats.ballistics_signals || 0) + (data.stats.missiles_signals || 0))) || 0;
       const dCount = (data.stats && data.stats.drones_signals) || 0;
       const pvoCount = (data.stats && data.stats.air_defense_signals) || 0;
-      const totalAlerts = (data.stats && data.stats.total_alerts) || 0;
       const windowStr = data.attack_window || 'За последние 24 часа';
       const summaryText = data.summary_text || 'Оперативная обстановка в регионах стабильная.';
       const hotspots = data.hotspots || [];
+
+      const latestSig = (data.recent_signals && data.recent_signals.length > 0) ? data.recent_signals[0] : null;
+      const channelUrl = (latestSig && latestSig.url) ? latestSig.url : 'https://t.me/NovynaUKR';
 
       const currentTag = selectedUkraineTag || 'all';
 
@@ -1211,12 +1177,12 @@
               <div>
                 <h3 class="text-base md:text-lg font-black text-white tracking-wide flex items-center gap-2">
                   <span>AI-Сводка безопасности: главное за сутки</span>
-                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Синтезировано ИИ</span>
                 </h3>
-                <p class="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
+                <div class="flex items-center gap-2 mt-1 flex-wrap">
                   <span class="inline-block w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-                  <span>Окно анализа: <strong class="text-slate-200 font-mono">${windowStr}</strong></span>
-                </p>
+                  <span class="text-xs text-slate-400 font-medium">Время атаки:</span>
+                  <span class="font-mono text-xs font-bold text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-lg border border-amber-500/30">${windowStr}</span>
+                </div>
               </div>
             </div>
 
@@ -1233,6 +1199,16 @@
                 <span class="text-emerald-400 font-bold">🛡️ ПВО перехватов:</span>
                 <span class="font-mono font-bold text-white text-sm">${pvoCount}</span>
               </div>
+
+              <!-- Channel Link & Refresh Button -->
+              <a href="${channelUrl}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 hover:text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm shrink-0 group" title="Перейти в Telegram-канал @NovynaUKR">
+                <span>В канал</span>
+                <svg class="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
+              </a>
+
+              <button id="ukraine-refresh-btn" type="button" onclick="loadUkraineAttacksSummary(true)" class="p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-sky-400 hover:text-sky-300 transition-colors border border-slate-700/60 shadow-sm shrink-0" title="Обновить сводку">
+                <svg id="ukraine-refresh-icon" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+              </button>
             </div>
           </div>
 
@@ -1256,11 +1232,6 @@
               <button type="button" onclick="filterUkraineByTag('energy')" class="ukraine-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${currentTag === 'energy' ? 'bg-sky-500 text-white border border-sky-400 shadow-md shadow-sky-500/20' : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/50'}" data-ukr-tag="energy">⚡ Энергетика</button>
               <button type="button" onclick="filterUkraineByTag('pvo')" class="ukraine-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${currentTag === 'pvo' ? 'bg-sky-500 text-white border border-sky-400 shadow-md shadow-sky-500/20' : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/50'}" data-ukr-tag="pvo">🛡️ Сводка ПВО</button>
             </div>
-
-            <a href="#ukraine-attacks-aside" onclick="document.getElementById('ukraine-attacks-aside')?.scrollIntoView({behavior:'smooth'})" class="text-xs text-sky-400 hover:text-sky-300 font-semibold flex items-center gap-1 hover:underline transition-all">
-              <span>🛡️ Оперативная сводка (${totalAlerts})</span>
-              <span>→</span>
-            </a>
           </div>
         </div>
       `;
@@ -2727,7 +2698,7 @@
       if (itAside) itAside.style.display = isIT ? 'block' : 'none';
       if (digestAside) digestAside.style.display = 'none';
       if (esportsAside) esportsAside.style.display = isGaming ? 'block' : 'none';
-      if (ukraineAside) ukraineAside.style.display = isUkraine ? 'block' : 'none';
+      if (ukraineAside) ukraineAside.style.display = 'none';
       if (aiAside) aiAside.style.display = isAI ? 'block' : 'none';
       if (linuxAside) linuxAside.style.display = isLinux ? 'block' : 'none';
       if (f1Aside) f1Aside.style.display = isF1 ? 'block' : 'none';
@@ -2737,7 +2708,7 @@
         langBar.style.display = isIT ? 'flex' : 'none';
       }
       if (mainCol) {
-        if (isIT || isGaming || isUkraine || isAI || isLinux || isF1 || isFootball) {
+        if (isIT || isGaming || isAI || isLinux || isF1 || isFootball) {
           mainCol.className = 'order-1 lg:order-1 lg:col-span-7 xl:col-span-8 space-y-6 w-full';
         } else {
           mainCol.className = 'order-1 lg:order-1 lg:col-span-12 space-y-6 w-full';
