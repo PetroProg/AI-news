@@ -662,6 +662,9 @@
       if (item) {
         const s = ((item.source || '') + ' ' + (item.source_url || '') + ' ' + (item.url || '')).toLowerCase();
         const t = (item.title || '').toLowerCase();
+        if (t.includes('робот') || t.includes('figure 0') || t.includes('boston dynamics')) {
+          return 'Технологии';
+        }
         if (s.includes('marca') || s.includes('primera') || s.includes('sportsru') || s.includes('fabrizio') || s.includes('terrikon') || s.includes('uefa') ||
             t.includes('месси') || t.includes('messi') || t.includes('барселона') || t.includes('barcelona') || t.includes('интер майами') || t.includes('ла лига') || t.includes('лига чемпионов') || t.includes('лига наций') || t.includes('лига европы')) {
           return 'Футбол';
@@ -682,6 +685,9 @@
       c = c.replace(/^Категория\s*[\(:]?/i, '').replace(/[\)]+$/g, '').trim();
 
       const lower = c.toLowerCase();
+      if (lower.includes('технолог') || lower.includes('technology') || lower.includes('робот') || lower.includes('robot')) {
+        return 'Технологии';
+      }
       if (lower.includes('футбол') || lower.includes('football') || lower.includes('soccer') || lower.includes('laliga') || lower.includes('ла лига')) {
         return 'Футбол';
       }
@@ -707,6 +713,12 @@
         'формула 1': 'F1',
         'swiss': 'Swiss',
         'швейцария': 'Swiss',
+        'технологии': 'Технологии',
+        'technology': 'Технологии',
+        'технология': 'Технологии',
+        'technologies': 'Технологии',
+        'роботы': 'Технологии',
+        'робототехника': 'Технологии',
         'it': 'IT',
         'it & аналитика': 'IT',
         'it-аналитик': 'IT',
@@ -744,6 +756,7 @@
 
     function getCategoryEmoji(catName) {
       const c = (catName || '').toUpperCase();
+      if (c.includes('ТЕХНОЛОГ') || c.includes('TECHNOLOG') || c.includes('РОБОТ')) return '💡';
       if (c.includes('ФУТБОЛ') || c.includes('FOOTBALL') || c.includes('SOCCER')) return '⚽';
       if (c.includes('F1') || c.includes('FORMULA') || c.includes('ФОРМУЛА')) return '🏎️';
       if (c.includes('SWISS') || c.includes('ШВЕЙЦАР')) return '🇨🇭';
@@ -2755,7 +2768,7 @@
       if (itemCat.includes('безопас') || itemCat.includes('cybersec') || itemCat.includes('security') ||
           rawCat.includes('безопас') || rawCat.includes('cybersec') || rawCat.includes('security') ||
           rawTitle.includes('уязвим') || rawTitle.includes('cve-') ||
-          itemCat.includes('общие') || itemCat.includes('технологии') || itemCat.includes('general tech') || itemCat.includes('technology')) {
+          itemCat.includes('общие') || itemCat.includes('general tech')) {
         return false;
       }
       if (targetCategory && (targetCategory.toLowerCase().includes('безопас') || targetCategory.toLowerCase().includes('security') || targetCategory.toLowerCase().includes('cybersec') || targetCategory.toLowerCase().includes('общие') || targetCategory.toLowerCase().includes('general tech'))) {
@@ -2961,7 +2974,7 @@
       distinctCats.forEach(cat => {
         const lowerCat = cat.toLowerCase();
         if (lowerCat.includes('безопас') || lowerCat.includes('security') || lowerCat.includes('cybersec') ||
-            lowerCat.includes('общие') || lowerCat.includes('general tech') || lowerCat.includes('technology')) {
+            lowerCat.includes('общие') || lowerCat.includes('general tech')) {
           return;
         }
         const langParam = (state.newsCategoryFilter && state.newsCategoryFilter.toLowerCase() === cat.toLowerCase())
@@ -2976,7 +2989,7 @@
       const topAllCount = state.articles.filter(a => isArticleEligibleForDisplay(a, 'all')).length;
 
       // Always guarantee essential categories are present even if article count is 0
-      const essentialCats = ['Футбол', 'F1', 'IT', 'CS2', 'Украина', 'Swiss', 'AI & Нейросети', 'DevOps & Linux'];
+      const essentialCats = ['Футбол', 'F1', 'IT', 'Технологии', 'CS2', 'Украина', 'Swiss', 'AI & Нейросети', 'DevOps & Linux'];
       essentialCats.forEach(ec => {
         if (catCounts[ec] === undefined) {
           catCounts[ec] = 0;

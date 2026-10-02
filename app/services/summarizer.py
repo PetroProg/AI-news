@@ -205,10 +205,12 @@ class SummarizerService:
                 chosen_category = "DevOps & Linux"
             elif (analysis.category and any(k in analysis.category.lower() for k in ["ai", "нейро", "интеллект", "llm", "машинн", "ml"])) or ("huggingface" in combined_source):
                 chosen_category = "AI & Нейросети"
-            elif analysis.category and analysis.category.lower() in ["it & аналитика", "it-аналитик", "development", "общие технологии", "general tech", "technology"]:
+            elif (analysis.category and any(k in analysis.category.lower() for k in ["технолог", "technology", "робот", "robot", "гаджет", "gadget", "железо", "hardware"])) or any(k in title_lower for k in ["робот", "figure 0", "boston dynamics"]):
+                chosen_category = "Технологии"
+            elif analysis.category and analysis.category.lower() in ["it & аналитика", "it-аналитик", "development", "programming", "разработка", "код"]:
                 chosen_category = "IT"
             else:
-                chosen_category = analysis.category or "IT"
+                chosen_category = analysis.category or "Технологии"
                 # Safety check: never allow gaming articles in IT
                 if ("it" in chosen_category.lower() or "аналитик" in chosen_category.lower() or "dev" in chosen_category.lower()):
                     if any(k in title_lower for k in GAMING_INDICATORS):
