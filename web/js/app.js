@@ -2699,7 +2699,7 @@
       if (digestAside) digestAside.style.display = 'none';
       if (esportsAside) esportsAside.style.display = isGaming ? 'block' : 'none';
       if (ukraineAside) ukraineAside.style.display = 'none';
-      if (aiAside) aiAside.style.display = isAI ? 'block' : 'none';
+      if (aiAside) aiAside.style.display = 'none';
       if (linuxAside) linuxAside.style.display = 'none';
       if (f1Aside) f1Aside.style.display = isF1 ? 'block' : 'none';
       if (footballAside) footballAside.style.display = isFootball ? 'block' : 'none';
@@ -2707,7 +2707,7 @@
       if (langBar) {
         langBar.style.display = isIT ? 'flex' : 'none';
       }
-      const hasAside = isIT || isGaming || isAI || isF1 || isFootball;
+      const hasAside = isIT || isGaming || isF1 || isFootball;
       const newsContainer = document.getElementById('news-container');
       if (mainCol) {
         if (hasAside) {
@@ -2729,9 +2729,6 @@
       }
       if (isUkraine) {
         loadUkraineAttacksSummary();
-      }
-      if (isAI) {
-        renderAIQuiz();
       }
       if (isIT) {
         renderITQuiz();
