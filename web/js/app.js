@@ -1123,14 +1123,26 @@
           renderUkraineDigestBanner();
 
           const badgeEl = document.getElementById('attack-window-badge');
+          const channelLinkEl = document.getElementById('attack-channel-link');
           const summaryEl = document.getElementById('attack-summary-text');
           const ballisticsEl = document.getElementById('attack-stat-ballistics');
           const dronesEl = document.getElementById('attack-stat-drones');
           const pvoEl = document.getElementById('attack-stat-pvo');
-          const listEl = document.getElementById('ukraine-signals-list');
+
+          const latestSig = (data.recent_signals && data.recent_signals.length > 0) ? data.recent_signals[0] : null;
 
           if (badgeEl) {
-            badgeEl.textContent = data.attack_window || 'За последние 24ч';
+            const attackTime = (latestSig && latestSig.time) ? latestSig.time : (data.attack_window || 'За последние 24ч');
+            badgeEl.textContent = attackTime;
+            if (data.attack_window) {
+              badgeEl.title = `Период активности: ${data.attack_window}`;
+            }
+          }
+          if (channelLinkEl) {
+            channelLinkEl.href = (latestSig && latestSig.url) ? latestSig.url : 'https://t.me/NovynaUKR';
+            if (latestSig && (latestSig.title || latestSig.summary)) {
+              channelLinkEl.title = cleanText(latestSig.title || latestSig.summary);
+            }
           }
           if (summaryEl) {
             summaryEl.textContent = data.summary_text || 'Оперативная обстановка стабильная.';
@@ -1144,31 +1156,6 @@
           }
           if (pvoEl) {
             pvoEl.textContent = (data.stats && data.stats.air_defense_signals) || 0;
-          }
-
-          if (listEl) {
-            if (data.recent_signals && data.recent_signals.length > 0) {
-              listEl.innerHTML = data.recent_signals.map(sig => {
-                const sTitle = cleanText(sig.title || sig.summary || 'Оперативный сигнал');
-                const sTime = sig.time || 'Сегодня';
-                const sUrl = sig.url || 'https://t.me/NovynaUKR';
-                return `
-                  <a href="${sUrl}" target="_blank" rel="noopener noreferrer" class="block p-2 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800/70 hover:border-sky-500/30 transition-all text-xs group">
-                    <div class="flex items-center justify-between text-[10px] text-slate-400 mb-1">
-                      <span class="font-mono text-amber-400 font-bold bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">${sTime}</span>
-                      <span class="text-sky-400 group-hover:underline flex items-center gap-0.5">В канал ↗</span>
-                    </div>
-                    <div class="text-slate-200 line-clamp-2 leading-relaxed text-[11px] group-hover:text-white font-medium">${sTitle}</div>
-                  </a>
-                `;
-              }).join('');
-            } else {
-              listEl.innerHTML = `
-                <div class="p-3 text-center text-xs text-slate-400 bg-slate-900/40 rounded-xl border border-slate-800/60">
-                  <span>За последние 24 часа активных сигналов атак не зафиксировано</span>
-                </div>
-              `;
-            }
           }
         }
       } catch (err) {
@@ -1270,8 +1257,8 @@
               <button type="button" onclick="filterUkraineByTag('pvo')" class="ukraine-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${currentTag === 'pvo' ? 'bg-sky-500 text-white border border-sky-400 shadow-md shadow-sky-500/20' : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/50'}" data-ukr-tag="pvo">🛡️ Сводка ПВО</button>
             </div>
 
-            <a href="#ukraine-signals-list" onclick="document.getElementById('ukraine-attacks-aside')?.scrollIntoView({behavior:'smooth'})" class="text-xs text-sky-400 hover:text-sky-300 font-semibold flex items-center gap-1 hover:underline transition-all">
-              <span>📡 Хроника сигналов (${totalAlerts})</span>
+            <a href="#ukraine-attacks-aside" onclick="document.getElementById('ukraine-attacks-aside')?.scrollIntoView({behavior:'smooth'})" class="text-xs text-sky-400 hover:text-sky-300 font-semibold flex items-center gap-1 hover:underline transition-all">
+              <span>🛡️ Оперативная сводка (${totalAlerts})</span>
               <span>→</span>
             </a>
           </div>
