@@ -826,10 +826,8 @@
     window.switchAsideTab = function(tab) {
       const bTop10 = document.getElementById('aside-block-top10');
       const bDeep = document.getElementById('aside-block-deepdive');
-      const bTasks = document.getElementById('aside-block-tasks');
       const btnTop10 = document.getElementById('aside-tab-top10');
       const btnDeep = document.getElementById('aside-tab-deepdive');
-      const btnTasks = document.getElementById('aside-tab-tasks');
 
       if (!bTop10 || !bDeep) return;
 
@@ -839,25 +837,13 @@
       if (tab === 'deepdive') {
         bTop10.style.display = 'none';
         bDeep.style.display = 'block';
-        if (bTasks) bTasks.style.display = 'none';
         if (btnTop10) btnTop10.className = inactiveClass;
         if (btnDeep) btnDeep.className = activeClass;
-        if (btnTasks) btnTasks.className = inactiveClass;
-      } else if (tab === 'tasks') {
-        bTop10.style.display = 'none';
-        bDeep.style.display = 'none';
-        if (bTasks) bTasks.style.display = 'block';
-        if (btnTop10) btnTop10.className = inactiveClass;
-        if (btnDeep) btnDeep.className = inactiveClass;
-        if (btnTasks) btnTasks.className = activeClass;
-        renderITQuiz();
       } else { // 'top10'
         bTop10.style.display = 'block';
         bDeep.style.display = 'none';
-        if (bTasks) bTasks.style.display = 'none';
         if (btnTop10) btnTop10.className = activeClass;
         if (btnDeep) btnDeep.className = inactiveClass;
-        if (btnTasks) btnTasks.className = inactiveClass;
       }
     };
 
@@ -2729,9 +2715,6 @@
       }
       if (isUkraine) {
         loadUkraineAttacksSummary();
-      }
-      if (isIT) {
-        renderITQuiz();
       }
       if (isF1) {
         loadF1Results();
