@@ -2707,11 +2707,20 @@
       if (langBar) {
         langBar.style.display = isIT ? 'flex' : 'none';
       }
+      const hasAside = isIT || isGaming || isAI || isLinux || isF1 || isFootball;
+      const newsContainer = document.getElementById('news-container');
       if (mainCol) {
-        if (isIT || isGaming || isAI || isLinux || isF1 || isFootball) {
+        if (hasAside) {
           mainCol.className = 'order-1 lg:order-1 lg:col-span-7 xl:col-span-8 space-y-6 w-full';
         } else {
           mainCol.className = 'order-1 lg:order-1 lg:col-span-12 space-y-6 w-full';
+        }
+      }
+      if (newsContainer) {
+        if (hasAside) {
+          newsContainer.className = 'grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6';
+        } else {
+          newsContainer.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6';
         }
       }
 
