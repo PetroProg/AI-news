@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timezone, timedelta
 import time
 from pathlib import Path
@@ -893,6 +894,9 @@ OPERATIONAL_ALERT_KEYWORDS = [
 ]
 
 
+_url_image_cache: Dict[str, Optional[str]] = {}
+
+
 @app.get("/api/news")
 async def get_news_feed(
     limit: int = 100,
@@ -909,11 +913,42 @@ async def get_news_feed(
     res = await session.execute(stmt)
     articles = res.scalars().all()
 
+    # Pre-fetch lead images on-the-fly for articles that don't have images in raw_content yet
+    unimaged_arts = [
+        art for art in articles
+        if art.original_url and art.original_url.startswith("http")
+        and ("<img" not in (art.raw_content or ""))
+        and art.original_url not in _url_image_cache
+    ]
+    if unimaged_arts:
+        try:
+            from app.services.image_scraper import fetch_article_image
+            sem = asyncio.Semaphore(6)
+            feed_headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+                "Accept-Language": "ru-RU,ru;q=0.9,uk-UA;q=0.8,uk;q=0.7,en-US;q=0.6,en;q=0.5",
+            }
+            async with httpx.AsyncClient(timeout=4.0, follow_redirects=True, headers=feed_headers) as client:
+                async def _scrape(art):
+                    async with sem:
+                        try:
+                            img = await fetch_article_image(art.original_url, client=client, timeout=3.5)
+                            _url_image_cache[art.original_url] = img
+                        except Exception:
+                            _url_image_cache[art.original_url] = None
+                await asyncio.gather(*[_scrape(a) for a in unimaged_arts], return_exceptions=True)
+        except Exception:
+            pass
+
     news_items = []
     for art in articles:
         raw_text = art.raw_content or ""
         imgs, primary_video = extract_article_media(raw_text)
         primary_img, is_diagram = detect_diagram_image(raw_text, imgs)
+
+        if not primary_img and art.original_url and art.original_url in _url_image_cache:
+            primary_img = _url_image_cache[art.original_url]
 
         source_name = art.source.name if art.source else "Web"
         source_url = art.source.url if art.source else ""

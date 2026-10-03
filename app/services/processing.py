@@ -1,7 +1,9 @@
+import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
+import httpx
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -39,6 +41,35 @@ class ProcessingService:
             return 0, 0
 
         logger.info("Starting processing pipeline for %d collected articles...", len(pending_articles))
+
+        # Enrich missing images from original web pages before deduplication & saving
+        unimaged = [
+            a for a in pending_articles
+            if a.original_url and a.original_url.startswith("http") and ("<img" not in (a.raw_content or ""))
+        ]
+        if unimaged:
+            try:
+                from app.services.image_scraper import fetch_article_image
+                sem = asyncio.Semaphore(6)
+                enrich_headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+                    "Accept-Language": "ru-RU,ru;q=0.9,uk-UA;q=0.8,uk;q=0.7,en-US;q=0.6,en;q=0.5",
+                }
+                async with httpx.AsyncClient(timeout=7.0, follow_redirects=True, headers=enrich_headers) as client:
+                    async def _enrich_art(art):
+                        async with sem:
+                            try:
+                                img = await fetch_article_image(art.original_url, client=client, timeout=6.0)
+                                if img:
+                                    art.raw_content = f'<img src="{img}" /><br>' + (art.raw_content or "")
+                                    logger.info("Enriched image for collected article %s (%s): %s", art.id, art.original_url, img)
+                            except Exception as err:
+                                logger.debug("Failed enriching image for %s: %s", art.original_url, err)
+
+                    await asyncio.gather(*[_enrich_art(a) for a in unimaged], return_exceptions=True)
+            except Exception as e:
+                logger.warning("Error running image enrichment in processing: %s", e)
 
         cutoff_time = datetime.now(timezone.utc) - timedelta(hours=self.DEDUPLICATION_WINDOW_HOURS)
         ref_stmt = (
