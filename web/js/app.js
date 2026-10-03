@@ -608,7 +608,7 @@
       ],
       ukraine: [
         'https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=800&q=80'
+        'https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?auto=format&fit=crop&w=800&q=80'
       ],
       linux: [
         'https://images.unsplash.com/photo-1629654297299-c8506221ca97?auto=format&fit=crop&w=800&q=80',
@@ -772,12 +772,12 @@
     }
 
     function getArticleImage(article, index) {
-      if (article.image_url) return article.image_url;
+      if (article.image_url) return String(article.image_url).replace(/&amp;/g, '&');
       if (article.raw_content) {
         const match = article.raw_content.match(/<img[^>]+src=["']([^"']+)["']/i);
-        if (match && match[1]) return match[1];
+        if (match && match[1]) return String(match[1]).replace(/&amp;/g, '&');
         const posterMatch = article.raw_content.match(/<video[^>]+poster=["']([^"']+)["']/i);
-        if (posterMatch && posterMatch[1]) return posterMatch[1];
+        if (posterMatch && posterMatch[1]) return String(posterMatch[1]).replace(/&amp;/g, '&');
       }
 
       const text = ((article.title || '') + ' ' + (article.category || '') + ' ' + (article.source || '')).toLowerCase();

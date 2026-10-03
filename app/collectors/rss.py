@@ -1,3 +1,4 @@
+import asyncio
 import calendar
 import logging
 from datetime import datetime, timezone
@@ -6,6 +7,7 @@ import feedparser
 import httpx
 
 from app.collectors.base import BaseCollector, CollectedItem
+from app.services.image_scraper import fetch_article_image
 
 logger = logging.getLogger("news_ai.collectors.rss")
 
@@ -28,7 +30,7 @@ class RSSCollector(BaseCollector):
         self.timeout = timeout
 
     async def collect(self) -> List[CollectedItem]:
-        """Fetch feed XML asynchronously and parse entries into CollectedItems."""
+        """Fetch feed XML asynchronously, parse entries and enrich missing lead images from article pages."""
         logger.info("Fetching RSS feed for '%s' from %s", self.source_name, self.source_url)
         
         raw_bytes = await self._fetch_feed_bytes()
@@ -36,7 +38,9 @@ class RSSCollector(BaseCollector):
             logger.warning("Empty response or fetch failed for source '%s'", self.source_name)
             return []
 
-        return self._parse_feed(raw_bytes)
+        items = self._parse_feed(raw_bytes)
+        await self._enrich_missing_images(items)
+        return items
 
     async def _fetch_feed_bytes(self) -> Optional[bytes]:
         """Download raw feed bytes using httpx with timeout and custom headers."""
@@ -45,7 +49,7 @@ class RSSCollector(BaseCollector):
             async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
                 response = await client.get(self.source_url, headers=headers)
                 response.raise_for_status()
-                return response.content  # Возвращаем сырые байты
+                return response.content
         except httpx.TimeoutException:
             logger.error("Timeout (%ss) while fetching RSS feed: %s", self.timeout, self.source_url)
         except httpx.HTTPStatusError as e:
@@ -72,6 +76,29 @@ class RSSCollector(BaseCollector):
         logger.info("Successfully parsed %d items from '%s'", len(items), self.source_name)
         return items
 
+    async def _enrich_missing_images(self, items: List[CollectedItem]) -> None:
+        """Fetch article webpage and extract og:image if not present in RSS feed."""
+        unimaged = [
+            it for it in items
+            if it.original_url and it.original_url.startswith("http") and ("<img" not in (it.raw_content or ""))
+        ]
+        if not unimaged:
+            return
+
+        sem = asyncio.Semaphore(6)
+        async with httpx.AsyncClient(timeout=7.0, follow_redirects=True) as client:
+            async def _enrich_one(it: CollectedItem):
+                async with sem:
+                    try:
+                        img = await fetch_article_image(it.original_url, client=client, timeout=6.0)
+                        if img:
+                            it.raw_content = f'<img src="{img}" /><br>' + (it.raw_content or "")
+                            logger.debug("Enriched article '%s' with og:image %s", it.title[:30], img)
+                    except Exception as err:
+                        logger.debug("Failed enriching image for %s: %s", it.original_url, err)
+
+            await asyncio.gather(*[_enrich_one(it) for it in unimaged], return_exceptions=True)
+
     def _convert_entry(self, entry: feedparser.FeedParserDict) -> Optional[CollectedItem]:
         """Convert a single feed entry dictionary into a validated CollectedItem."""
         title = entry.get("title", "").strip()
@@ -86,12 +113,22 @@ class RSSCollector(BaseCollector):
         elif "description" in entry:
             raw_content = entry.get("description", "")
 
-        # Extract YouTube/media thumbnails if present
+        # Extract YouTube/media thumbnails or standard enclosures if present
         thumbnail_url = None
         if "media_thumbnail" in entry and entry.media_thumbnail:
             thumbnail_url = entry.media_thumbnail[0].get("url")
         elif "media_content" in entry and entry.media_content:
             thumbnail_url = entry.media_content[0].get("url")
+        elif "enclosures" in entry and entry.enclosures:
+            for enc in entry.enclosures:
+                if enc.get("type", "").startswith("image/") and enc.get("href"):
+                    thumbnail_url = enc.get("href")
+                    break
+        elif "links" in entry and entry.links:
+            for lk in entry.links:
+                if lk.get("type", "").startswith("image/") and lk.get("href"):
+                    thumbnail_url = lk.get("href")
+                    break
 
         if thumbnail_url and "<img" not in raw_content:
             raw_content = f'<img src="{thumbnail_url}" /><br>' + raw_content
