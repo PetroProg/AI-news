@@ -97,6 +97,17 @@ FOOTBALL_PRIORITY = [
     "интер майами", "inter miami", "майами", "интер-майами"
 ]
 
+WORLD_POLITICS_INDICATORS = [
+    "трамп", "trump", "байден", "biden", "харрис", "harris", "пентагон", "белый дом", "white house",
+    "конгресс сша", "сенат сша", "new york times", "politico", "республиканц", "демократ", "выборы в сша",
+    "макрон", "шольц", "мерц", "бундестаг", "стармер", "сунак", "великобритани", "франци", "германи",
+    "орбан", "венгри", "фицо", "словаки", "вучич", "серби", "белград", "израиль", "нетаньяху",
+    "сектор газа", "хамас", "хезболла", "ливан", "бейрут", " иран", "ирана", "иране", "ирану", "ираном", "иранск",
+    "тегеран", "пезешкиан", "китай", "пекин", "си цзиньпин", "тайвань", "кндр", "северная корея", "южная корея", "пхеньян",
+    "сеул", "ким чен", "египет", "датск", "дания ", " дании", "рубио", "госдеп", "латви", "чехия", "чешск", "чехии",
+    "военные нато случайно обстреляли"
+]
+
 # Cache for HLTV ranking
 _hltv_cache: Dict[str, Any] = {}
 _hltv_cache_time: float = 0.0
@@ -959,9 +970,20 @@ async def get_news_feed(
         title_lower = (art.title or "").lower()
         content_lower = (art.cleaned_content or raw_text).lower()
 
-        # Off-topic checks for tech / world news
+        # Off-topic checks for tech / world politics news
         is_it_ai_offtopic = any(k in title_lower or k in content_lower for k in ["билл гейтс", "штучного интеллект", "искусственного интеллект", "нейросеть", "chatgpt", "openai", "deepseek", "llm"])
-        is_world_offtopic = any(k in title_lower for k in ["вучич", "сербия", "сербии", "сербию", "белград", "военные нато случайно обстреляли"]) and not any(k in title_lower for k in ["украин", "киев", "днепр", "всу", "зеленск"])
+
+        has_ukr_core = any(k in title_lower or k in content_lower for k in [
+            "украин", "україна", "киев", "київ", "днепр", "дніпро", "всу", "зеленск",
+            "покровск", "харьков", "харків", "одесс", "одес", "запорож", "купянск", "курск",
+            "шахед", "обстрел", "фронт", "оккупант", "прилет", "сырск", "залужн", "порошенк", "ермак", "генштаб",
+            "дрон", "бпла", "пво"
+        ])
+
+        is_world_politics = (
+            (raw_cat and any(k in raw_cat.lower() for k in ["мировая политика", "политика", "мир", "world"])) or
+            (any(k in title_lower for k in WORLD_POLITICS_INDICATORS) and not has_ukr_core)
+        )
 
         is_football = any(k in source_combined for k in ["marca", "primera", "sportsru", "fabrizio", "terrikon", "uefa", "футбол", "football"]) or \
                       (raw_cat and ("футбол" in raw_cat.lower() or "football" in raw_cat.lower())) or \
@@ -971,15 +993,15 @@ async def get_news_feed(
                 any(k in title_lower for k in F1_INDICATORS)
         is_gaming = any(k in source_combined for k in ["csgo", "cs3", "clashroyalepin", "hltv", "game", "киберспорт"]) or \
                     any(k in title_lower for k in GAMING_INDICATORS)
-        is_ukraine = not is_it_ai_offtopic and not is_world_offtopic and (
+        is_ukraine = not is_it_ai_offtopic and not is_world_politics and (
             any(k in source_combined for k in ["pravda.com.ua", "liga.net", "novynaukr", "украин", "украина", "україна"]) or 
             (raw_cat and "украин" in raw_cat.lower())
         )
 
         if is_it_ai_offtopic:
             cat_name = "AI & Нейросети"
-        elif is_world_offtopic:
-            cat_name = "Мир"
+        elif is_world_politics:
+            cat_name = "Мировая политика"
         elif is_football:
             cat_name = "Футбол"
         elif is_f1:
@@ -990,7 +1012,9 @@ async def get_news_feed(
             cat_name = "CS2"
         elif raw_cat:
             cat_name = raw_cat
-            if ("аналитик" in raw_cat.lower() or "dev" in raw_cat.lower() or "it" in raw_cat.lower()) and any(k in title_lower for k in GAMING_INDICATORS):
+            if any(k in raw_cat.lower() for k in ["мировая политика", "политика", "мир", "world"]):
+                cat_name = "Мировая политика"
+            elif ("аналитик" in raw_cat.lower() or "dev" in raw_cat.lower() or "it" in raw_cat.lower()) and any(k in title_lower for k in GAMING_INDICATORS):
                 cat_name = "CS2"
             elif cat_name.lower() in ["игры & киберспорт", "игры и киберспорт", "gaming", "cs2"]:
                 cat_name = "CS2"

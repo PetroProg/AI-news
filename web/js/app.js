@@ -637,6 +637,11 @@
       tech: [
         'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80',
         'https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=800&q=80'
+      ],
+      politics: [
+        'https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1526470608268-f674ce90ebd4?auto=format&fit=crop&w=800&q=80'
       ]
     };
 
@@ -676,6 +681,19 @@
             t.includes('cs2') || t.includes('cs:go') || t.includes('starladder') || t.includes('vitality') || t.includes('navi') || t.includes('s1mple') || t.includes('m0nesy') || t.includes('donk') || t.includes('clash royale') || t.includes('bcgame') || t.includes('fut')) {
           return 'CS2';
         }
+
+        const hasUkrCore = ['украин', 'україна', 'киев', 'київ', 'днепр', 'дніпро', 'всу', 'зеленск', 'покровск', 'харьков', 'одесс', 'шахед', 'обстрел', 'дрон', 'бпла', 'пво', 'оккупант', 'фронт'].some(k => t.includes(k));
+        if (!hasUkrCore && (
+          t.includes('трамп') || t.includes('trump') || t.includes('байден') || t.includes('biden') ||
+          t.includes('белый дом') || t.includes('конгресс сша') || t.includes('пентагон') ||
+          t.includes('макрон') || t.includes('шольц') || t.includes('мерц') || t.includes('стармер') ||
+          t.includes('нетаньяху') || t.includes('израиль') || t.includes('сектор газа') || t.includes('иран') ||
+          t.includes('вучич') || t.includes('серби') || t.includes('орбан') || t.includes('венгри') ||
+          t.includes('фицо') || t.includes('кндр') || t.includes('си цзиньпин') || t.includes('египет')
+        )) {
+          return 'Мировая политика';
+        }
+
         if (s.includes('novynaukr') || s.includes('novyna_ukr')) {
           return 'Украина';
         }
@@ -685,6 +703,9 @@
       c = c.replace(/^Категория\s*[\(:]?/i, '').replace(/[\)]+$/g, '').trim();
 
       const lower = c.toLowerCase();
+      if (lower.includes('мировая политика') || lower.includes('политик') || lower.includes('мир') || lower.includes('world')) {
+        return 'Мировая политика';
+      }
       if (lower.includes('технолог') || lower.includes('technology') || lower.includes('робот') || lower.includes('robot')) {
         return 'Технологии';
       }
@@ -705,6 +726,12 @@
       }
 
       const map = {
+        'мировая политика': 'Мировая политика',
+        'политика': 'Мировая политика',
+        'мир': 'Мировая политика',
+        'world': 'Мировая политика',
+        'новости мира': 'Мировая политика',
+        'международные': 'Мировая политика',
         'футбол': 'Футбол',
         'football': 'Футбол',
         'soccer': 'Футбол',
@@ -756,6 +783,7 @@
 
     function getCategoryEmoji(catName) {
       const c = (catName || '').toUpperCase();
+      if (c.includes('ПОЛИТИК') || c.includes('МИР') || c.includes('WORLD')) return '🌐';
       if (c.includes('ТЕХНОЛОГ') || c.includes('TECHNOLOG') || c.includes('РОБОТ')) return '💡';
       if (c.includes('ФУТБОЛ') || c.includes('FOOTBALL') || c.includes('SOCCER')) return '⚽';
       if (c.includes('F1') || c.includes('FORMULA') || c.includes('ФОРМУЛА')) return '🏎️';
@@ -785,6 +813,8 @@
 
       if (text.includes('swiss') || text.includes('швейцар') || text.includes('lausanne') || text.includes('geneve') || text.includes('vaud') || text.includes('rts') || text.includes('blick')) {
         pool = THEMATIC_IMAGES.swiss;
+      } else if (text.includes('политик') || text.includes('трамп') || text.includes('байден') || text.includes('конгресс') || text.includes('белый дом') || text.includes('мир')) {
+        pool = THEMATIC_IMAGES.politics;
       } else if (text.includes('cs') || text.includes('game') || text.includes('игр')) {
         pool = THEMATIC_IMAGES.csgo;
       } else if (text.includes('украин') || text.includes('україна') || text.includes('ukraine') || text.includes('novynaukr')) {
@@ -2999,7 +3029,7 @@
       const topAllCount = state.articles.filter(a => isArticleEligibleForDisplay(a, 'all')).length;
 
       // Always guarantee essential categories are present even if article count is 0
-      const essentialCats = ['Футбол', 'F1', 'IT', 'Технологии', 'CS2', 'Украина', 'Swiss', 'AI & Нейросети', 'DevOps & Linux'];
+      const essentialCats = ['Футбол', 'F1', 'IT', 'Технологии', 'CS2', 'Украина', 'Мировая политика', 'Swiss', 'AI & Нейросети', 'DevOps & Linux'];
       essentialCats.forEach(ec => {
         if (catCounts[ec] === undefined) {
           catCounts[ec] = 0;
@@ -3413,6 +3443,8 @@
           msg = 'В этой выборке нет новостей (для IT & Аналитики действует строгий фильтр: оценка ≥ 7.0)';
         } else if (catLower === 'cs2' || catLower.includes('игры') || catLower.includes('gaming')) {
           msg = 'В категории «CS2» действует фильтр качества (оценка ≥ 7.0). Актуальный рейтинг HLTV доступен в панели справа.';
+        } else if (catLower.includes('мировая политика') || catLower.includes('политик') || catLower === 'мир') {
+          msg = 'В категории «Мировая политика» новости отбираются по международным событиям, выборам и геополитике.';
         } else if (catLower.includes('украин') || catLower.includes('ukraine')) {
           msg = 'В категории «Украина» отображаются проверенные новости. Оперативная сводка атак и ПВО доступна в панели справа.';
         }

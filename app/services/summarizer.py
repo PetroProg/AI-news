@@ -55,10 +55,12 @@ class SummarizerService:
         self.ai_client = ai_client or OllamaClient()
 
     CATEGORY_ALIASES = {
-        "мир": "world",
-        "world": "world",
-        "новости мира": "world",
-        "международные": "world",
+        "мировая политика": "world-politics",
+        "политика": "world-politics",
+        "мир": "world-politics",
+        "world": "world-politics",
+        "новости мира": "world-politics",
+        "международные": "world-politics",
         "футбол": "football",
         "football": "football",
         "спорт": "football",
@@ -189,14 +191,41 @@ class SummarizerService:
             is_gaming = any(k in combined_source for k in ["csgo", "cs3", "clashroyalepin", "hltv", "game", "киберспорт"]) or \
                         any(k in title_lower for k in GAMING_INDICATORS)
 
-            is_ukraine = ("novynaukr" in combined_source) or \
-                         (analysis.category and "украин" in analysis.category.lower())
+            ukr_core_indicators = [
+                "украин", "україна", "киев", "київ", "днепр", "дніпро", "всу", "зеленск",
+                "покровск", "харьков", "харків", "одесс", "одес", "запорож", "купянск", "курск",
+                "шахед", "обстрел", "фронт", "оккупант", "прилет", "сырск", "залужн", "порошенк", "ермак", "генштаб",
+                "дрон", "бпла", "пво"
+            ]
+            world_politics_indicators = [
+                "трамп", "trump", "байден", "biden", "харрис", "harris", "пентагон", "белый дом",
+                "конгресс сша", "сенат сша", "new york times", "politico", "республиканц", "демократ",
+                "макрон", "шольц", "мерц", "бундестаг", "стармер", "великобритани", "франци", "германи",
+                "орбан", "венгри", "фицо", "словаки", "вучич", "серби", "белград", "израиль", "нетаньяху",
+                "сектор газа", "хамас", "хезболла", "ливан", "бейрут", " иран", "ирана", "иране", "ирану", "ираном", "иранск",
+                "тегеран", "пезешкиан", "китай", "пекин", "си цзиньпин", "тайвань", "кндр", "северная корея", "южная корея",
+                "пхеньян", "сеул", "ким чен", "египет", "датск", "дания ", " дании", "рубио", "госдеп", "латви", "чехия", "чешск", "чехии"
+            ]
+
+            has_ukr_core = any(k in title_lower or k in content_lower for k in ukr_core_indicators)
+
+            is_world_politics = (
+                (analysis.category and any(k in analysis.category.lower() for k in ["мировая политика", "политика", "мир", "world"])) or
+                (any(k in title_lower for k in world_politics_indicators) and not has_ukr_core)
+            )
+
+            is_ukraine = not is_world_politics and (
+                ("novynaukr" in combined_source) or 
+                (analysis.category and "украин" in analysis.category.lower())
+            )
 
             is_swiss = any(acc in combined_source for acc in ["rtsinfo", "rtsarchives", "blick_media", "20minutesonline", "instagram"]) or \
                        (analysis.category and "swiss" in analysis.category.lower())
 
             if is_swiss:
                 chosen_category = "Swiss"
+            elif is_world_politics:
+                chosen_category = "Мировая политика"
             elif is_ukraine:
                 chosen_category = "Украина"
             elif is_gaming or (analysis.category and analysis.category.lower() in ["игры & киберспорт", "игры и киберспорт", "gaming", "cs2"]):
