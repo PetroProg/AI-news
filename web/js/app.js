@@ -2020,6 +2020,136 @@
     window.loadFootballResults = loadFootballResults;
 
     // ==========================================
+    // CUSTOM DELETE CONFIRMATION MODAL
+    // ==========================================
+    function showDeleteConfirmModal({
+      title = 'Удалить новость?',
+      snippet = '',
+      desc = 'Запись будет навсегда стерта из базы данных.',
+      confirmText = 'Удалить',
+      onConfirm
+    }) {
+      const modal = document.getElementById('delete-confirm-modal');
+      if (!modal) {
+        if (window.confirm(`${title}\n\n${snippet}\n\n${desc}`)) {
+          if (typeof onConfirm === 'function') onConfirm();
+        }
+        return;
+      }
+
+      const titleEl = document.getElementById('delete-modal-title');
+      const snippetEl = document.getElementById('delete-modal-snippet');
+      const descEl = document.getElementById('delete-modal-desc');
+      const cancelBtn = document.getElementById('delete-modal-cancel');
+      const confirmBtn = document.getElementById('delete-modal-confirm');
+
+      if (titleEl) titleEl.textContent = title;
+      if (snippetEl) {
+        if (snippet && snippet.trim()) {
+          snippetEl.textContent = snippet;
+          snippetEl.classList.remove('hidden');
+        } else {
+          snippetEl.classList.add('hidden');
+        }
+      }
+      if (descEl) descEl.textContent = desc;
+      if (confirmBtn) {
+        const span = confirmBtn.querySelector('span');
+        if (span) span.textContent = confirmText;
+        else confirmBtn.textContent = confirmText;
+      }
+
+      // Show modal
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      void modal.offsetWidth;
+      modal.classList.remove('opacity-0');
+      modal.classList.add('opacity-100');
+
+      const panel = modal.querySelector('.glass-panel');
+      if (panel) {
+        panel.classList.remove('scale-95');
+        panel.classList.add('scale-100');
+      }
+
+      function closeModal() {
+        modal.classList.remove('opacity-100');
+        modal.classList.add('opacity-0');
+        if (panel) {
+          panel.classList.remove('scale-100');
+          panel.classList.add('scale-95');
+        }
+        cleanup();
+        setTimeout(() => {
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+        }, 200);
+      }
+
+      function handleCancel(e) {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        closeModal();
+      }
+
+      async function handleConfirm(e) {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        if (confirmBtn) {
+          confirmBtn.disabled = true;
+          confirmBtn.classList.add('opacity-60', 'pointer-events-none');
+        }
+        try {
+          if (typeof onConfirm === 'function') {
+            await onConfirm();
+          }
+        } finally {
+          if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.classList.remove('opacity-60', 'pointer-events-none');
+          }
+          closeModal();
+        }
+      }
+
+      function handleBackdrop(e) {
+        if (e.target === modal) {
+          handleCancel(e);
+        }
+      }
+
+      function handleKey(e) {
+        if (e.key === 'Escape') {
+          handleCancel(e);
+        } else if (e.key === 'Enter') {
+          if (document.activeElement !== cancelBtn) {
+            handleConfirm(e);
+          }
+        }
+      }
+
+      function cleanup() {
+        if (cancelBtn) cancelBtn.removeEventListener('click', handleCancel);
+        if (confirmBtn) confirmBtn.removeEventListener('click', handleConfirm);
+        modal.removeEventListener('click', handleBackdrop);
+        document.removeEventListener('keydown', handleKey);
+      }
+
+      if (cancelBtn) cancelBtn.addEventListener('click', handleCancel);
+      if (confirmBtn) confirmBtn.addEventListener('click', handleConfirm);
+      modal.addEventListener('click', handleBackdrop);
+      document.addEventListener('keydown', handleKey);
+
+      if (cancelBtn) cancelBtn.focus();
+    }
+
+    window.showDeleteConfirmModal = showDeleteConfirmModal;
+
+    // ==========================================
     // DELETE CURRENT CATEGORY NEWS HANDLER
     // ==========================================
     function updateDeleteCategoryBtn() {
@@ -2044,45 +2174,50 @@
       const isAll = (activeCat === 'all' || activeCat === 'Все');
       const catLabel = isAll ? 'новости категории «Украина»' : `новости категории «${activeCat}»`;
 
-      const confirmed = window.confirm(`Вы уверены, что хотите удалить ${catLabel} из базы данных?\nЭто действие необратимо.`);
-      if (!confirmed) return;
+      showDeleteConfirmModal({
+        title: 'Очистить категорию?',
+        snippet: `Вы собираетесь удалить все ${catLabel} из базы данных.`,
+        desc: 'Это действие необратимо. Все новости в этой категории будут стерты.',
+        confirmText: 'Очистить',
+        onConfirm: async () => {
+          const btn = document.getElementById('delete-category-news-btn');
+          if (btn) {
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'pointer-events-none');
+          }
 
-      const btn = document.getElementById('delete-category-news-btn');
-      if (btn) {
-        btn.disabled = true;
-        btn.classList.add('opacity-50', 'pointer-events-none');
-      }
+          try {
+            const encodedCat = encodeURIComponent(activeCat);
+            const resp = await fetch(`/api/news/category/${encodedCat}`, {
+              method: 'DELETE'
+            });
 
-      try {
-        const encodedCat = encodeURIComponent(activeCat);
-        const resp = await fetch(`/api/news/category/${encodedCat}`, {
-          method: 'DELETE'
-        });
+            if (!resp.ok) {
+              throw new Error(`Ошибка сервера: ${resp.status}`);
+            }
 
-        if (!resp.ok) {
-          throw new Error(`Ошибка сервера: ${resp.status}`);
+            const data = await resp.json();
+            const deletedCount = data.deleted_count || 0;
+
+            showToast(
+              'Удаление завершено',
+              `Удалено новостей: ${deletedCount}`,
+              'success'
+            );
+
+            // Reload live news from DB
+            await loadLiveNews();
+          } catch (err) {
+            console.error('Ошибка при удалении новостей:', err);
+            showToast('Ошибка удаления', err.message || 'Не удалось удалить новости', 'danger');
+          } finally {
+            if (btn) {
+              btn.disabled = false;
+              btn.classList.remove('opacity-50', 'pointer-events-none');
+            }
+          }
         }
-
-        const data = await resp.json();
-        const deletedCount = data.deleted_count || 0;
-
-        showToast(
-          'Удаление завершено',
-          `Удалено новостей: ${deletedCount}`,
-          'success'
-        );
-
-        // Reload live news from DB
-        await loadLiveNews();
-      } catch (err) {
-        console.error('Ошибка при удалении новостей:', err);
-        showToast('Ошибка удаления', err.message || 'Не удалось удалить новости', 'danger');
-      } finally {
-        if (btn) {
-          btn.disabled = false;
-          btn.classList.remove('opacity-50', 'pointer-events-none');
-        }
-      }
+      });
     }
 
     window.deleteCurrentCategoryNews = deleteCurrentCategoryNews;
@@ -3639,11 +3774,11 @@
               <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2 mt-auto">
                 <span class="text-[11px] text-slate-500 font-medium">News AI Engine</span>
                 <div class="flex items-center gap-2">
-                  <button type="button" class="btn-delete-article p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/25 border border-rose-500/30 hover:border-rose-500/60 text-rose-400 hover:text-rose-200 text-xs font-semibold flex items-center justify-center transition-all cursor-pointer" data-id="${article.id}" title="Удалить новость">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+                  <button type="button" class="btn-delete-article group/del relative p-2 rounded-xl bg-slate-900/80 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 border border-slate-800 hover:border-rose-500/50 shadow-sm hover:shadow-lg hover:shadow-rose-950/40 text-xs font-semibold flex items-center justify-center transition-all duration-200 active:scale-95 cursor-pointer" data-id="${article.id}" title="Удалить новость из базы">
+                    <svg class="w-4 h-4 transition-transform duration-200 group-hover/del:scale-110" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
                   </button>
-                  <a href="${sourceUrl}" target="_blank" rel="noopener noreferrer" class="p-2 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 hover:text-white text-xs font-semibold flex items-center justify-center transition-all" title="Читать в источнике">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
+                  <a href="${sourceUrl}" target="_blank" rel="noopener noreferrer" class="group/src p-2 rounded-xl bg-slate-900/80 hover:bg-sky-500/20 text-slate-400 hover:text-sky-300 border border-slate-800 hover:border-sky-500/50 shadow-sm hover:shadow-lg hover:shadow-sky-950/40 text-xs font-semibold flex items-center justify-center transition-all duration-200 active:scale-95" title="Читать в источнике">
+                    <svg class="w-4 h-4 transition-transform duration-200 group-hover/src:scale-110" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
                   </a>
                 </div>
               </div>
@@ -3653,42 +3788,52 @@
 
         const deleteBtn = card.querySelector('.btn-delete-article');
         if (deleteBtn) {
-          deleteBtn.addEventListener('click', async (e) => {
+          deleteBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
             const id = article.id;
             const articleTitle = article.title || 'Новость';
-            if (!confirm(`Вы уверены, что хотите удалить эту новость из базы данных?\n\n«${articleTitle.slice(0, 60)}...»`)) {
-              return;
-            }
-            deleteBtn.disabled = true;
-            deleteBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            try {
-              const resp = await fetch(`/api/news/${id}`, { method: 'DELETE' });
-              if (resp.ok) {
-                card.style.transition = 'all 0.35s ease';
-                card.style.opacity = '0';
-                card.style.transform = 'scale(0.92)';
-                setTimeout(() => {
-                  card.remove();
-                  state.articles = state.articles.filter(a => a.id !== id);
-                  renderCategoryPills();
-                  if (typeof showToast === 'function') {
-                    showToast('Новость удалена', 'Запись стерта из базы данных', 'info');
+
+            showDeleteConfirmModal({
+              title: 'Удалить эту новость?',
+              snippet: articleTitle,
+              desc: 'Запись будет безвозвратно удалена из базы данных.',
+              confirmText: 'Удалить',
+              onConfirm: async () => {
+                deleteBtn.disabled = true;
+                deleteBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                try {
+                  const resp = await fetch(`/api/news/${id}`, { method: 'DELETE' });
+                  if (resp.ok) {
+                    card.style.transition = 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)';
+                    card.style.opacity = '0';
+                    card.style.transform = 'scale(0.92)';
+                    setTimeout(() => {
+                      card.remove();
+                      state.articles = state.articles.filter(a => a.id !== id);
+                      renderCategoryPills();
+                      if (typeof showToast === 'function') {
+                        showToast('Новость удалена', 'Запись стерта из базы данных', 'info');
+                      }
+                    }, 350);
+                  } else {
+                    const errData = await resp.json().catch(() => ({}));
+                    if (typeof showToast === 'function') {
+                      showToast('Ошибка при удалении', errData.detail || 'Не удалось удалить новость', 'danger');
+                    }
+                    deleteBtn.disabled = false;
+                    deleteBtn.classList.remove('opacity-50', 'cursor-not-allowed');
                   }
-                }, 350);
-              } else {
-                const errData = await resp.json().catch(() => ({}));
-                alert('Ошибка при удалении: ' + (errData.detail || 'Не удалось удалить новость'));
-                deleteBtn.disabled = false;
-                deleteBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                } catch (err) {
+                  console.error('Delete error:', err);
+                  if (typeof showToast === 'function') {
+                    showToast('Ошибка сети', 'Не удалось связаться с сервером', 'danger');
+                  }
+                  deleteBtn.disabled = false;
+                  deleteBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
               }
-            } catch (err) {
-              console.error('Delete error:', err);
-              alert('Ошибка соединения с сервером');
-              deleteBtn.disabled = false;
-              deleteBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            }
+            });
           });
         }
 
