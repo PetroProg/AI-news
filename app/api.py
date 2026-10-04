@@ -1,6 +1,9 @@
 import asyncio
+import logging
 from datetime import datetime, timezone, timedelta
 import time
+
+logger = logging.getLogger("news_ai.api")
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 import re
