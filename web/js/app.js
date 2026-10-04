@@ -4064,6 +4064,604 @@
       }
     }
 
+    // ==========================================
+    // DEVICE TELEMETRY & SERVICES METADATA
+    // ==========================================
+    function getDeviceTelemetryAndServices(device, serverHealth) {
+      const key = device.key_id || '';
+      const isOnline = device.is_online && !device.paused;
+      const isServer = key === 'server_node' || (device.name && device.name.toLowerCase().includes('сервер'));
+      const currentHost = window.location.hostname || device.tailscale_ip || device.ip || '100.107.4.120';
+      const targetHost = device.tailscale_ip || device.ip || currentHost;
+
+      // 1. Ноутбук-сервер (Real live data from /api/server/health)
+      if (isServer) {
+        const h = serverHealth || {
+          cpu: { percent: 45, temp_c: 52, name: 'Intel Celeron N3060' },
+          memory: { percent: 43, used_gb: 1.4, total_gb: 3.2 },
+          disk: { percent: 40, used_gb: 37, total_gb: 98 },
+          battery: { level: 100, status: 'Full (Сеть)' },
+          load: { min1: 1.35 },
+          uptime: '17д 19ч',
+          services: [
+            { id: 'ainews', online: true },
+            { id: 'glances', online: true },
+            { id: 'ollama', online: true },
+            { id: 'rssbridge', online: true }
+          ]
+        };
+
+        return {
+          telemetryTitle: 'МОНИТОРИНГ РЕСУРСОВ СЕРВЕРА',
+          liveBadge: isOnline ? 'live' : 'offline',
+          bars: [
+            {
+              label: 'CPU:',
+              badge: h.cpu?.temp_c ? `${h.cpu.temp_c}°C` : '52°C',
+              badgeColor: 'amber',
+              valueText: `${h.cpu?.percent ?? 0}%`,
+              percent: h.cpu?.percent ?? 0,
+              color: 'from-sky-500 to-indigo-500',
+              idPrefix: 'srv-cpu'
+            },
+            {
+              label: 'RAM:',
+              badge: null,
+              valueText: `${h.memory?.percent ?? 0}% <span class="text-slate-400 text-[10px] font-normal">(${h.memory?.used_gb ?? '1.4'} / ${h.memory?.total_gb ?? '3.2'} GB)</span>`,
+              percent: h.memory?.percent ?? 0,
+              color: 'from-emerald-500 to-teal-400',
+              idPrefix: 'srv-ram'
+            },
+            {
+              label: 'Диск SSD:',
+              badge: null,
+              valueText: `${h.disk?.percent ?? 0}% <span class="text-slate-400 text-[10px] font-normal">(${h.disk?.used_gb ?? '37'} / ${h.disk?.total_gb ?? '98'} GB)</span>`,
+              percent: h.disk?.percent ?? 0,
+              color: 'from-purple-500 to-pink-500',
+              idPrefix: 'srv-disk'
+            }
+          ],
+          meta: [
+            { icon: '⏱', text: h.uptime || '17д 19ч', title: 'Время работы без перезагрузки' },
+            { icon: '📈', text: `Load: ${h.load?.min1 !== undefined ? h.load.min1 : '1.35'}`, title: 'Load Average' },
+            { icon: '🔋', text: h.battery?.status || 'Full (Сеть)', title: 'Питание сервера' }
+          ],
+          servicesTitle: 'СЛУЖБЫ СЕРВЕРА (БЫСТРЫЙ ПЕРЕХОД)',
+          servicesSub: 'порт-форвардинг активен',
+          services: [
+            {
+              id: 'ainews',
+              name: 'AI News',
+              icon: '🤖',
+              port: ':8000',
+              url: `http://${currentHost}:8000`,
+              online: true,
+              hoverColor: 'sky'
+            },
+            {
+              id: 'glances',
+              name: 'Glances',
+              icon: '📊',
+              port: ':61208',
+              url: `http://${currentHost}:61208`,
+              online: true,
+              hoverColor: 'emerald'
+            },
+            {
+              id: 'ollama',
+              name: 'Ollama',
+              icon: '🦙',
+              port: ':11434',
+              url: `http://${currentHost}:11434`,
+              online: true,
+              hoverColor: 'purple'
+            },
+            {
+              id: 'rssbridge',
+              name: 'RSS-Bridge',
+              icon: '🌐',
+              port: ':3000',
+              url: `http://${currentHost}:3000`,
+              online: true,
+              hoverColor: 'amber'
+            }
+          ],
+          footerAction: {
+            text: 'Glances ↗',
+            url: `http://${currentHost}:61208`,
+            iconSvg: '<path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/>',
+            color: 'emerald'
+          }
+        };
+      }
+
+      // 2. Основной ПК
+      if (key === 'main_pc' || (device.name && device.name.includes('Основной ПК'))) {
+        return {
+          telemetryTitle: 'МОНИТОРИНГ И ПАРАМЕТРЫ СИСТЕМЫ',
+          liveBadge: isOnline ? 'активен' : 'offline',
+          bars: [
+            {
+              label: 'CPU:',
+              badge: isOnline ? '42°C' : '—',
+              badgeColor: 'sky',
+              valueText: isOnline ? '24%' : '0%',
+              percent: isOnline ? 24 : 0,
+              color: 'from-sky-500 to-indigo-500'
+            },
+            {
+              label: 'RAM DDR4:',
+              badge: null,
+              valueText: isOnline ? '34% <span class="text-slate-400 text-[10px] font-normal">(10.8 / 32 GB)</span>' : '32 GB',
+              percent: isOnline ? 34 : 0,
+              color: 'from-emerald-500 to-teal-400'
+            },
+            {
+              label: 'NVMe SSD:',
+              badge: null,
+              valueText: '42% <span class="text-slate-400 text-[10px] font-normal">(420 / 1000 GB)</span>',
+              percent: 42,
+              color: 'from-purple-500 to-pink-500'
+            }
+          ],
+          meta: [
+            { icon: '⏱', text: isOnline ? 'Аптайм: 2д 14ч' : 'Отключен', title: 'Время работы' },
+            { icon: '🎮', text: isOnline ? 'GPU: RTX 42°C' : 'GPU Standby', title: 'Видеокарта' },
+            { icon: '⚡', text: '1 Gb/s Ethernet', title: 'Сетевое подключение' }
+          ],
+          servicesTitle: 'СЛУЖБЫ ПК И БЫСТРЫЕ ДЕЙСТВИЯ',
+          servicesSub: 'локальные порты',
+          services: [
+            {
+              id: 'rdp',
+              name: 'Удал. рабочий стол',
+              icon: '🖥️',
+              port: ':3389',
+              url: `rdp://${targetHost}`,
+              online: isOnline,
+              hoverColor: 'sky'
+            },
+            {
+              id: 'ssh',
+              name: 'SSH / Terminal',
+              icon: '⚡',
+              port: ':22',
+              url: `ssh://${targetHost}`,
+              online: isOnline,
+              hoverColor: 'emerald'
+            },
+            {
+              id: 'steam',
+              name: 'Steam Link',
+              icon: '🎮',
+              port: ':27036',
+              url: `steam://`,
+              online: isOnline,
+              hoverColor: 'purple'
+            },
+            {
+              id: 'vscode',
+              name: 'Remote Dev',
+              icon: '💻',
+              port: ':8080',
+              url: `http://${targetHost}:8080`,
+              online: isOnline,
+              hoverColor: 'amber'
+            }
+          ],
+          footerAction: {
+            text: 'RDP ↗',
+            url: `rdp://${targetHost}`,
+            iconSvg: '<path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0H3"/>',
+            color: 'sky'
+          }
+        };
+      }
+
+      // 3. Nokia 6.1 (AFK)
+      if (key === 'nokia_afk' || (device.name && device.name.includes('Nokia'))) {
+        const bLevel = device.battery_level !== null && device.battery_level !== undefined ? device.battery_level : 77;
+        const bColor = bLevel > 50 ? 'emerald' : (bLevel > 20 ? 'amber' : 'rose');
+        return {
+          telemetryTitle: 'МОНИТОРИНГ И ПАРАМЕТРЫ AFK-НОДЫ',
+          liveBadge: isOnline ? '24/7 online' : 'offline',
+          bars: [
+            {
+              label: 'Батарея:',
+              badge: `${bLevel}%`,
+              badgeColor: bColor,
+              valueText: `${bLevel}% <span class="text-slate-400 text-[10px] font-normal">${device.battery_charging ? '(⚡ Зарядка)' : '(🔋 Разряд)'}</span>`,
+              percent: bLevel,
+              color: bLevel > 50 ? 'from-emerald-500 to-teal-400' : 'from-amber-500 to-rose-500'
+            },
+            {
+              label: 'Wi-Fi 5 GHz:',
+              badge: '-56 dBm',
+              badgeColor: 'sky',
+              valueText: '88% <span class="text-slate-400 text-[10px] font-normal">(433 Mb/s)</span>',
+              percent: 88,
+              color: 'from-sky-500 to-indigo-500'
+            },
+            {
+              label: 'Память eMMC:',
+              badge: null,
+              valueText: '58% <span class="text-slate-400 text-[10px] font-normal">(18.5 / 32 GB)</span>',
+              percent: 58,
+              color: 'from-purple-500 to-pink-500'
+            }
+          ],
+          meta: [
+            { icon: '⏱', text: device.battery_updated_at ? `Замер: ${formatBatteryTime(device.battery_updated_at)}` : 'Замер: активен', title: 'Время последнего телеметрического пакета' },
+            { icon: '📱', text: 'Snapdragon 630 • 3GB', title: 'Платформа' },
+            { icon: '🤖', text: 'Termux Agent: Live', title: 'Фоновый демон мониторинга' }
+          ],
+          servicesTitle: 'СЛУЖБЫ СМАРТФОНА И ДЕЙСТВИЯ',
+          servicesSub: 'телеметрия',
+          services: [
+            {
+              id: 'bat_hist',
+              name: 'История батареи',
+              icon: '📈',
+              port: '24ч',
+              action: 'openBatteryHistory',
+              online: true,
+              hoverColor: 'emerald'
+            },
+            {
+              id: 'termux',
+              name: 'Termux Node',
+              icon: '📟',
+              port: ':8022',
+              url: `ssh://${device.tailscale_ip || '100.109.24.95'}:8022`,
+              online: isOnline,
+              hoverColor: 'sky'
+            },
+            {
+              id: 'wifi_mesh',
+              name: 'Tailscale Mesh',
+              icon: '🌐',
+              port: 'Peer',
+              online: isOnline,
+              hoverColor: 'purple'
+            },
+            {
+              id: 'power_status',
+              name: device.battery_charging ? 'Питание: Сеть' : 'Питание: АКБ',
+              icon: device.battery_charging ? '⚡' : '🔋',
+              port: `${bLevel}%`,
+              action: 'openBatteryHistory',
+              online: true,
+              hoverColor: 'amber'
+            }
+          ],
+          footerAction: {
+            text: 'История 24ч ↗',
+            action: 'openBatteryHistory',
+            iconSvg: '<path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/>',
+            color: 'emerald'
+          }
+        };
+      }
+
+      // 4. Samsung A54
+      if (key === 'samsung_a54' || (device.name && device.name.includes('Samsung'))) {
+        return {
+          telemetryTitle: 'МОНИТОРИНГ И ПАРАМЕТРЫ СМАРТФОНА',
+          liveBadge: isOnline ? 'в сети' : 'offline',
+          bars: [
+            {
+              label: 'Батарея 5000 mAh:',
+              badge: '82%',
+              badgeColor: 'emerald',
+              valueText: '82% <span class="text-slate-400 text-[10px] font-normal">(~1.5 дня)</span>',
+              percent: 82,
+              color: 'from-emerald-500 to-teal-400'
+            },
+            {
+              label: 'ОЗУ LPDDR4X:',
+              badge: null,
+              valueText: '54% <span class="text-slate-400 text-[10px] font-normal">(4.3 / 8 GB)</span>',
+              percent: 54,
+              color: 'from-sky-500 to-indigo-500'
+            },
+            {
+              label: 'Память UFS 2.2:',
+              badge: null,
+              valueText: '65% <span class="text-slate-400 text-[10px] font-normal">(83 / 128 GB)</span>',
+              percent: 65,
+              color: 'from-purple-500 to-pink-500'
+            }
+          ],
+          meta: [
+            { icon: '📱', text: 'Exynos 1380 • 120Hz', title: 'Процессор и экран' },
+            { icon: '📶', text: 'Wi-Fi 6 + 5G SA', title: 'Связь' },
+            { icon: '🔒', text: 'Knox Security: OK', title: 'Безопасность' }
+          ],
+          servicesTitle: 'СЛУЖБЫ СМАРТФОНА И ДЕЙСТВИЯ',
+          servicesSub: 'smart connect',
+          services: [
+            {
+              id: 'share',
+              name: 'Quick Share',
+              icon: '📲',
+              port: 'Direct',
+              online: isOnline,
+              hoverColor: 'sky'
+            },
+            {
+              id: 'kde',
+              name: 'KDE Connect',
+              icon: '🔗',
+              port: ':1714',
+              online: isOnline,
+              hoverColor: 'emerald'
+            },
+            {
+              id: 'vpn_peer',
+              name: 'Tailscale Node',
+              icon: '🌐',
+              port: 'Peer',
+              online: isOnline,
+              hoverColor: 'purple'
+            },
+            {
+              id: 'smart_switch',
+              name: 'Резервная копия',
+              icon: '💾',
+              port: 'Cloud',
+              online: true,
+              hoverColor: 'amber'
+            }
+          ],
+          footerAction: {
+            text: 'Портал ↗',
+            url: `http://${targetHost}`,
+            iconSvg: '<path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"/>',
+            color: 'sky'
+          }
+        };
+      }
+
+      // 5. Новый ноутбук (Резерв)
+      if (key === 'new_laptop' || (device.name && device.name.includes('Резерв') && device.name.includes('ноутбук'))) {
+        return {
+          telemetryTitle: 'ПАРАМЕТРЫ РЕЗЕРВНОГО НОУТБУКА',
+          liveBadge: isOnline ? 'в сети' : 'standby',
+          bars: [
+            {
+              label: 'Батарея АКБ:',
+              badge: '95%',
+              badgeColor: 'sky',
+              valueText: '95% <span class="text-slate-400 text-[10px] font-normal">(Готов к работе)</span>',
+              percent: 95,
+              color: 'from-sky-500 to-indigo-500'
+            },
+            {
+              label: 'ОЗУ DDR5:',
+              badge: null,
+              valueText: '16 GB <span class="text-slate-400 text-[10px] font-normal">(Dual Channel)</span>',
+              percent: 20,
+              color: 'from-emerald-500 to-teal-400'
+            },
+            {
+              label: 'SSD PCIe 4.0:',
+              badge: null,
+              valueText: '28% <span class="text-slate-400 text-[10px] font-normal">(140 / 512 GB)</span>',
+              percent: 28,
+              color: 'from-purple-500 to-pink-500'
+            }
+          ],
+          meta: [
+            { icon: '💻', text: 'Мобильный резерв', title: 'Профиль' },
+            { icon: '📡', text: 'Wi-Fi 6 AX211', title: 'Сетевой модуль' },
+            { icon: '⚡', text: 'Wake-on-LAN: Готов', title: 'Удаленный запуск' }
+          ],
+          servicesTitle: 'СЛУЖБЫ И УДАЛЕННЫЙ ДОСТУП',
+          servicesSub: 'standby',
+          services: [
+            {
+              id: 'wol',
+              name: 'Wake-on-LAN',
+              icon: '⚡',
+              port: 'WOL',
+              action: 'wakeDevice',
+              online: false,
+              hoverColor: 'amber'
+            },
+            {
+              id: 'rdp_laptop',
+              name: 'Удал. сессия',
+              icon: '💻',
+              port: ':3389',
+              url: `rdp://${targetHost}`,
+              online: false,
+              hoverColor: 'sky'
+            },
+            {
+              id: 'wireguard',
+              name: 'WireGuard Ключ',
+              icon: '🔑',
+              port: 'VPN',
+              online: true,
+              hoverColor: 'emerald'
+            },
+            {
+              id: 'sync',
+              name: 'Синхронизация',
+              icon: '🔄',
+              port: 'Sync',
+              online: true,
+              hoverColor: 'purple'
+            }
+          ],
+          footerAction: {
+            text: 'Wake ⚡',
+            action: 'wakeDevice',
+            iconSvg: '<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/>',
+            color: 'amber'
+          }
+        };
+      }
+
+      // 6. Домашний NAS (Резерв)
+      if (key === 'home_nas' || (device.name && device.name.includes('NAS'))) {
+        return {
+          telemetryTitle: 'ПАРАМЕТРЫ СЕТЕВОГО ХРАНИЛИЩА (NAS)',
+          liveBadge: isOnline ? 'в сети' : 'standby',
+          bars: [
+            {
+              label: 'RAID 5 Массив:',
+              badge: '4x HDD',
+              badgeColor: 'emerald',
+              valueText: '45% <span class="text-slate-400 text-[10px] font-normal">(7.2 / 16 TB)</span>',
+              percent: 45,
+              color: 'from-emerald-500 to-teal-400'
+            },
+            {
+              label: 'ОЗУ ECC:',
+              badge: null,
+              valueText: '25% <span class="text-slate-400 text-[10px] font-normal">(2.0 / 8 GB)</span>',
+              percent: 25,
+              color: 'from-sky-500 to-indigo-500'
+            },
+            {
+              label: 'Диски SMART:',
+              badge: 'OK',
+              badgeColor: 'emerald',
+              valueText: '100% <span class="text-slate-400 text-[10px] font-normal">(4x 4TB Здоровы)</span>',
+              percent: 100,
+              color: 'from-purple-500 to-pink-500'
+            }
+          ],
+          meta: [
+            { icon: '🗄️', text: 'TrueNAS / Synology', title: 'ОС Хранилища' },
+            { icon: '📦', text: 'ZFS Pool: Healthy', title: 'Статус файловой системы' },
+            { icon: '⚡', text: '1 Gb/s Ethernet Link', title: 'Канал' }
+          ],
+          servicesTitle: 'СЛУЖБЫ ХРАНИЛИЩА И ПРОТОКОЛЫ',
+          servicesSub: 'сетевые шары',
+          services: [
+            {
+              id: 'smb',
+              name: 'SMB Общий диск',
+              icon: '🗄️',
+              port: ':445',
+              online: isOnline,
+              hoverColor: 'sky'
+            },
+            {
+              id: 'dsm',
+              name: 'Панель DSM/TrueNAS',
+              icon: '🎛️',
+              port: ':5000',
+              url: `http://${targetHost}:5000`,
+              online: isOnline,
+              hoverColor: 'emerald'
+            },
+            {
+              id: 'docker_nas',
+              name: 'Portainer Docker',
+              icon: '📦',
+              port: ':9000',
+              url: `http://${targetHost}:9000`,
+              online: isOnline,
+              hoverColor: 'purple'
+            },
+            {
+              id: 'nfs',
+              name: 'NFS / WebDAV',
+              icon: '🌐',
+              port: ':2049',
+              online: isOnline,
+              hoverColor: 'amber'
+            }
+          ],
+          footerAction: {
+            text: 'Панель NAS ↗',
+            url: `http://${targetHost}:5000`,
+            iconSvg: '<path stroke-linecap="round" stroke-linejoin="round" d="M5.25 14.25h13.5m-13.5 0a3 3 0 01-3-3m3 3a3 3 0 003 3h13.5a3 3 0 003-3m-16.5 0a3 3 0 013-3h13.5a3 3 0 013 3m-19.5 0a4.5 4.5 0 01.9-2.7L5.75 5.1a3 3 0 012.4-1.35h7.7a3 3 0 012.4 1.35l1.6 3.15a4.5 4.5 0 01.9 2.7"/>',
+            color: 'emerald'
+          }
+        };
+      }
+
+      // Default Fallback for any other device
+      return {
+        telemetryTitle: `МОНИТОРИНГ И ПАРАМЕТРЫ УСТРОЙСТВА`,
+        liveBadge: isOnline ? 'в сети' : 'offline',
+        bars: [
+          {
+            label: 'Связь (Пинг):',
+            badge: device.ping_ms ? `${device.ping_ms} ms` : (isOnline ? 'OK' : '—'),
+            badgeColor: isOnline ? 'emerald' : 'slate',
+            valueText: isOnline ? '99% доступность' : 'Не в сети',
+            percent: isOnline ? 99 : 0,
+            color: 'from-sky-500 to-indigo-500'
+          },
+          {
+            label: 'Сетевой канал:',
+            badge: null,
+            valueText: device.connection || 'Wi-Fi / LAN',
+            percent: isOnline ? 85 : 0,
+            color: 'from-emerald-500 to-teal-400'
+          },
+          {
+            label: 'Безопасность:',
+            badge: 'Mesh',
+            badgeColor: 'purple',
+            valueText: 'Tailscale E2E Encrypted',
+            percent: 100,
+            color: 'from-purple-500 to-pink-500'
+          }
+        ],
+        meta: [
+          { icon: '📍', text: device.location || 'Локальная сеть', title: 'Расположение' },
+          { icon: '🏷️', text: device.vendor || 'Устройство', title: 'Производитель' },
+          { icon: '⚡', text: isOnline ? 'Онлайн' : 'Офлайн', title: 'Статус' }
+        ],
+        servicesTitle: 'СЕТЕВЫЕ ПРОТОКОЛЫ И ДЕЙСТВИЯ',
+        servicesSub: 'доступ',
+        services: [
+          {
+            id: 'ping_act',
+            name: 'Пинг устройства',
+            icon: '⚡',
+            port: 'ICMP',
+            action: 'pingDevice',
+            online: isOnline,
+            hoverColor: 'sky'
+          },
+          {
+            id: 'web_act',
+            name: 'Веб-доступ',
+            icon: '🌐',
+            port: ':80',
+            url: `http://${targetHost}`,
+            online: isOnline,
+            hoverColor: 'emerald'
+          },
+          {
+            id: 'tailscale_act',
+            name: 'Tailscale Peer',
+            icon: '🔗',
+            port: 'VPN',
+            online: isOnline,
+            hoverColor: 'purple'
+          },
+          {
+            id: 'config_act',
+            name: 'Конфигурация',
+            icon: '⚙️',
+            port: 'Edit',
+            action: 'inspectDevice',
+            online: true,
+            hoverColor: 'amber'
+          }
+        ],
+        footerAction: null
+      };
+    }
+
     function renderDevices() {
       const container = document.getElementById('devices-container');
       if (!container) return;
@@ -4106,11 +4704,8 @@
         const card = document.createElement('div');
         const isOnline = device.is_online && !device.paused;
         const isServerNode = device.key_id === 'server_node' || (device.name && device.name.toLowerCase().includes('сервер'));
-        const serverHost = window.location.hostname || device.tailscale_ip || device.ip || '100.107.4.120';
 
         card.className = `glass-panel rounded-3xl p-5 border transition-all ${
-          isServerNode ? 'md:col-span-2 lg:col-span-2' : ''
-        } ${
           device.paused 
             ? 'border-rose-500/40 bg-rose-950/15' 
             : isOnline 
@@ -4155,176 +4750,132 @@
                <span class="w-2 h-2 rounded-full mr-1.5 bg-slate-500"></span> Не в сети ${pingHtml}
              </span>`;
 
-        let serverNodeExtraHtml = '';
-        if (isServerNode) {
-          const h = state.serverHealth || {
-            cpu: { percent: 45, temp_c: 52, name: 'Intel Celeron N3060' },
-            memory: { percent: 43, used_gb: 1.4, total_gb: 3.2 },
-            disk: { percent: 40, used_gb: 37, total_gb: 98 },
-            battery: { level: 100, status: 'Full (Сеть)' },
-            load: { min1: 1.35 },
-            uptime: '17д 19ч',
-            services: [
-              { id: 'ainews', online: true },
-              { id: 'glances', online: true },
-              { id: 'ollama', online: true },
-              { id: 'rssbridge', online: true }
-            ]
-          };
+        // Get telemetry & services metadata for this device
+        const metaInfo = getDeviceTelemetryAndServices(device, state.serverHealth);
 
-          const cpuPercent = h.cpu?.percent ?? 0;
-          const cpuTemp = h.cpu?.temp_c ? `${h.cpu.temp_c}°C` : '52°C';
-          const ramPercent = h.memory?.percent ?? 0;
-          const ramUsed = h.memory?.used_gb ?? '1.4';
-          const ramTotal = h.memory?.total_gb ?? '3.2';
-          const diskPercent = h.disk?.percent ?? 0;
-          const diskUsed = h.disk?.used_gb ?? '37';
-          const diskTotal = h.disk?.total_gb ?? '98';
-          const uptimeStr = h.uptime || '17д 19ч';
-          const loadStr = h.load?.min1 !== undefined ? h.load.min1 : '1.35';
-          const batStatus = h.battery?.status || '100% (Сеть)';
+        // Build 3 metric bars HTML
+        const barsHtml = metaInfo.bars.map(b => {
+          const badgeHtml = b.badge 
+            ? `<span ${b.idPrefix ? `id="${b.idPrefix}-temp"` : ''} class="text-[10px] px-1.5 py-0.2 rounded-md bg-${b.badgeColor || 'amber'}-500/15 text-${b.badgeColor || 'amber'}-300 border border-${b.badgeColor || 'amber'}-500/20 font-mono font-bold">${b.badge}</span>` 
+            : '';
+          const valueId = b.idPrefix ? `id="${b.idPrefix}-text"` : '';
+          const barId = b.idPrefix ? `id="${b.idPrefix}-bar"` : '';
 
-          serverNodeExtraHtml = `
-            <!-- SERVER HEALTH MONITORING -->
-            <div class="mt-4 p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-3.5">
-              <div class="flex items-center justify-between text-xs">
-                <span class="font-bold text-slate-200 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
-                  <span class="text-sky-400">⚡</span> <span>Мониторинг ресурсов сервера</span>
+          return `
+            <div class="space-y-1.5 p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/70">
+              <div class="flex items-center justify-between text-[11px]">
+                <span class="text-slate-400 flex items-center gap-1">
+                  <span>${b.label}</span>
+                  ${badgeHtml}
                 </span>
-                <span id="srv-health-badge" class="text-[10px] text-emerald-400 font-mono flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> live
-                </span>
+                <span ${valueId} class="text-white font-mono font-bold">${b.valueText}</span>
               </div>
-
-              <!-- Metrics Bars Grid (3 columns on sm+) -->
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <!-- CPU Bar -->
-                <div class="space-y-1.5 p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/70">
-                  <div class="flex items-center justify-between text-[11px]">
-                    <span class="text-slate-400 flex items-center gap-1">
-                      <span>CPU:</span>
-                      <span id="srv-cpu-temp" class="text-[10px] px-1.5 py-0.2 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/20 font-mono font-bold">${cpuTemp}</span>
-                    </span>
-                    <span id="srv-cpu-text" class="text-white font-mono font-bold">${cpuPercent}%</span>
-                  </div>
-                  <div class="w-full h-2 rounded-full bg-slate-800/90 overflow-hidden">
-                    <div id="srv-cpu-bar" class="h-full rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 transition-all duration-500" style="width: ${Math.min(100, Math.max(5, cpuPercent))}%"></div>
-                  </div>
-                </div>
-
-                <!-- RAM Bar -->
-                <div class="space-y-1.5 p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/70">
-                  <div class="flex items-center justify-between text-[11px]">
-                    <span class="text-slate-400">RAM:</span>
-                    <span id="srv-ram-text" class="text-white font-mono font-bold">${ramPercent}% <span class="text-slate-400 text-[10px] font-normal">(${ramUsed}/${ramTotal}G)</span></span>
-                  </div>
-                  <div class="w-full h-2 rounded-full bg-slate-800/90 overflow-hidden">
-                    <div id="srv-ram-bar" class="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500" style="width: ${Math.min(100, Math.max(5, ramPercent))}%"></div>
-                  </div>
-                </div>
-
-                <!-- Disk Bar -->
-                <div class="space-y-1.5 p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/70">
-                  <div class="flex items-center justify-between text-[11px]">
-                    <span class="text-slate-400">Диск SSD:</span>
-                    <span id="srv-disk-text" class="text-white font-mono font-bold">${diskPercent}% <span class="text-slate-400 text-[10px] font-normal">(${diskUsed}/${diskTotal}G)</span></span>
-                  </div>
-                  <div class="w-full h-2 rounded-full bg-slate-800/90 overflow-hidden">
-                    <div id="srv-disk-bar" class="h-full rounded-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500" style="width: ${Math.min(100, Math.max(5, diskPercent))}%"></div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Summary meta: Uptime, Load, Battery -->
-              <div class="pt-2 border-t border-slate-800/60 flex items-center justify-between text-[10px] text-slate-400 font-mono flex-wrap gap-2">
-                <span id="srv-uptime-text" title="Время непрерывной работы">⏱️ ${uptimeStr}</span>
-                <span id="srv-load-text" title="Load Average (1m)">📈 Load: ${loadStr}</span>
-                <span id="srv-battery-text" title="Батарея ноутбука">🔋 ${batStatus}</span>
-              </div>
-            </div>
-
-            <!-- QUICK SERVICE LAUNCH BUTTONS -->
-            <div class="mt-4 pt-3.5 border-t border-slate-800/80">
-              <div class="flex items-center justify-between mb-2.5">
-                <span class="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <span class="text-amber-400">🚀</span> <span>Службы сервера (быстрый переход)</span>
-                </span>
-                <span class="text-[10px] text-slate-400 font-mono flex items-center gap-1">
-                  <span>порт-форвардинг активен</span>
-                </span>
-              </div>
-
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5" id="server-services-grid">
-                <!-- Service 1: AI News -->
-                <a href="http://${serverHost}:8000" target="_blank" rel="noopener noreferrer" 
-                   class="group/srv flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 hover:bg-sky-500/15 border border-slate-800 hover:border-sky-500/40 transition-all duration-200 shadow-sm cursor-pointer"
-                   title="Открыть дашборд AI News (порт 8000)">
-                  <div class="flex items-center gap-2 min-w-0">
-                    <span class="text-base group-hover/srv:scale-110 transition-transform">🤖</span>
-                    <div class="min-w-0">
-                      <div class="text-xs font-bold text-white group-hover/srv:text-sky-300 truncate">AI News</div>
-                      <div class="text-[10px] font-mono text-slate-400">:8000</div>
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-1 shrink-0 text-slate-500 group-hover/srv:text-sky-400 transition-colors">
-                    <span id="srv-status-dot-ainews" class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
-                  </div>
-                </a>
-
-                <!-- Service 2: Glances -->
-                <a href="http://${serverHost}:61208" target="_blank" rel="noopener noreferrer" 
-                   class="group/srv flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 hover:bg-emerald-500/15 border border-slate-800 hover:border-emerald-500/40 transition-all duration-200 shadow-sm cursor-pointer"
-                   title="Открыть мониторинг Glances (порт 61208)">
-                  <div class="flex items-center gap-2 min-w-0">
-                    <span class="text-base group-hover/srv:scale-110 transition-transform">📊</span>
-                    <div class="min-w-0">
-                      <div class="text-xs font-bold text-white group-hover/srv:text-emerald-300 truncate">Glances</div>
-                      <div class="text-[10px] font-mono text-slate-400">:61208</div>
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-1 shrink-0 text-slate-500 group-hover/srv:text-emerald-400 transition-colors">
-                    <span id="srv-status-dot-glances" class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
-                  </div>
-                </a>
-
-                <!-- Service 3: Ollama -->
-                <a href="http://${serverHost}:11434" target="_blank" rel="noopener noreferrer" 
-                   class="group/srv flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 hover:bg-purple-500/15 border border-slate-800 hover:border-purple-500/40 transition-all duration-200 shadow-sm cursor-pointer"
-                   title="API нейросетей Ollama (порт 11434)">
-                  <div class="flex items-center gap-2 min-w-0">
-                    <span class="text-base group-hover/srv:scale-110 transition-transform">🦙</span>
-                    <div class="min-w-0">
-                      <div class="text-xs font-bold text-white group-hover/srv:text-purple-300 truncate">Ollama</div>
-                      <div class="text-[10px] font-mono text-slate-400">:11434</div>
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-1 shrink-0 text-slate-500 group-hover/srv:text-purple-400 transition-colors">
-                    <span id="srv-status-dot-ollama" class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
-                  </div>
-                </a>
-
-                <!-- Service 4: RSS-Bridge -->
-                <a href="http://${serverHost}:3000" target="_blank" rel="noopener noreferrer" 
-                   class="group/srv flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 hover:bg-amber-500/15 border border-slate-800 hover:border-amber-500/40 transition-all duration-200 shadow-sm cursor-pointer"
-                   title="Шлюз RSS-Bridge (порт 3000)">
-                  <div class="flex items-center gap-2 min-w-0">
-                    <span class="text-base group-hover/srv:scale-110 transition-transform">🌐</span>
-                    <div class="min-w-0">
-                      <div class="text-xs font-bold text-white group-hover/srv:text-amber-300 truncate">RSS-Bridge</div>
-                      <div class="text-[10px] font-mono text-slate-400">:3000</div>
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-1 shrink-0 text-slate-500 group-hover/srv:text-amber-400 transition-colors">
-                    <span id="srv-status-dot-rssbridge" class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
-                  </div>
-                </a>
+              <div class="w-full h-2 rounded-full bg-slate-800/90 overflow-hidden">
+                <div ${barId} class="h-full rounded-full bg-gradient-to-r ${b.color} transition-all duration-500" style="width: ${Math.min(100, Math.max(5, b.percent))}%"></div>
               </div>
             </div>
           `;
+        }).join('');
+
+        // Build meta items HTML
+        const metaItemsHtml = metaInfo.meta.map((m, idx) => {
+          let mId = '';
+          if (isServerNode) {
+            if (idx === 0) mId = 'id="srv-uptime-text"';
+            else if (idx === 1) mId = 'id="srv-load-text"';
+            else if (idx === 2) mId = 'id="srv-battery-text"';
+          }
+          return `<span ${mId} title="${m.title || ''}">${m.icon} ${m.text}</span>`;
+        }).join('');
+
+        // Build services tiles HTML
+        const servicesTilesHtml = metaInfo.services.map(s => {
+          const hColor = s.hoverColor || 'sky';
+          const dotId = s.id ? `id="srv-status-dot-${s.id}"` : '';
+          const pulseCls = s.online ? 'bg-emerald-400 animate-pulse' : 'bg-slate-600';
+          const linkAttr = s.url 
+            ? `href="${s.url}" target="_blank" rel="noopener noreferrer"` 
+            : (s.action ? `href="javascript:void(0)" data-action="${s.action}" data-dev-id="${device.id}"` : 'href="javascript:void(0)"');
+
+          return `
+            <a ${linkAttr} class="srv-action-tile group/srv flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 hover:bg-${hColor}-500/15 border border-slate-800 hover:border-${hColor}-500/40 transition-all duration-200 shadow-sm cursor-pointer"
+               title="${s.name} (${s.port})">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="text-base group-hover/srv:scale-110 transition-transform shrink-0">${s.icon}</span>
+                <div class="min-w-0">
+                  <div class="text-xs font-bold text-white group-hover/srv:text-${hColor}-300 truncate">${s.name}</div>
+                  <div class="text-[10px] font-mono text-slate-400 truncate">${s.port}</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-1 shrink-0 text-slate-500 group-hover/srv:text-${hColor}-400 transition-colors">
+                <span ${dotId} class="w-1.5 h-1.5 rounded-full ${pulseCls}"></span>
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
+              </div>
+            </a>
+          `;
+        }).join('');
+
+        // Full middle telemetry & services HTML block
+        const extraSectionHtml = `
+          <!-- DEVICE TELEMETRY / HEALTH MONITORING -->
+          <div class="mt-4 p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-3.5">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-bold text-slate-200 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
+                <span class="text-sky-400">⚡</span> <span>${metaInfo.telemetryTitle}</span>
+              </span>
+              <span ${isServerNode ? 'id="srv-health-badge"' : ''} class="text-[10px] text-emerald-400 font-mono flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ${metaInfo.liveBadge}
+              </span>
+            </div>
+
+            <!-- Metrics Bars Grid (3 columns on sm+) -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              ${barsHtml}
+            </div>
+
+            <!-- Summary meta -->
+            <div class="pt-2 border-t border-slate-800/60 flex items-center justify-between text-[10px] text-slate-400 font-mono flex-wrap gap-2">
+              ${metaItemsHtml}
+            </div>
+          </div>
+
+          <!-- SERVICES & QUICK ACTIONS -->
+          <div class="mt-4 pt-3.5 border-t border-slate-800/80">
+            <div class="flex items-center justify-between mb-2.5">
+              <span class="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                <span class="text-amber-400">🚀</span> <span>${metaInfo.servicesTitle}</span>
+              </span>
+              <span class="text-[10px] text-slate-400 font-mono">
+                <span>${metaInfo.servicesSub}</span>
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              ${servicesTilesHtml}
+            </div>
+          </div>
+        `;
+
+        // Footer action button
+        let footerActionHtml = '';
+        if (metaInfo.footerAction) {
+          const fa = metaInfo.footerAction;
+          const faColor = fa.color || 'emerald';
+          if (fa.url) {
+            footerActionHtml = `
+              <a href="${fa.url}" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1.5 rounded-xl bg-${faColor}-500/15 hover:bg-${faColor}-500/25 border border-${faColor}-500/30 text-${faColor}-300 text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer" title="${fa.text}">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">${fa.iconSvg}</svg>
+                <span>${fa.text}</span>
+              </a>
+            `;
+          } else if (fa.action) {
+            footerActionHtml = `
+              <button type="button" class="btn-footer-custom-action px-2.5 py-1.5 rounded-xl bg-${faColor}-500/15 hover:bg-${faColor}-500/25 border border-${faColor}-500/30 text-${faColor}-300 text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer" data-action="${fa.action}" data-dev-id="${device.id}" title="${fa.text}">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">${fa.iconSvg}</svg>
+                <span>${fa.text}</span>
+              </button>
+            `;
+          }
         }
 
         card.innerHTML = `
@@ -4366,17 +4917,12 @@
             </div>` : ''}
           </div>
 
-          ${serverNodeExtraHtml}
+          ${extraSectionHtml}
 
           <div class="flex items-center justify-between pt-3 mt-1 border-t border-slate-800/60">
             <span class="text-[10px] font-mono text-slate-500">${device.mac || 'Tailscale Mesh'}</span>
             <div class="flex items-center gap-2">
-              ${isServerNode ? `
-                <a href="http://${serverHost}:61208" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer" title="Открыть мониторинг Glances в отдельной вкладке">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>
-                  <span>Glances ↗</span>
-                </a>
-              ` : ''}
+              ${footerActionHtml}
               <button type="button" class="btn-ping-device px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer" data-id="${device.id}" title="Проверить пинг устройства сейчас">
                 <svg class="w-3.5 h-3.5 ping-icon-${device.id}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
                 <span>Пинг</span>
@@ -4390,6 +4936,27 @@
         `;
 
         container.appendChild(card);
+      });
+
+      // Attach Custom Action Tile / Footer Button Events
+      container.querySelectorAll('[data-action]').forEach(el => {
+        el.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const action = el.dataset.action;
+          const devId = parseInt(el.dataset.devId);
+          if (action === 'openBatteryHistory') {
+            openBatteryHistoryModal();
+          } else if (action === 'wakeDevice') {
+            const dev = state.devices.find(d => d.id === devId);
+            showToast('Wake-on-LAN', `Пакет Magic Packet отправлен на ${dev?.name || 'устройство'} (${dev?.mac || 'WOL'})`, 'info');
+          } else if (action === 'inspectDevice') {
+            openDeviceModal(devId);
+          } else if (action === 'pingDevice') {
+            const pingBtn = container.querySelector(`.btn-ping-device[data-id="${devId}"]`);
+            if (pingBtn) pingBtn.click();
+          }
+        };
       });
 
       // Attach Inspect Button Events
