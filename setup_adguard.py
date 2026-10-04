@@ -93,7 +93,13 @@ filters:
     name: AdAway Default Blocklist
     id: 2
 whitelist_filters: []
-user_rules: []
+user_rules:
+  - "@@||spotify.com^"
+  - "@@||scdn.co^"
+  - "@@||spotifycdn.com^"
+  - "@@||gvt2.com^"
+  - "@@||gvt3.com^"
+  - "@@||widevine.com^"
 dhcp:
   enabled: false
 clients:
