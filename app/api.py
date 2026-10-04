@@ -2152,3 +2152,502 @@ async def get_nokia_battery_history(session: AsyncSession = Depends(get_db_sessi
     }
 
 
+# ==========================================
+# ADGUARD HOME DNS SHIELD & TAILSCALE VPN API
+# ==========================================
+
+import os
+ADGUARD_URL = os.getenv("ADGUARD_URL", "http://news_ai_adguard:3000")
+ADGUARD_USER = os.getenv("ADGUARD_USER", "admin")
+ADGUARD_PASSWORD = os.getenv("ADGUARD_PASSWORD", "")
+ADGUARD_AUTH = (ADGUARD_USER, ADGUARD_PASSWORD)
+
+_last_net_traffic = {
+    "timestamp": time.time(),
+    "rx_bytes": 0,
+    "tx_bytes": 0
+}
+
+
+def _read_host_network_bytes() -> tuple[int, int]:
+    """Reads total RX and TX bytes across all interfaces from /proc/net/dev."""
+    total_rx = 0
+    total_tx = 0
+    try:
+        with open("/proc/net/dev", "r") as f:
+            for line in f:
+                if ":" not in line:
+                    continue
+                iface, data = line.split(":", 1)
+                iface = iface.strip()
+                if iface == "lo":
+                    continue
+                parts = data.split()
+                if len(parts) >= 9:
+                    total_rx += int(parts[0])
+                    total_tx += int(parts[8])
+    except Exception:
+        pass
+    return total_rx, total_tx
+
+
+@app.get("/api/dns/stats")
+async def get_dns_stats() -> Dict[str, Any]:
+    """Статистика DNS-фильтрации AdGuard Home за 24 часа."""
+    try:
+        async with httpx.AsyncClient(timeout=2.0, auth=ADGUARD_AUTH) as client:
+            resp = await client.get(f"{ADGUARD_URL}/control/stats")
+            if resp.status_code == 200:
+                data = resp.json()
+                total_queries = data.get("num_dns_queries", 0)
+                blocked_queries = data.get("num_blocked_filtering", 0)
+                safebrowsing = data.get("num_replaced_safebrowsing", 0)
+                parental = data.get("num_replaced_parental", 0)
+                threats_count = safebrowsing + parental
+
+                pct = round((blocked_queries / total_queries * 100), 1) if total_queries > 0 else 0.0
+                avg_lat = round(data.get("avg_processing_time", 0.0) * 1000, 1)
+
+                top_blocked = []
+                for b in data.get("top_blocked_domains", [])[:6]:
+                    for dom, cnt in b.items():
+                        top_blocked.append({"domain": dom, "count": cnt})
+
+                top_clients = []
+                for c in data.get("top_clients", [])[:6]:
+                    for ip, cnt in c.items():
+                        c_name = ip
+                        if ip == "192.168.178.65" or ip == "100.107.4.120":
+                            c_name = "Сервер petroprog"
+                        elif ip == "192.168.178.39" or ip == "100.114.251.81":
+                            c_name = "Основной ПК"
+                        elif ip == "100.109.24.95":
+                            c_name = "Nokia 6.1 AFK"
+                        elif ip == "192.168.178.38" or ip == "100.76.188.111":
+                            c_name = "Samsung A54"
+                        top_clients.append({"ip": ip, "name": c_name, "count": cnt})
+
+                return {
+                    "online": True,
+                    "total_queries": total_queries,
+                    "blocked_queries": blocked_queries,
+                    "threats_count": threats_count,
+                    "blocked_percent": pct,
+                    "avg_latency_ms": avg_lat,
+                    "dns_queries_history": data.get("dns_queries", []),
+                    "blocked_history": data.get("blocked_filtering", []),
+                    "top_blocked": top_blocked,
+                    "top_clients": top_clients,
+                    "dns_ip": "192.168.178.65",
+                    "tailscale_ip": "100.107.4.120"
+                }
+    except Exception as e:
+        logger.warning(f"AdGuard stats error: {e}")
+
+    return {
+        "online": False,
+        "total_queries": 0,
+        "blocked_queries": 0,
+        "threats_count": 0,
+        "blocked_percent": 0.0,
+        "avg_latency_ms": 0.0,
+        "dns_queries_history": [],
+        "blocked_history": [],
+        "top_blocked": [],
+        "top_clients": [],
+        "dns_ip": "192.168.178.65",
+        "tailscale_ip": "100.107.4.120"
+    }
+
+
+@app.get("/api/dns/status")
+async def get_dns_status() -> Dict[str, Any]:
+    """Текущее состояние защитных функций AdGuard Home."""
+    status_data = {
+        "online": False,
+        "protection": True,
+        "adblock": True,
+        "malware": True,
+        "doh": True,
+        "parental": False,
+        "provider": "cloudflare",
+        "version": "v0.107.79",
+        "dns_ip": "192.168.178.65",
+        "tailscale_ip": "100.107.4.120"
+    }
+    try:
+        async with httpx.AsyncClient(timeout=3.0, auth=ADGUARD_AUTH) as client:
+            r_stat = await client.get(f"{ADGUARD_URL}/control/status")
+            if r_stat.status_code == 200:
+                s_json = r_stat.json()
+                status_data["online"] = True
+                status_data["protection"] = s_json.get("protection_enabled", True)
+                status_data["version"] = s_json.get("version", "v0.107.79")
+
+            # Fetch remaining settings
+            resps = await asyncio.gather(
+                client.get(f"{ADGUARD_URL}/control/filtering/status"),
+                client.get(f"{ADGUARD_URL}/control/safebrowsing/status"),
+                client.get(f"{ADGUARD_URL}/control/parental/status"),
+                client.get(f"{ADGUARD_URL}/control/dns_info"),
+                return_exceptions=True
+            )
+
+            r_filt, r_safe, r_parent, r_dns = resps
+
+            if not isinstance(r_filt, Exception) and r_filt.status_code == 200:
+                status_data["adblock"] = r_filt.json().get("enabled", True)
+
+            if not isinstance(r_safe, Exception) and r_safe.status_code == 200:
+                status_data["malware"] = r_safe.json().get("enabled", True)
+
+            if not isinstance(r_parent, Exception) and r_parent.status_code == 200:
+                status_data["parental"] = r_parent.json().get("enabled", False)
+
+            if not isinstance(r_dns, Exception) and r_dns.status_code == 200:
+                upstreams = r_dns.json().get("upstream_dns", [])
+                up_str = " ".join(upstreams).lower()
+                if "cloudflare" in up_str or "1.1.1.1" in up_str:
+                    status_data["provider"] = "cloudflare"
+                elif "adguard" in up_str or "94.140" in up_str:
+                    status_data["provider"] = "adguard"
+                elif "quad9" in up_str or "9.9.9.9" in up_str:
+                    status_data["provider"] = "quad9"
+                elif "google" in up_str or "8.8.8.8" in up_str:
+                    status_data["provider"] = "google"
+                status_data["doh"] = any(u.startswith("https://") for u in upstreams)
+
+    except Exception as e:
+        logger.warning(f"AdGuard status error: {e}")
+
+    return status_data
+
+
+@app.post("/api/dns/toggle")
+async def toggle_dns_feature(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Переключение тумблеров (adblock, malware, parental, protection)."""
+    feature = payload.get("feature")
+    enabled = bool(payload.get("enabled"))
+    try:
+        async with httpx.AsyncClient(timeout=3.0, auth=ADGUARD_AUTH) as client:
+            if feature == "protection":
+                await client.post(f"{ADGUARD_URL}/control/protection", json={"enabled": enabled})
+            elif feature == "adblock":
+                await client.post(f"{ADGUARD_URL}/control/filtering/config", json={"enabled": enabled, "interval": 24})
+            elif feature == "malware":
+                ep = "enable" if enabled else "disable"
+                await client.post(f"{ADGUARD_URL}/control/safebrowsing/{ep}")
+            elif feature == "parental":
+                ep = "enable" if enabled else "disable"
+                await client.post(f"{ADGUARD_URL}/control/parental/{ep}")
+            elif feature == "doh":
+                up_resp = await client.get(f"{ADGUARD_URL}/control/dns_info")
+                if up_resp.status_code == 200:
+                    cfg = up_resp.json()
+                    ups = cfg.get("upstream_dns", [])
+                    if enabled:
+                        new_ups = [u if u.startswith("https://") else "https://cloudflare-dns.com/dns-query" for u in ups]
+                    else:
+                        new_ups = ["1.1.1.1", "9.9.9.9"]
+                    cfg["upstream_dns"] = list(dict.fromkeys(new_ups))
+                    await client.post(f"{ADGUARD_URL}/control/dns_config", json=cfg)
+            return {"success": True, "feature": feature, "enabled": enabled}
+    except Exception as e:
+        logger.error(f"Failed to toggle feature {feature}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/dns/upstream")
+async def set_dns_upstream(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Смена активного DNS-провайдера (Cloudflare, AdGuard, Quad9, Google)."""
+    provider = payload.get("provider", "cloudflare").lower()
+    presets = {
+        "cloudflare": ["https://cloudflare-dns.com/dns-query", "1.1.1.1"],
+        "adguard": ["https://dns.adguard-dns.com/dns-query", "94.140.14.14"],
+        "quad9": ["https://dns.quad9.net/dns-query", "9.9.9.9"],
+        "google": ["https://dns.google/dns-query", "8.8.8.8"]
+    }
+    if provider not in presets:
+        raise HTTPException(status_code=400, detail=f"Unknown provider: {provider}")
+
+    try:
+        async with httpx.AsyncClient(timeout=3.0, auth=ADGUARD_AUTH) as client:
+            info_resp = await client.get(f"{ADGUARD_URL}/control/dns_info")
+            if info_resp.status_code == 200:
+                cfg = info_resp.json()
+                cfg["upstream_dns"] = presets[provider]
+                cfg["bootstrap_dns"] = ["1.1.1.1", "9.9.9.9"]
+                await client.post(f"{ADGUARD_URL}/control/dns_config", json=cfg)
+                return {"success": True, "provider": provider, "upstream_dns": presets[provider]}
+            else:
+                raise HTTPException(status_code=502, detail="Failed to fetch current dns_info")
+    except Exception as e:
+        logger.error(f"Failed to set upstream to {provider}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/dns/querylog")
+async def get_dns_querylog(limit: int = 40, filter: str = "all") -> Dict[str, Any]:
+    """Живой журнал DNS-запросов."""
+    try:
+        async with httpx.AsyncClient(timeout=3.0, auth=ADGUARD_AUTH) as client:
+            resp = await client.get(f"{ADGUARD_URL}/control/querylog?limit={limit}")
+            if resp.status_code == 200:
+                data = resp.json()
+                raw_entries = data.get("data", [])
+                logs = []
+
+                known_clients = {
+                    "192.168.178.65": "Ноутбук-сервер",
+                    "100.107.4.120": "Сервер (Mesh)",
+                    "192.168.178.39": "Основной ПК",
+                    "100.114.251.81": "Основной ПК",
+                    "100.109.24.95": "Nokia 6.1 AFK",
+                    "192.168.178.38": "Samsung A54",
+                    "100.76.188.111": "Samsung A54"
+                }
+
+                for item in raw_entries:
+                    reason = item.get("reason", "")
+                    ans = item.get("answer", [])
+                    is_zero_ans = any(a.get("value") == "0.0.0.0" for a in ans if isinstance(a, dict))
+                    is_blocked = (
+                        reason.startswith("Filtered") or 
+                        reason in ("FilteredBlackList", "FilteredBlockedService", "FilteredParental", "FilteredSafeBrowsing") or 
+                        is_zero_ans
+                    )
+
+                    if filter == "blocked" and not is_blocked:
+                        continue
+                    if filter == "allowed" and is_blocked:
+                        continue
+
+                    reason_ru = "Разрешено"
+                    if is_blocked:
+                        if "Parental" in reason:
+                            reason_ru = "Родительский контроль"
+                        elif "SafeBrowsing" in reason:
+                            reason_ru = "Фишинг / Угроза"
+                        else:
+                            reason_ru = "Реклама / Трекер"
+
+                    c_ip = item.get("client", "")
+                    c_name = known_clients.get(c_ip, c_ip)
+
+                    q = item.get("question", {})
+                    domain = q.get("name", "")
+                    q_type = q.get("type", "A")
+
+                    t_str = item.get("time", "")
+                    formatted_time = ""
+                    if t_str:
+                        try:
+                            dt = datetime.fromisoformat(t_str.replace("Z", "+00:00"))
+                            formatted_time = dt.strftime("%H:%M:%S")
+                        except Exception:
+                            formatted_time = t_str[:19].replace("T", " ")
+
+                    elapsed = 0.0
+                    try:
+                        elapsed = round(float(item.get("elapsedMs", 0)), 1)
+                    except Exception:
+                        pass
+
+                    rule = item.get("rule", "")
+
+                    logs.append({
+                        "time": formatted_time,
+                        "domain": domain,
+                        "type": q_type,
+                        "client_ip": c_ip,
+                        "client_name": c_name,
+                        "status": "blocked" if is_blocked else "allowed",
+                        "reason": reason_ru,
+                        "rule": rule,
+                        "elapsed_ms": elapsed
+                    })
+
+                return {"success": True, "logs": logs, "total": len(logs)}
+    except Exception as e:
+        logger.warning(f"AdGuard querylog error: {e}")
+
+    return {"success": False, "logs": [], "total": 0}
+
+
+@app.post("/api/dns/block")
+async def block_dns_domain(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Блокировка домена в 1 клик через добавление правила в AdGuard Home."""
+    domain = payload.get("domain", "").strip().lower()
+    if not domain or "." not in domain:
+        raise HTTPException(status_code=400, detail="Invalid domain")
+
+    domain = domain.replace("http://", "").replace("https://", "").split("/")[0]
+    rule = f"||{domain}^"
+
+    try:
+        async with httpx.AsyncClient(timeout=3.0, auth=ADGUARD_AUTH) as client:
+            filt_resp = await client.get(f"{ADGUARD_URL}/control/filtering/status")
+            if filt_resp.status_code == 200:
+                data = filt_resp.json()
+                current_rules = data.get("user_rules", [])
+                if rule not in current_rules:
+                    current_rules.append(rule)
+                    await client.post(f"{ADGUARD_URL}/control/filtering/set_rules", json={"rules": current_rules})
+                return {"success": True, "domain": domain, "rule": rule}
+            else:
+                raise HTTPException(status_code=502, detail="Failed to fetch filtering status")
+    except Exception as e:
+        logger.error(f"Failed to block domain {domain}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/vpn/status")
+async def get_vpn_status() -> Dict[str, Any]:
+    """Статус Tailscale Mesh VPN (локальный IP, статус пиров, пинг, шифрование)."""
+    sock_path = Path("/var/run/tailscale/tailscaled.sock")
+    data = None
+    try:
+        if sock_path.exists():
+            with httpx.Client(transport=httpx.HTTPTransport(uds=str(sock_path)), timeout=2.0) as client:
+                resp = client.get("http://local-tailscaled.sock/localapi/v0/status")
+                if resp.status_code == 200:
+                    data = resp.json()
+    except Exception:
+        pass
+
+    if not data:
+        try:
+            res = subprocess.run(["tailscale", "status", "--json"], capture_output=True, text=True, timeout=2)
+            if res.returncode == 0:
+                import json
+                data = json.loads(res.stdout)
+        except Exception:
+            pass
+
+    self_node = (data or {}).get("Self", {})
+    ts_ips = self_node.get("TailscaleIPs", ["100.107.4.120"])
+    primary_ip = ts_ips[0] if ts_ips else "100.107.4.120"
+
+    peers_list = []
+    known_friendly = {
+        "desktop-na86l48": "Основной ПК",
+        "nokia-6": "Nokia 6.1 (AFK)",
+        "samsung-a54": "Samsung A54"
+    }
+
+    online_count = 0
+    if data:
+        for k, p in data.get("Peer", {}).items():
+            hname = p.get("HostName", "")
+            is_on = p.get("Online", False)
+            if is_on:
+                online_count += 1
+            p_ips = p.get("TailscaleIPs", [])
+            peers_list.append({
+                "hostname": hname,
+                "display_name": known_friendly.get(hname.lower(), hname),
+                "ip": p_ips[0] if p_ips else "",
+                "os": p.get("OS", ""),
+                "online": is_on,
+                "rx_mb": round(p.get("RxBytes", 0) / (1024**2), 1),
+                "tx_mb": round(p.get("TxBytes", 0) / (1024**2), 1),
+                "cur_addr": p.get("CurAddr", "")
+            })
+
+    _, ping_latency = await _async_ping("192.168.178.1", timeout_sec=1.5)
+    if ping_latency is None:
+        ping_latency = 2
+
+    return {
+        "connected": True,
+        "mode": "tailscale_mesh",
+        "self": {
+            "hostname": self_node.get("HostName", "petroprog"),
+            "ip": primary_ip,
+            "virtual_ip": f"{primary_ip} / 32",
+            "os": "Ubuntu Linux",
+            "online": True
+        },
+        "lan_ip": "192.168.178.65",
+        "ping_ms": ping_latency,
+        "encryption": "ChaCha20-Poly1305 (WireGuard)",
+        "peers_count": len(peers_list),
+        "peers_online": online_count,
+        "peers": peers_list
+    }
+
+
+@app.get("/api/vpn/traffic")
+async def get_vpn_traffic() -> Dict[str, Any]:
+    """Скорость входящего/исходящего трафика в реальном времени (RX/TX kbps/mbps) для живого графика."""
+    global _last_net_traffic
+    now = time.time()
+    cur_rx, cur_tx = _read_host_network_bytes()
+
+    last_time = _last_net_traffic.get("timestamp", now)
+    last_rx = _last_net_traffic.get("rx_bytes", cur_rx)
+    last_tx = _last_net_traffic.get("tx_bytes", cur_tx)
+
+    dt = max(0.5, now - last_time)
+
+    delta_rx = max(0, cur_rx - last_rx)
+    delta_tx = max(0, cur_tx - last_tx)
+
+    rx_kbps = round((delta_rx * 8) / (dt * 1000), 1)
+    tx_kbps = round((delta_tx * 8) / (dt * 1000), 1)
+    rx_mbps = round(rx_kbps / 1000, 2)
+    tx_mbps = round(tx_kbps / 1000, 2)
+
+    _last_net_traffic = {
+        "timestamp": now,
+        "rx_bytes": cur_rx,
+        "tx_bytes": cur_tx
+    }
+
+    return {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "rx_kbps": rx_kbps,
+        "tx_kbps": tx_kbps,
+        "rx_mbps": rx_mbps,
+        "tx_mbps": tx_mbps,
+        "total_rx_mb": round(cur_rx / (1024**2), 1),
+        "total_tx_mb": round(cur_tx / (1024**2), 1)
+    }
+
+
+@app.get("/api/vpn/qr")
+async def get_vpn_qr() -> Dict[str, Any]:
+    """Генерация QR-кода для мобильного подключения к домашней сети / Tailscale / AdGuard."""
+    import base64
+    import io
+
+    content = "https://login.tailscale.com/admin/machines"
+    qr_b64 = ""
+    try:
+        import qrcode
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_M,
+            box_size=8,
+            border=2,
+        )
+        qr.add_data(content)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="#0284c7", back_color="#0f172a")
+
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        qr_b64 = "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
+    except Exception as e:
+        logger.warning(f"QR code generation error: {e}")
+
+    return {
+        "success": True,
+        "qr_base64": qr_b64,
+        "tailscale_ip": "100.107.4.120",
+        "lan_ip": "192.168.178.65",
+        "server_name": "petroprog",
+        "instruction": "Отсканируйте камерой телефона для входа в панель устройств Tailscale или укажите DNS 100.107.4.120 в настройках приватного DNS (DoT/DoH)."
+    }
+
+
