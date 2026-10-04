@@ -84,6 +84,25 @@ services:
     ports:
       - "3000:80"
 
+  adguard:
+    image: adguard/adguardhome:latest
+    container_name: news_ai_adguard
+    restart: unless-stopped
+    ports:
+      - "192.168.178.65:53:53/udp"
+      - "192.168.178.65:53:53/tcp"
+      - "100.107.4.120:53:53/udp"
+      - "100.107.4.120:53:53/tcp"
+      - "3053:3000/tcp"
+    volumes:
+      - ./adguard/work:/opt/adguardhome/work
+      - ./adguard/conf:/opt/adguardhome/conf
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 150M
+
 volumes:
   postgres_data:
     driver: local

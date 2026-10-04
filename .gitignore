@@ -43,3 +43,7 @@ media/*
 !media/.gitkeep
 media/
 *.bak
+
+# AdGuard Home runtime data
+adguard/work/
+adguard/conf/AdGuardHome.yaml
