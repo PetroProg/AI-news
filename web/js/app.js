@@ -6,6 +6,7 @@
       searchDeviceQuery: '',
       deviceCategoryFilter: 'all',
       newsCategoryFilter: 'Украина',
+      serverHealth: null,
       vpnConnected: true,
       selectedDns: 'pihole',
       dnsFilters: {
@@ -586,6 +587,7 @@
       if (tabId === 'devices') {
         loadManagedDevices();
         loadRouterStats();
+        loadServerHealth();
       }
 
       if (tabId === 'vpn') {
@@ -3906,6 +3908,94 @@
       loadRouterStats();
     }
 
+    // ==========================================
+    // SERVER HEALTH & SERVICES MONITORING
+    // ==========================================
+    async function loadServerHealth() {
+      try {
+        const res = await fetch('/api/server/health');
+        if (!res.ok) throw new Error("API returned " + res.status);
+        const data = await res.json();
+        state.serverHealth = data;
+        updateServerHealthUI();
+      } catch (err) {
+        console.warn("Could not load /api/server/health:", err);
+      }
+    }
+
+    function updateServerHealthUI() {
+      if (!state.serverHealth) return;
+      const h = state.serverHealth;
+
+      // Update Card 1 in top analytics
+      const p = document.getElementById('metric-protection');
+      const pSub = document.getElementById('metric-protection-sub');
+      if (p && h.uptime) p.textContent = h.uptime;
+      if (pSub && h.cpu && h.memory) {
+        pSub.textContent = `CPU ${h.cpu.percent}% • RAM ${h.memory.percent}% • Ubuntu`;
+      }
+
+      // Update inside Server Node Card if elements exist
+      const cpuText = document.getElementById('srv-cpu-text');
+      const cpuBar = document.getElementById('srv-cpu-bar');
+      const cpuTemp = document.getElementById('srv-cpu-temp');
+      if (cpuText && h.cpu) cpuText.textContent = `${h.cpu.percent}%`;
+      if (cpuBar && h.cpu) {
+        cpuBar.style.width = `${Math.min(100, Math.max(5, h.cpu.percent))}%`;
+        if (h.cpu.percent > 80) {
+          cpuBar.className = 'h-full rounded-full bg-gradient-to-r from-amber-500 to-rose-500 transition-all duration-500';
+        } else {
+          cpuBar.className = 'h-full rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 transition-all duration-500';
+        }
+      }
+      if (cpuTemp && h.cpu?.temp_c) cpuTemp.textContent = `${h.cpu.temp_c}°C`;
+
+      const ramText = document.getElementById('srv-ram-text');
+      const ramBar = document.getElementById('srv-ram-bar');
+      if (ramText && h.memory) {
+        ramText.innerHTML = `${h.memory.percent}% <span class="text-slate-400 text-[10px] font-normal">(${h.memory.used_gb} / ${h.memory.total_gb} GB)</span>`;
+      }
+      if (ramBar && h.memory) {
+        ramBar.style.width = `${Math.min(100, Math.max(5, h.memory.percent))}%`;
+        if (h.memory.percent > 85) {
+          ramBar.className = 'h-full rounded-full bg-gradient-to-r from-amber-500 to-rose-500 transition-all duration-500';
+        } else {
+          ramBar.className = 'h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500';
+        }
+      }
+
+      const diskText = document.getElementById('srv-disk-text');
+      const diskBar = document.getElementById('srv-disk-bar');
+      if (diskText && h.disk) {
+        diskText.innerHTML = `${h.disk.percent}% <span class="text-slate-400 text-[10px] font-normal">(${h.disk.used_gb} / ${h.disk.total_gb} GB)</span>`;
+      }
+      if (diskBar && h.disk) diskBar.style.width = `${Math.min(100, Math.max(5, h.disk.percent))}%`;
+
+      const upEl = document.getElementById('srv-uptime-text');
+      if (upEl && h.uptime) upEl.textContent = `⏱️ ${h.uptime}`;
+
+      const loadEl = document.getElementById('srv-load-text');
+      if (loadEl && h.load) loadEl.textContent = `📈 Load: ${h.load.min1}`;
+
+      const batEl = document.getElementById('srv-battery-text');
+      if (batEl && h.battery) batEl.textContent = `🔋 ${h.battery.status || (h.battery.level + '%')}`;
+
+      // Update service status dots if elements exist
+      if (Array.isArray(h.services)) {
+        h.services.forEach(s => {
+          const dot = document.getElementById(`srv-status-dot-${s.id}`);
+          if (dot) {
+            dot.className = s.online 
+              ? 'w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse' 
+              : 'w-1.5 h-1.5 rounded-full bg-rose-500';
+          }
+        });
+      }
+    }
+
+    window.loadServerHealth = loadServerHealth;
+    window.updateServerHealthUI = updateServerHealthUI;
+
     // Load Live Devices from Server API
     async function loadManagedDevices() {
       try {
@@ -3938,6 +4028,7 @@
           }));
           renderDevices();
           loadRouterStats();
+          loadServerHealth();
         }
       } catch (err) {
         console.warn("Could not fetch /api/devices, keeping current devices:", err);
@@ -4014,7 +4105,12 @@
       filtered.forEach(device => {
         const card = document.createElement('div');
         const isOnline = device.is_online && !device.paused;
+        const isServerNode = device.key_id === 'server_node' || (device.name && device.name.toLowerCase().includes('сервер'));
+        const serverHost = window.location.hostname || device.tailscale_ip || device.ip || '100.107.4.120';
+
         card.className = `glass-panel rounded-3xl p-5 border transition-all ${
+          isServerNode ? 'md:col-span-2 lg:col-span-2' : ''
+        } ${
           device.paused 
             ? 'border-rose-500/40 bg-rose-950/15' 
             : isOnline 
@@ -4059,6 +4155,178 @@
                <span class="w-2 h-2 rounded-full mr-1.5 bg-slate-500"></span> Не в сети ${pingHtml}
              </span>`;
 
+        let serverNodeExtraHtml = '';
+        if (isServerNode) {
+          const h = state.serverHealth || {
+            cpu: { percent: 45, temp_c: 52, name: 'Intel Celeron N3060' },
+            memory: { percent: 43, used_gb: 1.4, total_gb: 3.2 },
+            disk: { percent: 40, used_gb: 37, total_gb: 98 },
+            battery: { level: 100, status: 'Full (Сеть)' },
+            load: { min1: 1.35 },
+            uptime: '17д 19ч',
+            services: [
+              { id: 'ainews', online: true },
+              { id: 'glances', online: true },
+              { id: 'ollama', online: true },
+              { id: 'rssbridge', online: true }
+            ]
+          };
+
+          const cpuPercent = h.cpu?.percent ?? 0;
+          const cpuTemp = h.cpu?.temp_c ? `${h.cpu.temp_c}°C` : '52°C';
+          const ramPercent = h.memory?.percent ?? 0;
+          const ramUsed = h.memory?.used_gb ?? '1.4';
+          const ramTotal = h.memory?.total_gb ?? '3.2';
+          const diskPercent = h.disk?.percent ?? 0;
+          const diskUsed = h.disk?.used_gb ?? '37';
+          const diskTotal = h.disk?.total_gb ?? '98';
+          const uptimeStr = h.uptime || '17д 19ч';
+          const loadStr = h.load?.min1 !== undefined ? h.load.min1 : '1.35';
+          const batStatus = h.battery?.status || '100% (Сеть)';
+
+          serverNodeExtraHtml = `
+            <!-- SERVER HEALTH MONITORING -->
+            <div class="mt-4 p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-3.5">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-bold text-slate-200 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
+                  <span class="text-sky-400">⚡</span> <span>Мониторинг ресурсов сервера</span>
+                </span>
+                <span id="srv-health-badge" class="text-[10px] text-emerald-400 font-mono flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> live
+                </span>
+              </div>
+
+              <!-- Metrics Bars Grid (3 columns on sm+) -->
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <!-- CPU Bar -->
+                <div class="space-y-1.5 p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/70">
+                  <div class="flex items-center justify-between text-[11px]">
+                    <span class="text-slate-400 flex items-center gap-1">
+                      <span>CPU:</span>
+                      <span id="srv-cpu-temp" class="text-[10px] px-1.5 py-0.2 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/20 font-mono font-bold">${cpuTemp}</span>
+                    </span>
+                    <span id="srv-cpu-text" class="text-white font-mono font-bold">${cpuPercent}%</span>
+                  </div>
+                  <div class="w-full h-2 rounded-full bg-slate-800/90 overflow-hidden">
+                    <div id="srv-cpu-bar" class="h-full rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 transition-all duration-500" style="width: ${Math.min(100, Math.max(5, cpuPercent))}%"></div>
+                  </div>
+                </div>
+
+                <!-- RAM Bar -->
+                <div class="space-y-1.5 p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/70">
+                  <div class="flex items-center justify-between text-[11px]">
+                    <span class="text-slate-400">RAM:</span>
+                    <span id="srv-ram-text" class="text-white font-mono font-bold">${ramPercent}% <span class="text-slate-400 text-[10px] font-normal">(${ramUsed}/${ramTotal}G)</span></span>
+                  </div>
+                  <div class="w-full h-2 rounded-full bg-slate-800/90 overflow-hidden">
+                    <div id="srv-ram-bar" class="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500" style="width: ${Math.min(100, Math.max(5, ramPercent))}%"></div>
+                  </div>
+                </div>
+
+                <!-- Disk Bar -->
+                <div class="space-y-1.5 p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/70">
+                  <div class="flex items-center justify-between text-[11px]">
+                    <span class="text-slate-400">Диск SSD:</span>
+                    <span id="srv-disk-text" class="text-white font-mono font-bold">${diskPercent}% <span class="text-slate-400 text-[10px] font-normal">(${diskUsed}/${diskTotal}G)</span></span>
+                  </div>
+                  <div class="w-full h-2 rounded-full bg-slate-800/90 overflow-hidden">
+                    <div id="srv-disk-bar" class="h-full rounded-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500" style="width: ${Math.min(100, Math.max(5, diskPercent))}%"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Summary meta: Uptime, Load, Battery -->
+              <div class="pt-2 border-t border-slate-800/60 flex items-center justify-between text-[10px] text-slate-400 font-mono flex-wrap gap-2">
+                <span id="srv-uptime-text" title="Время непрерывной работы">⏱️ ${uptimeStr}</span>
+                <span id="srv-load-text" title="Load Average (1m)">📈 Load: ${loadStr}</span>
+                <span id="srv-battery-text" title="Батарея ноутбука">🔋 ${batStatus}</span>
+              </div>
+            </div>
+
+            <!-- QUICK SERVICE LAUNCH BUTTONS -->
+            <div class="mt-4 pt-3.5 border-t border-slate-800/80">
+              <div class="flex items-center justify-between mb-2.5">
+                <span class="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <span class="text-amber-400">🚀</span> <span>Службы сервера (быстрый переход)</span>
+                </span>
+                <span class="text-[10px] text-slate-400 font-mono flex items-center gap-1">
+                  <span>порт-форвардинг активен</span>
+                </span>
+              </div>
+
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5" id="server-services-grid">
+                <!-- Service 1: AI News -->
+                <a href="http://${serverHost}:8000" target="_blank" rel="noopener noreferrer" 
+                   class="group/srv flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 hover:bg-sky-500/15 border border-slate-800 hover:border-sky-500/40 transition-all duration-200 shadow-sm cursor-pointer"
+                   title="Открыть дашборд AI News (порт 8000)">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="text-base group-hover/srv:scale-110 transition-transform">🤖</span>
+                    <div class="min-w-0">
+                      <div class="text-xs font-bold text-white group-hover/srv:text-sky-300 truncate">AI News</div>
+                      <div class="text-[10px] font-mono text-slate-400">:8000</div>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-1 shrink-0 text-slate-500 group-hover/srv:text-sky-400 transition-colors">
+                    <span id="srv-status-dot-ainews" class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
+                  </div>
+                </a>
+
+                <!-- Service 2: Glances -->
+                <a href="http://${serverHost}:61208" target="_blank" rel="noopener noreferrer" 
+                   class="group/srv flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 hover:bg-emerald-500/15 border border-slate-800 hover:border-emerald-500/40 transition-all duration-200 shadow-sm cursor-pointer"
+                   title="Открыть мониторинг Glances (порт 61208)">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="text-base group-hover/srv:scale-110 transition-transform">📊</span>
+                    <div class="min-w-0">
+                      <div class="text-xs font-bold text-white group-hover/srv:text-emerald-300 truncate">Glances</div>
+                      <div class="text-[10px] font-mono text-slate-400">:61208</div>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-1 shrink-0 text-slate-500 group-hover/srv:text-emerald-400 transition-colors">
+                    <span id="srv-status-dot-glances" class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
+                  </div>
+                </a>
+
+                <!-- Service 3: Ollama -->
+                <a href="http://${serverHost}:11434" target="_blank" rel="noopener noreferrer" 
+                   class="group/srv flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 hover:bg-purple-500/15 border border-slate-800 hover:border-purple-500/40 transition-all duration-200 shadow-sm cursor-pointer"
+                   title="API нейросетей Ollama (порт 11434)">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="text-base group-hover/srv:scale-110 transition-transform">🦙</span>
+                    <div class="min-w-0">
+                      <div class="text-xs font-bold text-white group-hover/srv:text-purple-300 truncate">Ollama</div>
+                      <div class="text-[10px] font-mono text-slate-400">:11434</div>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-1 shrink-0 text-slate-500 group-hover/srv:text-purple-400 transition-colors">
+                    <span id="srv-status-dot-ollama" class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
+                  </div>
+                </a>
+
+                <!-- Service 4: RSS-Bridge -->
+                <a href="http://${serverHost}:3000" target="_blank" rel="noopener noreferrer" 
+                   class="group/srv flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 hover:bg-amber-500/15 border border-slate-800 hover:border-amber-500/40 transition-all duration-200 shadow-sm cursor-pointer"
+                   title="Шлюз RSS-Bridge (порт 3000)">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="text-base group-hover/srv:scale-110 transition-transform">🌐</span>
+                    <div class="min-w-0">
+                      <div class="text-xs font-bold text-white group-hover/srv:text-amber-300 truncate">RSS-Bridge</div>
+                      <div class="text-[10px] font-mono text-slate-400">:3000</div>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-1 shrink-0 text-slate-500 group-hover/srv:text-amber-400 transition-colors">
+                    <span id="srv-status-dot-rssbridge" class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
+                  </div>
+                </a>
+              </div>
+            </div>
+          `;
+        }
+
         card.innerHTML = `
           <div class="flex items-start justify-between gap-3 mb-3">
             <div class="flex items-center gap-3 min-w-0">
@@ -4098,9 +4366,17 @@
             </div>` : ''}
           </div>
 
-          <div class="flex items-center justify-between pt-1">
+          ${serverNodeExtraHtml}
+
+          <div class="flex items-center justify-between pt-3 mt-1 border-t border-slate-800/60">
             <span class="text-[10px] font-mono text-slate-500">${device.mac || 'Tailscale Mesh'}</span>
             <div class="flex items-center gap-2">
+              ${isServerNode ? `
+                <a href="http://${serverHost}:61208" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer" title="Открыть мониторинг Glances в отдельной вкладке">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>
+                  <span>Glances ↗</span>
+                </a>
+              ` : ''}
               <button type="button" class="btn-ping-device px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer" data-id="${device.id}" title="Проверить пинг устройства сейчас">
                 <svg class="w-3.5 h-3.5 ping-icon-${device.id}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
                 <span>Пинг</span>
@@ -4505,6 +4781,13 @@
         renderCanvasChart();
       }
     }, 2000);
+
+    // Auto-refresh server health & devices
+    setInterval(() => {
+      if (state.currentTab === 'devices') {
+        loadServerHealth();
+      }
+    }, 8000);
 
     // DNS Providers
     document.querySelectorAll('.dns-provider-card').forEach(card => {

@@ -1880,6 +1880,177 @@ async def get_router_stats() -> Dict[str, Any]:
     }
 
 
+@app.get("/api/server/health")
+async def get_server_health() -> Dict[str, Any]:
+    """
+    Мониторинг ресурсов сервера (Server Health):
+    CPU (загрузка, температура, частота, модель),
+    RAM (занято, свободно, всего, %),
+    Диск (занято, свободно, всего, %),
+    Uptime, Load Average, Статус батареи ноутбука,
+    а также статус ключевых запущенных служб.
+    """
+    glances_url = "http://172.18.0.1:61208/api/4"
+
+    cpu_data = {"name": "Intel Celeron N3060", "percent": 0.0, "cores": 2, "temp_c": None, "freq_ghz": 1.6}
+    mem_data = {"percent": 0.0, "used_gb": 0.0, "total_gb": 3.2, "free_gb": 0.0}
+    disk_data = {"percent": 0.0, "used_gb": 0.0, "total_gb": 98.0, "free_gb": 0.0}
+    load_data = {"min1": 0.0, "min5": 0.0, "min15": 0.0}
+    battery_data = {"level": 100, "status": "Full (Сеть)"}
+    uptime_str = "—"
+
+    # 1. Fetch system metrics via Glances REST API
+    try:
+        async with httpx.AsyncClient(timeout=1.2) as client:
+            q_task = client.get(f"{glances_url}/quicklook")
+            m_task = client.get(f"{glances_url}/mem")
+            f_task = client.get(f"{glances_url}/fs")
+            s_task = client.get(f"{glances_url}/sensors")
+            u_task = client.get(f"{glances_url}/uptime")
+            l_task = client.get(f"{glances_url}/load")
+
+            resps = await asyncio.gather(q_task, m_task, f_task, s_task, u_task, l_task, return_exceptions=True)
+
+            # Quicklook
+            if not isinstance(resps[0], Exception) and resps[0].status_code == 200:
+                q_json = resps[0].json()
+                cpu_data["name"] = q_json.get("cpu_name", "Intel Celeron N3060").strip()
+                cpu_data["percent"] = round(q_json.get("cpu", 0.0), 1)
+                cpu_data["cores"] = q_json.get("cpu_phys_core", 2)
+                freq_hz = q_json.get("cpu_hz_current") or q_json.get("cpu_hz")
+                if freq_hz:
+                    cpu_data["freq_ghz"] = round(freq_hz / 1e9, 2)
+
+            # Memory
+            if not isinstance(resps[1], Exception) and resps[1].status_code == 200:
+                m_json = resps[1].json()
+                mem_data["percent"] = round(m_json.get("percent", 0.0), 1)
+                mem_data["total_gb"] = round(m_json.get("total", 0) / (1024**3), 2)
+                mem_data["used_gb"] = round(m_json.get("used", 0) / (1024**3), 2)
+                mem_data["free_gb"] = round(m_json.get("available", 0) / (1024**3), 2)
+
+            # Filesystem / Disk
+            if not isinstance(resps[2], Exception) and resps[2].status_code == 200:
+                fs_list = resps[2].json()
+                if isinstance(fs_list, list) and len(fs_list) > 0:
+                    primary_fs = fs_list[0]
+                    disk_data["percent"] = round(primary_fs.get("percent", 0.0), 1)
+                    disk_data["total_gb"] = round(primary_fs.get("size", 0) / (1024**3), 1)
+                    disk_data["used_gb"] = round(primary_fs.get("used", 0) / (1024**3), 1)
+                    disk_data["free_gb"] = round(primary_fs.get("free", 0) / (1024**3), 1)
+
+            # Sensors & Battery
+            if not isinstance(resps[3], Exception) and resps[3].status_code == 200:
+                sensors = resps[3].json()
+                temps = []
+                for s in sensors:
+                    if s.get("type") == "temperature_core" or "Core" in str(s.get("label", "")):
+                        temps.append(s.get("value", 0))
+                    elif s.get("type") == "battery" or "BAT" in str(s.get("label", "")):
+                        battery_data["level"] = s.get("value", 100)
+                        battery_data["status"] = f"{s.get('status', 'Full')} (Сеть)"
+                if temps:
+                    cpu_data["temp_c"] = max(temps)
+
+            # Uptime
+            if not isinstance(resps[4], Exception) and resps[4].status_code == 200:
+                uptime_val = resps[4].json()
+                if isinstance(uptime_val, str):
+                    uptime_str = uptime_val.replace("days", "дней").replace("day", "день")
+
+            # Load
+            if not isinstance(resps[5], Exception) and resps[5].status_code == 200:
+                l_json = resps[5].json()
+                load_data["min1"] = round(l_json.get("min1", 0.0), 2)
+                load_data["min5"] = round(l_json.get("min5", 0.0), 2)
+                load_data["min15"] = round(l_json.get("min15", 0.0), 2)
+    except Exception as e:
+        logger.warning(f"Glances server health error: {e}")
+
+    # Fallback uptime from /proc/uptime
+    if uptime_str == "—":
+        try:
+            with open("/proc/uptime", "r") as f:
+                sec = float(f.readline().split()[0])
+                d = int(sec // 86400)
+                h = int((sec % 86400) // 3600)
+                m = int((sec % 3600) // 60)
+                uptime_str = f"{d}д {h}ч {m}м" if d > 0 else f"{h}ч {m}м"
+        except Exception:
+            pass
+
+    # 2. Check running services
+    srv_checks = {
+        "ainews": True,
+        "glances": False,
+        "ollama": False,
+        "rssbridge": False
+    }
+    try:
+        async with httpx.AsyncClient(timeout=0.6) as client:
+            t_gl = client.get("http://172.18.0.1:61208/api/4/quicklook")
+            t_ol = client.get("http://news_ai_ollama:11434/api/tags")
+            t_rss = client.get("http://news_ai_rss_bridge:80/")
+            r_gl, r_ol, r_rss = await asyncio.gather(t_gl, t_ol, t_rss, return_exceptions=True)
+            srv_checks["glances"] = not isinstance(r_gl, Exception) and (200 <= r_gl.status_code < 400 or r_gl.status_code == 405)
+            srv_checks["ollama"] = not isinstance(r_ol, Exception) and (200 <= r_ol.status_code < 400)
+            srv_checks["rssbridge"] = not isinstance(r_rss, Exception) and (200 <= r_rss.status_code < 400)
+    except Exception:
+        pass
+
+    services = [
+        {
+            "id": "ainews",
+            "name": "AI News",
+            "icon": "🤖",
+            "port": 8000,
+            "desc": "Веб-интерфейс и API новостей",
+            "online": srv_checks["ainews"],
+            "url_path": "/"
+        },
+        {
+            "id": "glances",
+            "name": "Glances",
+            "icon": "📊",
+            "port": 61208,
+            "desc": "Мониторинг ОС и ресурсов",
+            "online": srv_checks["glances"],
+            "url_path": "/"
+        },
+        {
+            "id": "ollama",
+            "name": "Ollama",
+            "icon": "🦙",
+            "port": 11434,
+            "desc": "Локальные нейросети / LLM",
+            "online": srv_checks["ollama"],
+            "url_path": "/"
+        },
+        {
+            "id": "rssbridge",
+            "name": "RSS-Bridge",
+            "icon": "🌐",
+            "port": 3000,
+            "desc": "Генератор RSS-лент",
+            "online": srv_checks["rssbridge"],
+            "url_path": "/"
+        }
+    ]
+
+    return {
+        "hostname": "petroprog",
+        "os": "Ubuntu Server 26.04",
+        "uptime": uptime_str,
+        "cpu": cpu_data,
+        "memory": mem_data,
+        "disk": disk_data,
+        "battery": battery_data,
+        "load": load_data,
+        "services": services,
+        "updated_at": datetime.now(timezone.utc).strftime("%H:%M:%S UTC")
+    }
+
+
 @app.post("/api/devices/{device_id}/ping")
 async def ping_single_device(device_id: int, session: AsyncSession = Depends(get_db_session)) -> Dict[str, Any]:
     """Быстрый целевой пинг конкретного устройства."""
