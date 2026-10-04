@@ -591,7 +591,14 @@
       }
 
       if (tabId === 'vpn') {
-        setTimeout(renderCanvasChart, 50);
+        if (typeof loadVpnStatus === 'function') loadVpnStatus();
+        if (typeof loadVpnTraffic === 'function') loadVpnTraffic();
+        if (typeof loadDnsStats === 'function') loadDnsStats();
+        if (typeof loadDnsStatus === 'function') loadDnsStatus();
+        if (typeof loadDnsQueryLog === 'function') loadDnsQueryLog();
+        setTimeout(() => {
+          if (typeof renderCanvasChart === 'function') renderCanvasChart();
+        }, 50);
       }
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -5226,51 +5233,102 @@
       };
     }
 
-    // VPN UI Management
-    function updateVpnUI() {
-      const pill = document.getElementById('vpn-status-pill');
-      const text = document.getElementById('vpn-status-text');
-      const btn = document.getElementById('vpn-main-toggle');
+    // ==========================================
+    // VPN & ADGUARD HOME LIVE INTEGRATION
+    // ==========================================
 
-      if (state.vpnConnected) {
-        if (pill) {
-          pill.className = 'badge-status px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1.5';
-          pill.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> ${t('vpnStatusConnected')}`;
-        }
-        if (text) text.textContent = t('vpnDesc');
-        if (btn) {
-          btn.className = 'w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold flex items-center justify-center gap-3 shadow-lg shadow-emerald-900/30 border border-emerald-400/40 transition-all';
-          btn.innerHTML = `<span class="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span> <span class="font-bold text-white">${t('vpnBtnDisconnect')}</span>`;
-        }
-      } else {
-        if (pill) {
-          pill.className = 'badge-status px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-1.5';
-          pill.innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-500"></span> ${t('vpnStatusDisconnected')}`;
-        }
-        if (text) text.textContent = t('vpnDesc');
-        if (btn) {
-          btn.className = 'w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 text-white font-bold flex items-center justify-center gap-3 border border-slate-600 transition-all';
-          btn.innerHTML = `<span class="w-3 h-3 rounded-full bg-slate-400"></span> <span class="font-bold text-white">${t('vpnBtnConnect')}</span>`;
-        }
+    state.vpnStatus = null;
+    state.dnsStats = null;
+    state.dnsStatus = null;
+    state.vpnTraffic = { rx_kbps: 0, tx_kbps: 0, rx_mbps: 0, tx_mbps: 0 };
+    let chartPoints = [20, 35, 45, 60, 50, 42, 68, 85, 70, 55, 65, 80];
+
+    async function loadVpnStatus() {
+      try {
+        const resp = await fetch('/api/vpn/status');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        state.vpnStatus = data;
+        updateVpnUI();
+      } catch (err) {
+        console.warn('Could not load /api/vpn/status:', err);
       }
     }
 
-    const vpnToggleBtn = document.getElementById('vpn-main-toggle');
-    if (vpnToggleBtn) {
-      vpnToggleBtn.onclick = () => {
-        state.vpnConnected = !state.vpnConnected;
-        updateVpnUI();
-        if (state.vpnConnected) {
-          showToast(t('toastVpnOn'), "10.8.0.2", "success");
-        } else {
-          showToast(t('toastVpnOff'), "", "warning");
-        }
-        renderCanvasChart();
-      };
+    function updateVpnUI() {
+      const v = state.vpnStatus;
+      if (!v) return;
+
+      const pill = document.getElementById('vpn-status-pill');
+      const label = document.getElementById('vpn-status-label');
+      const virtualIp = document.getElementById('vpn-virtual-ip');
+      const pingEl = document.getElementById('vpn-ping');
+      const encEl = document.getElementById('vpn-encryption');
+      const badge = document.getElementById('vpn-peers-badge');
+      const peersContainer = document.getElementById('vpn-peers-container');
+
+      if (pill && label) {
+        pill.className = v.connected 
+          ? 'badge-status px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1.5'
+          : 'badge-status px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-1.5';
+        label.textContent = v.connected ? 'В сети Tailscale' : 'Автономно';
+      }
+
+      if (virtualIp && v.self?.virtual_ip) virtualIp.textContent = v.self.virtual_ip;
+      if (pingEl && v.ping_ms !== undefined) pingEl.textContent = `${v.ping_ms} ms`;
+      if (encEl && v.encryption) encEl.textContent = v.encryption;
+
+      if (badge) {
+        badge.textContent = `${v.peers_online || 0} онлайн / ${v.peers_count || 0} всего`;
+      }
+
+      if (peersContainer && Array.isArray(v.peers)) {
+        peersContainer.innerHTML = v.peers.map(p => {
+          const isOnline = p.online;
+          const osIcon = (p.os || '').toLowerCase().includes('windows') ? '💻' : ((p.os || '').toLowerCase().includes('android') ? '📱' : '🐧');
+          return `
+            <div class="p-2.5 rounded-2xl bg-slate-900/60 border ${isOnline ? 'border-slate-800' : 'border-slate-800/50 opacity-60'} flex items-center justify-between gap-2">
+              <div class="min-w-0 flex items-center gap-2">
+                <span class="text-base">${osIcon}</span>
+                <div class="min-w-0">
+                  <div class="text-xs font-bold text-white truncate">${p.display_name || p.hostname}</div>
+                  <div class="text-[10px] font-mono text-slate-400 truncate">${p.ip || '—'}</div>
+                </div>
+              </div>
+              <div class="shrink-0 text-right">
+                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${isOnline ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-500'}">
+                  <span class="w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}"></span>
+                  ${isOnline ? 'В сети' : 'Offline'}
+                </span>
+                ${isOnline && p.tx_mb ? `<div class="text-[9px] text-slate-500 mt-0.5">${p.tx_mb} MB</div>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
     }
 
-    // Standalone Canvas Traffic Chart
-    let chartPoints = [35, 52, 78, 110, 85, 62, 94, 120, 95, 88];
+    async function loadVpnTraffic() {
+      try {
+        const resp = await fetch('/api/vpn/traffic');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        state.vpnTraffic = data;
+
+        const rxEl = document.getElementById('vpn-speed-rx');
+        const txEl = document.getElementById('vpn-speed-tx');
+        if (rxEl) rxEl.textContent = `↓ ${data.rx_mbps >= 1 ? data.rx_mbps + ' Mb/s' : data.rx_kbps + ' Kb/s'}`;
+        if (txEl) txEl.textContent = `↑ ${data.tx_mbps >= 1 ? data.tx_mbps + ' Mb/s' : data.tx_kbps + ' Kb/s'}`;
+
+        const point = Math.max(15, Math.min(150, Math.round(data.rx_kbps + data.tx_kbps * 0.5)));
+        chartPoints.shift();
+        chartPoints.push(point);
+        renderCanvasChart();
+      } catch (err) {
+        console.warn('Could not load /api/vpn/traffic:', err);
+      }
+    }
+
     function renderCanvasChart() {
       const canvas = document.getElementById('vpn-traffic-chart');
       if (!canvas) return;
@@ -5298,32 +5356,24 @@
         ctx.stroke();
       }
 
-      if (!state.vpnConnected) {
-        ctx.fillStyle = '#64748b';
-        ctx.font = '14px Inter, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('VPN Déconnecté', w / 2, h / 2);
-        return;
-      }
-
       // Draw Gradient Area & Line
       const pts = chartPoints;
       const step = w / (pts.length - 1);
 
       ctx.beginPath();
-      ctx.moveTo(0, h - (pts[0] / 150) * h);
+      ctx.moveTo(0, h - (pts[0] / 160) * h);
 
       for (let i = 1; i < pts.length; i++) {
         const x = i * step;
-        const y = h - (pts[i] / 150) * h;
+        const y = h - (pts[i] / 160) * h;
         const prevX = (i - 1) * step;
-        const prevY = h - (pts[i - 1] / 150) * h;
+        const prevY = h - (pts[i - 1] / 160) * h;
         const cpX = (prevX + x) / 2;
         ctx.bezierCurveTo(cpX, prevY, cpX, y, x, y);
       }
 
       ctx.strokeStyle = '#38bdf8';
-      ctx.lineWidth = 3 * (window.devicePixelRatio || 1);
+      ctx.lineWidth = 2.5 * (window.devicePixelRatio || 1);
       ctx.stroke();
 
       // Fill Gradient
@@ -5340,120 +5390,317 @@
 
     window.addEventListener('resize', renderCanvasChart);
 
-    // Pulse live chart values
-    setInterval(() => {
-      if (state.vpnConnected && state.currentTab === 'vpn') {
-        chartPoints.shift();
-        chartPoints.push(Math.floor(Math.random() * 50 + 60));
-        renderCanvasChart();
+    // ==========================================
+    // ADGUARD HOME DNS SHIELD INTEGRATION
+    // ==========================================
+
+    async function loadDnsStats() {
+      try {
+        const resp = await fetch('/api/dns/stats');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        state.dnsStats = data;
+
+        const totalEl = document.getElementById('stat-total-queries');
+        const blockedEl = document.getElementById('stat-blocked-count');
+        const threatsEl = document.getElementById('stat-threats-count');
+
+        if (totalEl) totalEl.textContent = Number(data.total_queries || 0).toLocaleString();
+        if (blockedEl) {
+          const pct = data.blocked_percent !== undefined ? ` (${data.blocked_percent}%)` : '';
+          blockedEl.textContent = `${Number(data.blocked_queries || 0).toLocaleString()}${pct}`;
+        }
+        if (threatsEl) threatsEl.textContent = Number(data.threats_count || 0).toLocaleString();
+      } catch (err) {
+        console.warn('Could not load /api/dns/stats:', err);
       }
-    }, 2000);
-
-    // Auto-refresh server health & devices
-    setInterval(() => {
-      if (state.currentTab === 'devices') {
-        loadServerHealth();
-      }
-    }, 8000);
-
-    // DNS Providers
-    document.querySelectorAll('.dns-provider-card').forEach(card => {
-      card.onclick = () => {
-        document.querySelectorAll('.dns-provider-card').forEach(c => {
-          c.className = 'dns-provider-card cursor-pointer p-3 rounded-2xl border border-slate-800 bg-slate-900/60 hover:border-slate-700 transition-all';
-        });
-        card.className = 'dns-provider-card cursor-pointer p-3 rounded-2xl border border-sky-500 bg-sky-500/10 glow-cyan transition-all';
-        state.selectedDns = card.dataset.dns;
-        showToast(t('toastSaved'), card.querySelector('h4').textContent.trim(), "info");
-      };
-    });
-
-    // DNS Shields
-    function bindDns(id, key) {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.onchange = (e) => {
-        state.dnsFilters[key] = e.target.checked;
-        showToast(t('toastSaved'), t('dnsSectionTitle'), "success");
-      };
     }
-    bindDns('dns-toggle-adblock', 'adblock');
-    bindDns('dns-toggle-malware', 'malware');
-    bindDns('dns-toggle-doh', 'doh');
-    bindDns('dns-toggle-parental', 'parental');
 
-    // DNS Log
-    function renderDnsLog() {
+    async function loadDnsStatus() {
+      try {
+        const resp = await fetch('/api/dns/status');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        state.dnsStatus = data;
+
+        // Update toggles
+        const adblockTog = document.getElementById('dns-toggle-adblock');
+        const malwareTog = document.getElementById('dns-toggle-malware');
+        const dohTog = document.getElementById('dns-toggle-doh');
+        const parentalTog = document.getElementById('dns-toggle-parental');
+
+        if (adblockTog) adblockTog.checked = Boolean(data.adblock);
+        if (malwareTog) malwareTog.checked = Boolean(data.malware);
+        if (dohTog) dohTog.checked = Boolean(data.doh);
+        if (parentalTog) parentalTog.checked = Boolean(data.parental);
+
+        // Highlight active provider
+        const curProvider = data.provider || 'cloudflare';
+        const provLabel = document.getElementById('dns-active-provider-label');
+        if (provLabel) {
+          const titles = {
+            cloudflare: 'Cloudflare (1.1.1.1)',
+            adguard: 'AdGuard DNS',
+            quad9: 'Quad9 (9.9.9.9)',
+            google: 'Google DNS'
+          };
+          provLabel.textContent = titles[curProvider] || curProvider;
+        }
+
+        document.querySelectorAll('.dns-provider-card').forEach(c => {
+          if (c.dataset.dns === curProvider) {
+            c.className = 'dns-provider-card cursor-pointer p-3 rounded-2xl border border-sky-500 bg-sky-500/10 glow-cyan transition-all';
+          } else {
+            c.className = 'dns-provider-card cursor-pointer p-3 rounded-2xl border border-slate-800 bg-slate-900/60 hover:border-slate-700 transition-all';
+          }
+        });
+      } catch (err) {
+        console.warn('Could not load /api/dns/status:', err);
+      }
+    }
+
+    async function toggleDnsFeature(feature, enabled) {
+      try {
+        const resp = await fetch('/api/dns/toggle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ feature, enabled })
+        });
+        if (resp.ok) {
+          const titles = {
+            adblock: 'Блокировщик рекламы',
+            malware: 'Защита от вирусов и фишинга',
+            doh: 'Шифрование DNS (DoH)',
+            parental: 'Безопасный поиск / Семья'
+          };
+          const name = titles[feature] || feature;
+          showToast('Настройки щита обновлены', `${name}: ${enabled ? 'Включено' : 'Выключено'}`, enabled ? 'success' : 'info');
+          loadDnsStatus();
+          loadDnsStats();
+        } else {
+          showToast('Ошибка', 'Не удалось применить настройку', 'danger');
+        }
+      } catch (err) {
+        console.error('Toggle error:', err);
+        showToast('Ошибка сети', 'Сервер DNS временно недоступен', 'danger');
+      }
+    }
+
+    async function switchDnsProvider(provider) {
+      try {
+        const resp = await fetch('/api/dns/upstream', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ provider })
+        });
+        if (resp.ok) {
+          const names = {
+            cloudflare: 'Cloudflare DoH (1.1.1.1)',
+            adguard: 'AdGuard DNS DoH',
+            quad9: 'Quad9 Приватный DoH',
+            google: 'Google DNS DoH'
+          };
+          showToast('DNS-провайдер изменён', `Активен ${names[provider] || provider}`, 'info');
+          loadDnsStatus();
+        } else {
+          showToast('Ошибка', 'Не удалось переключить DNS-провайдера', 'danger');
+        }
+      } catch (err) {
+        console.error('Upstream error:', err);
+        showToast('Ошибка сети', 'Не удалось связаться с сервером', 'danger');
+      }
+    }
+
+    async function loadDnsQueryLog() {
       const body = document.getElementById('dns-query-log-body');
       if (!body) return;
 
-      const filter = document.getElementById('dns-log-filter').value;
-      const filtered = state.dnsQueries.filter(q => {
-        if (filter === 'all') return true;
-        if (filter === 'blocked') return q.status === 'blocked' || q.status === 'threat';
-        if (filter === 'allowed') return q.status === 'allowed';
-        return true;
-      });
+      const filterSelect = document.getElementById('dns-log-filter');
+      const filter = filterSelect ? filterSelect.value : 'all';
 
-      const statusLabels = {
-        allowed: { fr: "Autorisé", en: "Allowed", de: "Erlaubt", badge: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" },
-        blocked: { fr: "Pub bloquée", en: "Ad blocked", de: "Werbung geblockt", badge: "bg-rose-500/15 text-rose-300 border-rose-500/30" },
-        threat: { fr: "⚠️ Menace évitée", en: "⚠️ Threat stopped", de: "⚠️ Bedrohung geblockt", badge: "bg-amber-500/20 text-amber-300 border-amber-500/40" }
-      };
+      try {
+        const resp = await fetch(`/api/dns/querylog?limit=40&filter=${filter}`);
+        if (!resp.ok) throw new Error('API error');
+        const data = await resp.json();
+        const logs = data.logs || [];
 
-      body.innerHTML = filtered.map(query => {
-        const info = statusLabels[query.status] || statusLabels.allowed;
-        const statusText = info[state.lang] || info.fr;
-
-        return `
-          <div class="p-3 rounded-2xl bg-slate-900/60 border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-2 mb-1">
-                <span class="font-mono text-white text-xs font-semibold truncate">${query.domain}</span>
-                <span class="badge-status px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${info.badge}">
-                  ${statusText}
-                </span>
-              </div>
-              <div class="text-[11px] text-slate-400 flex items-center gap-1.5 flex-wrap">
-                <span>${query.client}</span>
-                <span>•</span>
-                <span class="text-slate-500">${query.time}</span>
-                <span>•</span>
-                <span class="text-slate-400 italic truncate">${query.reason}</span>
-              </div>
+        if (logs.length === 0) {
+          body.innerHTML = `
+            <div class="p-6 text-center text-slate-500 text-xs">
+              Нет свежих записей в журнале
             </div>
-            
-            <button type="button" class="toggle-domain-btn px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all ${query.status === 'allowed' ? 'bg-rose-500/15 text-rose-300 hover:bg-rose-500/25 border border-rose-500/30' : 'bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 border border-emerald-500/30'}" data-id="${query.id}">
-              ${query.status === 'allowed' ? (state.lang === 'fr' ? 'Bloquer' : state.lang === 'de' ? 'Blockieren' : 'Block') : (state.lang === 'fr' ? 'Autoriser' : state.lang === 'de' ? 'Erlauben' : 'Allow')}
-            </button>
-          </div>
-        `;
-      }).join('');
+          `;
+          return;
+        }
 
-      body.querySelectorAll('.toggle-domain-btn').forEach(btn => {
-        btn.onclick = () => {
-          const id = parseInt(btn.dataset.id);
-          const q = state.dnsQueries.find(item => item.id === id);
-          if (!q) return;
+        body.innerHTML = logs.map(q => {
+          const isBlocked = q.status === 'blocked';
+          const badgeClass = isBlocked
+            ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+            : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
 
-          if (q.status === 'allowed') {
-            q.status = 'blocked';
-            q.reason = state.lang === 'fr' ? "Bloqué par l'utilisateur" : "Blocked by user";
-            state.dnsStats.blockedQueries++;
-          } else {
-            q.status = 'allowed';
-            q.reason = state.lang === 'fr' ? "Autorisé par l'utilisateur" : "Allowed by user";
-            if (state.dnsStats.blockedQueries > 0) state.dnsStats.blockedQueries--;
+          return `
+            <div class="p-3 rounded-2xl bg-slate-900/60 border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2 mb-1 flex-wrap">
+                  <span class="font-mono text-white text-xs font-semibold truncate max-w-[280px] sm:max-w-xs" title="${q.domain}">${q.domain}</span>
+                  <span class="badge-status px-2 py-0.5 rounded-full text-[10px] font-bold border ${badgeClass}">
+                    ${q.reason}
+                  </span>
+                  <span class="px-1.5 py-0.2 rounded text-[9px] font-mono bg-slate-800 text-slate-400">${q.type || 'A'}</span>
+                </div>
+                <div class="text-[11px] text-slate-400 flex items-center gap-1.5 flex-wrap">
+                  <span class="text-slate-300 font-medium">${q.client_name || q.client_ip}</span>
+                  <span>•</span>
+                  <span class="text-slate-500">${q.time}</span>
+                  ${q.elapsed_ms ? `<span>•</span><span class="text-slate-500">${q.elapsed_ms} ms</span>` : ''}
+                </div>
+              </div>
+              
+              ${!isBlocked ? `
+                <button type="button" class="px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all bg-rose-500/15 text-rose-300 hover:bg-rose-500/25 border border-rose-500/30 cursor-pointer" onclick="blockDomainPrompt('${q.domain}')">
+                  Заблокировать
+                </button>
+              ` : `
+                <span class="text-[11px] font-mono text-rose-400/80 shrink-0">✕ Заблокировано</span>
+              `}
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        console.warn('Could not load /api/dns/querylog:', err);
+      }
+    }
+
+    async function blockDomainPrompt(domain) {
+      if (!domain) return;
+      if (typeof openConfirmModal === 'function') {
+        openConfirmModal({
+          title: 'Заблокировать домен?',
+          snippet: domain,
+          desc: 'Все DNS-запросы к этому домену будут блокироваться для всех ваших устройств.',
+          confirmText: 'Заблокировать',
+          onConfirm: async () => {
+            try {
+              const resp = await fetch('/api/dns/block', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ domain })
+              });
+              if (resp.ok) {
+                showToast('Домен заблокирован', `Правило ||${domain}^ добавлено`, 'warning');
+                loadDnsQueryLog();
+                loadDnsStats();
+              } else {
+                showToast('Ошибка', 'Не удалось заблокировать домен', 'danger');
+              }
+            } catch (e) {
+              showToast('Ошибка сети', 'Не удалось связаться с сервером', 'danger');
+            }
           }
+        });
+      } else {
+        if (confirm(`Заблокировать домен ${domain}?`)) {
+          const resp = await fetch('/api/dns/block', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ domain })
+          });
+          if (resp.ok) {
+            showToast('Домен заблокирован', domain, 'warning');
+            loadDnsQueryLog();
+            loadDnsStats();
+          }
+        }
+      }
+    }
 
-          document.getElementById('stat-blocked-count').textContent = state.dnsStats.blockedQueries.toLocaleString();
-          renderDnsLog();
-        };
+    window.blockDomainPrompt = blockDomainPrompt;
+
+    // QR Code Modal Handlers
+    async function openVpnQrModal() {
+      const modal = document.getElementById('vpn-qr-modal');
+      const img = document.getElementById('vpn-qr-image');
+      if (!modal) return;
+
+      try {
+        const resp = await fetch('/api/vpn/qr');
+        if (resp.ok) {
+          const data = await resp.json();
+          if (img && data.qr_base64) {
+            img.src = data.qr_base64;
+          }
+        }
+      } catch (e) {
+        console.warn('QR code load failed:', e);
+      }
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      requestAnimationFrame(() => {
+        modal.classList.remove('opacity-0');
+        modal.classList.add('opacity-100');
       });
     }
 
-    const dnsFilterEl = document.getElementById('dns-log-filter');
-    if (dnsFilterEl) dnsFilterEl.onchange = renderDnsLog;
+    function closeVpnQrModal(e) {
+      if (e && e.target && e.target !== e.currentTarget && e.target.tagName !== 'BUTTON') {
+        return;
+      }
+      const modal = document.getElementById('vpn-qr-modal');
+      if (!modal) return;
+
+      modal.classList.remove('opacity-100');
+      modal.classList.add('opacity-0');
+      setTimeout(() => {
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+      }, 300);
+    }
+
+    window.openVpnQrModal = openVpnQrModal;
+    window.closeVpnQrModal = closeVpnQrModal;
+
+    // Attach Provider Cards Listeners
+    document.querySelectorAll('.dns-provider-card').forEach(card => {
+      card.onclick = () => {
+        const prov = card.dataset.dns;
+        if (prov) switchDnsProvider(prov);
+      };
+    });
+
+    // Attach Toggle Listeners
+    const adblockEl = document.getElementById('dns-toggle-adblock');
+    if (adblockEl) adblockEl.onchange = (e) => toggleDnsFeature('adblock', e.target.checked);
+
+    const malwareEl = document.getElementById('dns-toggle-malware');
+    if (malwareEl) malwareEl.onchange = (e) => toggleDnsFeature('malware', e.target.checked);
+
+    const dohEl = document.getElementById('dns-toggle-doh');
+    if (dohEl) dohEl.onchange = (e) => toggleDnsFeature('doh', e.target.checked);
+
+    const parentalEl = document.getElementById('dns-toggle-parental');
+    if (parentalEl) parentalEl.onchange = (e) => toggleDnsFeature('parental', e.target.checked);
+
+    const logFilterEl = document.getElementById('dns-log-filter');
+    if (logFilterEl) logFilterEl.onchange = () => loadDnsQueryLog();
+
+    const qrBtn = document.getElementById('show-qr-btn');
+    if (qrBtn) qrBtn.onclick = openVpnQrModal;
+
+    // Background auto-refresh for VPN & DNS
+    setInterval(() => {
+      if (state.currentTab === 'vpn') {
+        loadVpnTraffic();
+      }
+    }, 2500);
+
+    setInterval(() => {
+      if (state.currentTab === 'vpn') {
+        loadDnsStats();
+        loadDnsQueryLog();
+      }
+    }, 6000);
 
     // Presentation Demo Actions (Safely guarded)
     const attackBtn = document.getElementById('demo-simulate-attack');
