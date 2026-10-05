@@ -988,9 +988,13 @@ async def get_news_feed(
             (any(k in title_lower for k in WORLD_POLITICS_INDICATORS) and not has_ukr_core)
         )
 
-        is_football = any(k in source_combined for k in ["marca", "primera", "sportsru", "fabrizio", "terrikon", "uefa", "футбол", "football"]) or \
-                      (raw_cat and ("футбол" in raw_cat.lower() or "football" in raw_cat.lower())) or \
-                      any(k in title_lower for k in FOOTBALL_INDICATORS)
+        is_gaming = any(k in source_combined for k in ["csgo", "cs3", "clashroyalepin", "hltv", "game", "киберспорт"]) or \
+                    any(k in title_lower for k in GAMING_INDICATORS)
+        is_football = not is_gaming and (
+            any(k in source_combined for k in ["sportsru", "sports.ru", "championat", "matchpremier", "sport-express", "fabrizio", "terrikon", "uefa", "футбол", "football"]) or
+            (raw_cat and ("футбол" in raw_cat.lower() or "football" in raw_cat.lower())) or
+            any(k in title_lower for k in FOOTBALL_INDICATORS)
+        )
         is_f1 = any(k in source_combined for k in ["formula 1", "formula1", "f1", "формула-1"]) or \
                 (raw_cat and raw_cat.lower() == "f1") or \
                 any(k in title_lower for k in F1_INDICATORS)
@@ -999,8 +1003,6 @@ async def get_news_feed(
             (raw_cat and any(k in raw_cat.lower() for k in ["linux", "devops"])) or
             any(k in title_lower for k in ["ядро linux", "ubuntu", "debian", "arch linux", "kernel", "docker", "kubernetes", "k8s", "ansible"])
         )
-        is_gaming = any(k in source_combined for k in ["csgo", "cs3", "clashroyalepin", "hltv", "game", "киберспорт"]) or \
-                    any(k in title_lower for k in GAMING_INDICATORS)
         is_ukraine = not is_it_ai_offtopic and not is_world_politics and (
             any(k in source_combined for k in ["pravda.com.ua", "liga.net", "novynaukr", "украин", "украина", "україна"]) or 
             (raw_cat and "украин" in raw_cat.lower())
@@ -1124,6 +1126,10 @@ async def get_news_feed(
         # Safeguard: Never display untranslated Ukrainian titles in the feed
         has_ukr_letters = any(c in "ієїґІЄЇҐ" for c in (art.title or ""))
         if has_ukr_letters and (cat_name == "Украина" or "novynaukr" in source_combined):
+            continue
+
+        # Safeguard: Never display raw Spanish articles in Russian feed
+        if art.language == "es" or any(s in source_combined for s in ["marca", "as:"]):
             continue
 
         # Require a valid AI summary or substantive content fallback

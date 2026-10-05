@@ -652,6 +652,17 @@
         'https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=800&q=80',
         'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?auto=format&fit=crop&w=800&q=80',
         'https://images.unsplash.com/photo-1526470608268-f674ce90ebd4?auto=format&fit=crop&w=800&q=80'
+      ],
+      football: [
+        'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=1200&q=85',
+        'https://images.unsplash.com/photo-1522778119026-d647f0596c20?auto=format&fit=crop&w=1200&q=85',
+        'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=85',
+        'https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?auto=format&fit=crop&w=1200&q=85'
+      ],
+      f1: [
+        'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=1200&q=85',
+        'https://images.unsplash.com/photo-1574776215779-114cb9f6eb39?auto=format&fit=crop&w=1200&q=85',
+        'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?auto=format&fit=crop&w=1200&q=85'
       ]
     };
 
@@ -857,19 +868,35 @@
       return '⚡';
     }
 
+    function upgradeImageUrl(url) {
+      if (!url) return '';
+      let cleanUrl = String(url).replace(/&amp;/g, '&');
+      // Upgrade Marca / Unidad Editorial thumbnails: 17910383221445_150x0.jpg -> 17910383221445.jpg
+      cleanUrl = cleanUrl.replace(/_\d+x\d+\.(jpe?g|png|webp)/i, '.$1');
+      // Upgrade generic size query params
+      cleanUrl = cleanUrl.replace(/([?&](?:w|width|size|resize)=)\d+/i, '$11200');
+      // Upgrade common resize paths
+      cleanUrl = cleanUrl.replace(/\/resize\/\d+\//i, '/resize/1200/');
+      return cleanUrl;
+    }
+
     function getArticleImage(article, index) {
-      if (article.image_url) return String(article.image_url).replace(/&amp;/g, '&');
+      if (article.image_url) return upgradeImageUrl(article.image_url);
       if (article.raw_content) {
         const match = article.raw_content.match(/<img[^>]+src=["']([^"']+)["']/i);
-        if (match && match[1]) return String(match[1]).replace(/&amp;/g, '&');
+        if (match && match[1]) return upgradeImageUrl(match[1]);
         const posterMatch = article.raw_content.match(/<video[^>]+poster=["']([^"']+)["']/i);
-        if (posterMatch && posterMatch[1]) return String(posterMatch[1]).replace(/&amp;/g, '&');
+        if (posterMatch && posterMatch[1]) return upgradeImageUrl(posterMatch[1]);
       }
 
       const text = ((article.title || '') + ' ' + (article.category || '') + ' ' + (article.source || '')).toLowerCase();
       let pool = THEMATIC_IMAGES.tech;
 
-      if (text.includes('swiss') || text.includes('швейцар') || text.includes('lausanne') || text.includes('geneve') || text.includes('vaud') || text.includes('rts') || text.includes('blick')) {
+      if (text.includes('футбол') || text.includes('football') || text.includes('месси') || text.includes('барселона') || text.includes('ла лига') || text.includes('апл')) {
+        pool = THEMATIC_IMAGES.football;
+      } else if (text.includes('f1') || text.includes('формул') || text.includes('formula') || text.includes('ферстаппен') || text.includes('ред булл')) {
+        pool = THEMATIC_IMAGES.f1;
+      } else if (text.includes('swiss') || text.includes('швейцар') || text.includes('lausanne') || text.includes('geneve') || text.includes('vaud') || text.includes('rts') || text.includes('blick')) {
         pool = THEMATIC_IMAGES.swiss;
       } else if (text.includes('политик') || text.includes('трамп') || text.includes('байден') || text.includes('конгресс') || text.includes('белый дом') || text.includes('мир')) {
         pool = THEMATIC_IMAGES.politics;
@@ -3183,6 +3210,19 @@
       // 7. Football Filter: Priority keywords Месси, Барселона, Испания, Интер Майами
       const isFootballCategory = targetCatLower === 'футбол' || targetCatLower.includes('футбол') || targetCatLower.includes('football');
       if (isFootballCategory) {
+        // Strict guard: Never display raw Spanish articles in Russian football interface
+        const curLang = state.lang || 'ru';
+        if (curLang === 'ru') {
+          const titleStr = item.title || '';
+          const sumStr = (item.summaries && (item.summaries.ru || item.summaries[curLang])) || item.summary || item.short_summary || '';
+          const hasCyrillic = /[а-яёА-ЯЁ]/.test(titleStr);
+          const hasSpanishKeywords = ['estará', 'baja', 'canteras', 'futbolistas', 'partido', 'lesión', 'fichaje', 'primer equipo', 'semana'].some(w => (titleStr + ' ' + sumStr).toLowerCase().includes(w));
+          const isSpanishSource = ((item.source || '') + ' ' + (item.url || '')).toLowerCase().includes('marca') || ((item.source || '') + ' ' + (item.url || '')).toLowerCase().includes('as.com');
+          if (hasSpanishKeywords || (!hasCyrillic && isSpanishSource)) {
+            return false;
+          }
+        }
+
         const fullText = ((item.title || '') + ' ' + (item.summary || '') + ' ' + (item.why_it_matters || '') + ' ' + (item.source || '')).toLowerCase();
 
         // Sub-filter by specific tag chip if selected

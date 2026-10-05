@@ -113,22 +113,30 @@ class RSSCollector(BaseCollector):
         elif "description" in entry:
             raw_content = entry.get("description", "")
 
-        # Extract YouTube/media thumbnails or standard enclosures if present
+        # Extract highest resolution lead image or enclosures
         thumbnail_url = None
-        if "media_thumbnail" in entry and entry.media_thumbnail:
-            thumbnail_url = entry.media_thumbnail[0].get("url")
-        elif "media_content" in entry and entry.media_content:
-            thumbnail_url = entry.media_content[0].get("url")
+        if "media_content" in entry and entry.media_content:
+            for mc in entry.media_content:
+                if mc.get("medium") == "image" or mc.get("type", "").startswith("image/") or mc.get("url"):
+                    thumbnail_url = mc.get("url")
+                    break
         elif "enclosures" in entry and entry.enclosures:
             for enc in entry.enclosures:
                 if enc.get("type", "").startswith("image/") and enc.get("href"):
                     thumbnail_url = enc.get("href")
                     break
+        elif "media_thumbnail" in entry and entry.media_thumbnail:
+            thumbnail_url = entry.media_thumbnail[-1].get("url")
         elif "links" in entry and entry.links:
             for lk in entry.links:
                 if lk.get("type", "").startswith("image/") and lk.get("href"):
                     thumbnail_url = lk.get("href")
                     break
+
+        if thumbnail_url:
+            import re
+            # Upgrade thumbnail URLs with resolution suffixes (e.g. _150x0.jpg -> .jpg)
+            thumbnail_url = re.sub(r'_\d+x\d+\.(jpe?g|png|webp)', r'.', thumbnail_url)
 
         if thumbnail_url and "<img" not in raw_content:
             raw_content = f'<img src="{thumbnail_url}" /><br>' + raw_content
