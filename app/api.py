@@ -990,7 +990,13 @@ async def get_news_feed(
 
         is_gaming = any(k in source_combined for k in ["csgo", "cs3", "clashroyalepin", "hltv", "game", "киберспорт"]) or \
                     any(k in title_lower for k in GAMING_INDICATORS)
-        is_football = not is_gaming and (
+        is_other_sports = any(k in title_lower for k in [
+            "хокке", "нхл", "кхл", "овечкин", "шайб", " хк ",
+            "теннис", "уимблдон", "ролан гаррос", "atp", "wta", "медведев", "джокович", "алькарас", "синнер",
+            "баскетбол", "нба", "nba", "йокич", "леброн", "карри",
+            "бокс", "ufc", "мма", "mma", "нокаут", "нфл", "корги"
+        ])
+        is_football = not is_gaming and not is_other_sports and (
             any(k in source_combined for k in ["sportsru", "sports.ru", "championat", "matchpremier", "sport-express", "fabrizio", "terrikon", "uefa", "футбол", "football"]) or
             (raw_cat and ("футбол" in raw_cat.lower() or "football" in raw_cat.lower())) or
             any(k in title_lower for k in FOOTBALL_INDICATORS)

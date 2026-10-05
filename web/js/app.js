@@ -739,16 +739,16 @@
         if (s.includes('formula1') || s.includes('formula 1') || s.includes('f1') || t.includes('formula 1') || t.includes('гран-при') || t.includes('ферстаппен') || t.includes('red bull')) {
           return 'F1';
         }
-        if (s.includes('marca') || s.includes('primera') || s.includes('sportsru') || s.includes('fabrizio') || s.includes('terrikon') || s.includes('uefa') ||
+        if (s.includes('csgo') || s.includes('cs3') || s.includes('clashroyalepin') || s.includes('clashroyale') || s.includes('hltv') ||
+            t.includes('cs2') || t.includes('cs:go') || t.includes('starladder') || t.includes('vitality') || t.includes('navi') || t.includes('s1mple') || t.includes('m0nesy') || t.includes('donk') || t.includes('clash royale') || t.includes('bcgame') || t.includes('fut')) {
+          return 'CS2';
+        }
+        if (s.includes('marca') || s.includes('primera') || s.includes('sportsru') || s.includes('championat') || s.includes('matchpremier') || s.includes('sport-express') || s.includes('fabrizio') || s.includes('terrikon') || s.includes('uefa') ||
             t.includes('месси') || t.includes('messi') || t.includes('барселона') || t.includes('barcelona') || t.includes('интер майами') || t.includes('ла лига') || t.includes('лига чемпионов') || t.includes('лига наций') || t.includes('лига европы')) {
           return 'Футбол';
         }
         if (s.includes('rtsinfo') || s.includes('rtsarchives') || s.includes('blick_media') || s.includes('20minutesonline') || s.includes('instagram')) {
           return 'Swiss';
-        }
-        if (s.includes('csgo') || s.includes('cs3') || s.includes('clashroyalepin') || s.includes('clashroyale') || s.includes('hltv') ||
-            t.includes('cs2') || t.includes('cs:go') || t.includes('starladder') || t.includes('vitality') || t.includes('navi') || t.includes('s1mple') || t.includes('m0nesy') || t.includes('donk') || t.includes('clash royale') || t.includes('bcgame') || t.includes('fut')) {
-          return 'CS2';
         }
 
         const hasUkrCore = ['украин', 'україна', 'киев', 'київ', 'днепр', 'дніпро', 'всу', 'зеленск', 'покровск', 'харьков', 'одесс', 'шахед', 'обстрел', 'дрон', 'бпла', 'пво', 'оккупант', 'фронт'].some(k => t.includes(k));
@@ -3221,6 +3221,15 @@
           if (hasSpanishKeywords || (!hasCyrillic && isSpanishSource)) {
             return false;
           }
+        }
+
+        // Strict guard: Exclude non-football sports (CS2, hockey, tennis, basketball, combat)
+        const isNonFootballItem = [
+          'cs2', 'cs:go', 'csgo', 'скин', 'скины', 'киберспорт', 'starladder', 'hltv', 'vitality', 's1mple', 'm0nesy', 'donk',
+          'хокке', 'нхл', 'кхл', 'овечкин', 'шайб', 'теннис', 'медведев', 'баскетбол', 'нба', 'йокич', 'ufc', 'мма', 'бокс', 'нфл', 'корги'
+        ].some(k => ((item.title || '') + ' ' + (item.summary || '')).toLowerCase().includes(k));
+        if (isNonFootballItem) {
+          return false;
         }
 
         const fullText = ((item.title || '') + ' ' + (item.summary || '') + ' ' + (item.why_it_matters || '') + ' ' + (item.source || '')).toLowerCase();
