@@ -5435,23 +5435,28 @@
         if (parentalTog) parentalTog.checked = Boolean(data.parental);
 
         // Highlight active provider
-        const curProvider = data.provider || 'cloudflare';
+        const curProvider = data.provider || 'quad9';
         const provLabel = document.getElementById('dns-active-provider-label');
         if (provLabel) {
           const titles = {
-            cloudflare: 'Cloudflare (1.1.1.1)',
-            adguard: 'AdGuard DNS',
-            quad9: 'Quad9 (9.9.9.9)',
-            google: 'Google DNS'
+            quad9: 'Quad9 DoH 🇨🇭 (Швейцария)',
+            cloudflare: 'Cloudflare DoH ⚡ (1.1.1.1)',
+            adguard: 'AdGuard Cloud DoH 🛡️',
+            google: 'Google DoH 🌐 (8.8.8.8)'
           };
           provLabel.textContent = titles[curProvider] || curProvider;
+          if (curProvider === 'quad9') {
+            provLabel.className = 'text-[11px] text-emerald-400 font-mono font-bold px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30';
+          } else {
+            provLabel.className = 'text-[11px] text-sky-400 font-mono font-bold px-2 py-0.5 rounded-lg bg-sky-500/10 border border-sky-500/30';
+          }
         }
 
         document.querySelectorAll('.dns-provider-card').forEach(c => {
           if (c.dataset.dns === curProvider) {
-            c.className = 'dns-provider-card cursor-pointer p-3 rounded-2xl border border-sky-500 bg-sky-500/10 glow-cyan transition-all';
+            c.className = 'dns-provider-card cursor-pointer p-3 rounded-2xl border-2 border-emerald-500 bg-emerald-500/10 shadow-lg shadow-emerald-950/40 transition-all flex flex-col justify-between';
           } else {
-            c.className = 'dns-provider-card cursor-pointer p-3 rounded-2xl border border-slate-800 bg-slate-900/60 hover:border-slate-700 transition-all';
+            c.className = 'dns-provider-card cursor-pointer p-3 rounded-2xl border border-slate-800 bg-slate-900/60 hover:border-slate-700 transition-all flex flex-col justify-between';
           }
         });
       } catch (err) {
@@ -5488,22 +5493,24 @@
 
     async function switchDnsProvider(provider) {
       try {
+        const names = {
+          quad9: 'Quad9 🇨🇭 (Защита от вирусов + законы Швейцарии)',
+          cloudflare: 'Cloudflare ⚡ (Максимальная скорость 1.1.1.1)',
+          adguard: 'AdGuard Cloud 🛡️ (Двойная фильтрация рекламы)',
+          google: 'Google DoH 🌐 (Глобальная сеть 8.8.8.8)'
+        };
+        showToast('Переключение шлюза...', `Подключаем ${names[provider] || provider}`, 'info');
         const resp = await fetch('/api/dns/upstream', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ provider })
         });
         if (resp.ok) {
-          const names = {
-            cloudflare: 'Cloudflare DoH (1.1.1.1)',
-            adguard: 'AdGuard DNS DoH',
-            quad9: 'Quad9 Приватный DoH',
-            google: 'Google DNS DoH'
-          };
-          showToast('DNS-провайдер изменён', `Активен ${names[provider] || provider}`, 'info');
-          loadDnsStatus();
+          showToast('DNS-шлюз успешно изменён', `Активен ${names[provider] || provider}`, 'success');
+          await loadDnsStatus();
+          await loadDnsStats();
         } else {
-          showToast('Ошибка', 'Не удалось переключить DNS-провайдера', 'danger');
+          showToast('Ошибка', 'Не удалось переключить DNS-шлюз', 'danger');
         }
       } catch (err) {
         console.error('Upstream error:', err);

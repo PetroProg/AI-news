@@ -2198,7 +2198,7 @@ def _read_host_network_bytes() -> tuple[int, int]:
 async def get_dns_stats() -> Dict[str, Any]:
     """Статистика DNS-фильтрации AdGuard Home за 24 часа."""
     try:
-        async with httpx.AsyncClient(timeout=2.0, auth=ADGUARD_AUTH) as client:
+        async with httpx.AsyncClient(timeout=8.0, auth=ADGUARD_AUTH) as client:
             resp = await client.get(f"{ADGUARD_URL}/control/stats")
             if resp.status_code == 200:
                 data = resp.json()
@@ -2273,13 +2273,13 @@ async def get_dns_status() -> Dict[str, Any]:
         "malware": True,
         "doh": True,
         "parental": False,
-        "provider": "cloudflare",
+        "provider": "quad9",
         "version": "v0.107.79",
         "dns_ip": "192.168.178.65",
         "tailscale_ip": "100.107.4.120"
     }
     try:
-        async with httpx.AsyncClient(timeout=3.0, auth=ADGUARD_AUTH) as client:
+        async with httpx.AsyncClient(timeout=10.0, auth=ADGUARD_AUTH) as client:
             r_stat = await client.get(f"{ADGUARD_URL}/control/status")
             if r_stat.status_code == 200:
                 s_json = r_stat.json()
@@ -2309,15 +2309,18 @@ async def get_dns_status() -> Dict[str, Any]:
 
             if not isinstance(r_dns, Exception) and r_dns.status_code == 200:
                 upstreams = r_dns.json().get("upstream_dns", [])
-                up_str = " ".join(upstreams).lower()
-                if "cloudflare" in up_str or "1.1.1.1" in up_str:
-                    status_data["provider"] = "cloudflare"
-                elif "adguard" in up_str or "94.140" in up_str:
-                    status_data["provider"] = "adguard"
-                elif "quad9" in up_str or "9.9.9.9" in up_str:
+                primary = (upstreams[0] if upstreams else "").lower()
+                all_up = " ".join(upstreams).lower()
+                if "quad9" in primary or "9.9.9.9" in primary or "quad9" in all_up:
                     status_data["provider"] = "quad9"
-                elif "google" in up_str or "8.8.8.8" in up_str:
+                elif "adguard" in primary or "94.140" in primary:
+                    status_data["provider"] = "adguard"
+                elif "google" in primary or "8.8.8.8" in primary:
                     status_data["provider"] = "google"
+                elif "cloudflare" in primary or "1.1.1.1" in primary:
+                    status_data["provider"] = "cloudflare"
+                else:
+                    status_data["provider"] = "quad9"
                 status_data["doh"] = any(u.startswith("https://") for u in upstreams)
 
     except Exception as e:
@@ -2332,7 +2335,7 @@ async def toggle_dns_feature(payload: Dict[str, Any]) -> Dict[str, Any]:
     feature = payload.get("feature")
     enabled = bool(payload.get("enabled"))
     try:
-        async with httpx.AsyncClient(timeout=3.0, auth=ADGUARD_AUTH) as client:
+        async with httpx.AsyncClient(timeout=10.0, auth=ADGUARD_AUTH) as client:
             if feature == "protection":
                 await client.post(f"{ADGUARD_URL}/control/protection", json={"enabled": enabled})
             elif feature == "adblock":
@@ -2363,23 +2366,24 @@ async def toggle_dns_feature(payload: Dict[str, Any]) -> Dict[str, Any]:
 @app.post("/api/dns/upstream")
 async def set_dns_upstream(payload: Dict[str, Any]) -> Dict[str, Any]:
     """Смена активного DNS-провайдера (Cloudflare, AdGuard, Quad9, Google)."""
-    provider = payload.get("provider", "cloudflare").lower()
+    provider = payload.get("provider", "quad9").lower()
     presets = {
-        "cloudflare": ["https://cloudflare-dns.com/dns-query", "1.1.1.1"],
-        "adguard": ["https://dns.adguard-dns.com/dns-query", "94.140.14.14"],
-        "quad9": ["https://dns.quad9.net/dns-query", "9.9.9.9"],
-        "google": ["https://dns.google/dns-query", "8.8.8.8"]
+        "quad9": ["https://dns.quad9.net/dns-query", "9.9.9.9", "192.168.178.1"],
+        "cloudflare": ["https://cloudflare-dns.com/dns-query", "1.1.1.1", "192.168.178.1"],
+        "adguard": ["https://dns.adguard-dns.com/dns-query", "94.140.14.14", "192.168.178.1"],
+        "google": ["https://dns.google/dns-query", "8.8.8.8", "192.168.178.1"]
     }
     if provider not in presets:
         raise HTTPException(status_code=400, detail=f"Unknown provider: {provider}")
 
     try:
-        async with httpx.AsyncClient(timeout=3.0, auth=ADGUARD_AUTH) as client:
+        async with httpx.AsyncClient(timeout=10.0, auth=ADGUARD_AUTH) as client:
             info_resp = await client.get(f"{ADGUARD_URL}/control/dns_info")
             if info_resp.status_code == 200:
                 cfg = info_resp.json()
                 cfg["upstream_dns"] = presets[provider]
                 cfg["bootstrap_dns"] = ["1.1.1.1", "9.9.9.9"]
+                cfg["disable_ipv6"] = True
                 await client.post(f"{ADGUARD_URL}/control/dns_config", json=cfg)
                 return {"success": True, "provider": provider, "upstream_dns": presets[provider]}
             else:
@@ -2393,7 +2397,7 @@ async def set_dns_upstream(payload: Dict[str, Any]) -> Dict[str, Any]:
 async def get_dns_querylog(limit: int = 40, filter: str = "all") -> Dict[str, Any]:
     """Живой журнал DNS-запросов."""
     try:
-        async with httpx.AsyncClient(timeout=3.0, auth=ADGUARD_AUTH) as client:
+        async with httpx.AsyncClient(timeout=8.0, auth=ADGUARD_AUTH) as client:
             resp = await client.get(f"{ADGUARD_URL}/control/querylog?limit={limit}")
             if resp.status_code == 200:
                 data = resp.json()
@@ -2488,7 +2492,7 @@ async def block_dns_domain(payload: Dict[str, Any]) -> Dict[str, Any]:
     rule = f"||{domain}^"
 
     try:
-        async with httpx.AsyncClient(timeout=3.0, auth=ADGUARD_AUTH) as client:
+        async with httpx.AsyncClient(timeout=10.0, auth=ADGUARD_AUTH) as client:
             filt_resp = await client.get(f"{ADGUARD_URL}/control/filtering/status")
             if filt_resp.status_code == 200:
                 data = filt_resp.json()

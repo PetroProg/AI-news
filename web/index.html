@@ -1012,32 +1012,86 @@
               <p class="text-xs text-slate-400 mt-1">Блокирует рекламу, баннеры, трекеры и фишинговые сайты без установки лишних программ.</p>
             </div>
 
-            <!-- DNS Provider Choice -->
-            <div class="space-y-1.5">
-              <div class="flex items-center justify-between">
-                <label class="text-xs font-semibold text-slate-300 block">Активный DNS-провайдер (DoH) :</label>
-                <span id="dns-active-provider-label" class="text-[11px] text-sky-400 font-mono font-bold">Cloudflare</span>
+            <!-- Architecture Engine Badge -->
+            <div class="p-3.5 rounded-2xl bg-gradient-to-r from-purple-950/40 via-slate-900/80 to-slate-900/60 border border-purple-500/30 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-lg shrink-0">
+                  🛡️
+                </div>
+                <div>
+                  <div class="text-xs font-bold text-white flex items-center gap-1.5 flex-wrap">
+                    <span>Локальный фильтр:</span>
+                    <span class="text-purple-300 font-extrabold">AdGuard Home</span>
+                    <span class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30">Активен всегда</span>
+                  </div>
+                  <p class="text-[11px] text-slate-400 mt-0.5">Очищает трафик от рекламы и трекеров прямо на сервере petroprog</p>
+                </div>
               </div>
-              <div class="grid grid-cols-2 gap-2">
-                <div class="dns-provider-card cursor-pointer p-3 rounded-2xl border border-sky-500 bg-sky-500/10 glow-cyan transition-all" data-dns="cloudflare">
-                  <h4 class="text-xs font-bold text-white">Cloudflare</h4>
-                  <p class="text-[10px] text-slate-400 mt-0.5">DoH 1.1.1.1</p>
+            </div>
+
+            <!-- DNS Provider Choice (Upstream DoH) -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between flex-wrap gap-1">
+                <div>
+                  <label class="text-xs font-bold text-slate-200 block uppercase tracking-wider">Вышестоящий интернет-шлюз (Upstream DoH):</label>
+                  <p class="text-[10px] text-slate-400">Куда AdGuard отправляет очищенные запросы за сайтами</p>
+                </div>
+                <span id="dns-active-provider-label" class="text-[11px] text-emerald-400 font-mono font-bold px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30">Quad9 DoH 🇨🇭</span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                
+                <!-- Quad9 -->
+                <div class="dns-provider-card cursor-pointer p-3 rounded-2xl border border-slate-800 bg-slate-900/60 hover:border-slate-700 transition-all flex flex-col justify-between" data-dns="quad9">
+                  <div class="flex items-center justify-between mb-1">
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-sm">🇨🇭</span>
+                      <h4 class="text-xs font-bold text-white">Quad9 DoH</h4>
+                    </div>
+                    <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">Стак с AdGuard</span>
+                  </div>
+                  <p class="text-[11px] text-slate-200 font-medium leading-snug">Защита от вирусов, фишинга и малвари</p>
+                  <p class="text-[9px] text-slate-400 mt-1">Швейцарский фонд (Цюрих) • Строгая приватность FADP • 9.9.9.9</p>
                 </div>
 
-                <div class="dns-provider-card cursor-pointer p-3 rounded-2xl border border-slate-800 bg-slate-900/60 hover:border-slate-700 transition-all" data-dns="adguard">
-                  <h4 class="text-xs font-bold text-white">AdGuard DNS</h4>
-                  <p class="text-[10px] text-slate-400 mt-0.5">Анти-реклама</p>
+                <!-- Cloudflare -->
+                <div class="dns-provider-card cursor-pointer p-3 rounded-2xl border border-slate-800 bg-slate-900/60 hover:border-slate-700 transition-all flex flex-col justify-between" data-dns="cloudflare">
+                  <div class="flex items-center justify-between mb-1">
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-sm">⚡</span>
+                      <h4 class="text-xs font-bold text-white">Cloudflare DoH</h4>
+                    </div>
+                    <span class="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30 font-bold">Турбо-скорость</span>
+                  </div>
+                  <p class="text-[11px] text-slate-200 font-medium leading-snug">Максимально быстрая загрузка сайтов</p>
+                  <p class="text-[9px] text-slate-400 mt-1">Крупнейшая Anycast-сеть в мире • Задержка 1-2 мс • 1.1.1.1</p>
                 </div>
 
-                <div class="dns-provider-card cursor-pointer p-3 rounded-2xl border border-slate-800 bg-slate-900/60 hover:border-slate-700 transition-all" data-dns="quad9">
-                  <h4 class="text-xs font-bold text-white">Quad9</h4>
-                  <p class="text-[10px] text-slate-400 mt-0.5">Приватность 9.9.9.9</p>
+                <!-- AdGuard DNS -->
+                <div class="dns-provider-card cursor-pointer p-3 rounded-2xl border border-slate-800 bg-slate-900/60 hover:border-slate-700 transition-all flex flex-col justify-between" data-dns="adguard">
+                  <div class="flex items-center justify-between mb-1">
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-sm">🛡️</span>
+                      <h4 class="text-xs font-bold text-white">AdGuard Cloud DoH</h4>
+                    </div>
+                    <span class="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">Двойной щит</span>
+                  </div>
+                  <p class="text-[11px] text-slate-200 font-medium leading-snug">Двойная облачная фильтрация рекламы</p>
+                  <p class="text-[9px] text-slate-400 mt-1">Облачные списки AdGuard • Блокирует трекеры и счетчики</p>
                 </div>
 
-                <div class="dns-provider-card cursor-pointer p-3 rounded-2xl border border-slate-800 bg-slate-900/60 hover:border-slate-700 transition-all" data-dns="google">
-                  <h4 class="text-xs font-bold text-white">Google DNS</h4>
-                  <p class="text-[10px] text-slate-400 mt-0.5">Быстрый 8.8.8.8</p>
+                <!-- Google DNS -->
+                <div class="dns-provider-card cursor-pointer p-3 rounded-2xl border border-slate-800 bg-slate-900/60 hover:border-slate-700 transition-all flex flex-col justify-between" data-dns="google">
+                  <div class="flex items-center justify-between mb-1">
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-sm">🌐</span>
+                      <h4 class="text-xs font-bold text-white">Google DoH</h4>
+                    </div>
+                    <span class="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 font-bold">Универсальный</span>
+                  </div>
+                  <p class="text-[11px] text-slate-200 font-medium leading-snug">100% совместимость со всеми сервисами</p>
+                  <p class="text-[9px] text-slate-400 mt-1">Отказоустойчивая сеть Google • Без задержек • 8.8.8.8</p>
                 </div>
+
               </div>
             </div>
 
@@ -1504,6 +1558,6 @@
   <!-- STANDALONE JAVASCRIPT (ZERO DEPENDENCIES) -->
   <!-- ========================================== -->
 
-  <script src="js/app.js?v=2026_10_04_vpn_stage3_v14"></script>
+  <script src="js/app.js?v=2026_10_05_dns_clarity_v15"></script>
 </body>
 </html>
