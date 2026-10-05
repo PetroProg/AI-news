@@ -4,6 +4,7 @@
       lang: 'ru',
       currentTab: 'news',
       searchDeviceQuery: '',
+      categorySearchQuery: '',
       deviceCategoryFilter: 'all',
       newsCategoryFilter: 'Украина',
       serverHealth: null,
@@ -670,6 +671,48 @@
         .replace(/[ \t\-\:\,\|—–«»\"]+$/, '')
         .replace(/\s+/g, ' ')
         .trim();
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function getCategorySearchPlaceholder(cat) {
+      const c = (cat || '').toLowerCase();
+      if (c === 'cs2' || c.includes('игры') || c.includes('gaming')) {
+        return 'Поиск в «CS2» (команды, игроки, турниры, s1mple, NAVI)...';
+      }
+      if (c === 'футбол' || c.includes('football')) {
+        return 'Поиск в «Футбол» (клубы, игроки, Барселона, Месси, матчи)...';
+      }
+      if (c === 'f1' || c.includes('формул') || c.includes('formula')) {
+        return 'Поиск в «F1» (пилоты, команды, Verstappen, Leclerc, Hamilton)...';
+      }
+      if (c === 'it' || c.includes('аналитик') || c.includes('разработ')) {
+        return 'Поиск в «IT & Аналитика» (языки, фреймворки, AI, стек)...';
+      }
+      if (c.includes('devops') || c.includes('linux')) {
+        return 'Поиск в «DevOps & Linux» (дистрибутивы, утилиты, серверы, Docker)...';
+      }
+      if (c.includes('украин') || c.includes('ukraine')) {
+        return 'Поиск в «Украина» (события, регионы, ПВО, энергетика, сводки)...';
+      }
+      if (c.includes('политик') || c === 'мир' || c.includes('world')) {
+        return 'Поиск в «Мировая политика» (страны, лидеры, выборы, договоры)...';
+      }
+      if (c.includes('swiss') || c.includes('швейцар')) {
+        return 'Поиск в «Swiss» (новости Швейцарии, события, кантоны)...';
+      }
+      if (c.includes('ai') || c.includes('нейрос')) {
+        return 'Поиск в «AI & Нейросети» (модели, LLM, OpenAI, Claude)...';
+      }
+      return `Поиск в категории «${cat || 'Новости'}» (заголовок, суть, источник)...`;
     }
 
     function normalizeCategory(rawCat, item) {
@@ -2935,6 +2978,18 @@
         selectedFootballTag = 'all';
       }
 
+      // Reset news search query and update input placeholder for newly selected category
+      state.categorySearchQuery = '';
+      const catSearchInput = document.getElementById('category-news-search-input');
+      const catSearchClearBtn = document.getElementById('category-news-search-clear-btn');
+      if (catSearchInput) {
+        catSearchInput.value = '';
+        catSearchInput.placeholder = getCategorySearchPlaceholder(cat);
+      }
+      if (catSearchClearBtn) {
+        catSearchClearBtn.classList.add('hidden');
+      }
+
       renderCategoryPills();
       renderNews();
       updateDeleteCategoryBtn();
@@ -3229,8 +3284,6 @@
       const container = document.getElementById('category-pills-container');
       const leftBtn = document.getElementById('category-scroll-left-btn');
       const rightBtn = document.getElementById('category-scroll-right-btn');
-      const fadeLeft = document.getElementById('category-scroll-fade-left');
-      const fadeRight = document.getElementById('category-scroll-fade-right');
 
       if (!container) return;
 
@@ -3246,39 +3299,33 @@
           rightBtn.classList.add('opacity-0', 'pointer-events-none');
           rightBtn.classList.remove('opacity-100', 'pointer-events-auto');
         }
-        if (fadeLeft) fadeLeft.classList.add('opacity-0');
-        if (fadeRight) fadeRight.classList.add('opacity-0');
         return;
       }
 
-      // Left button & fade mask
+      // Left button
       if (container.scrollLeft > 10) {
         if (leftBtn) {
           leftBtn.classList.remove('opacity-0', 'pointer-events-none');
           leftBtn.classList.add('opacity-100', 'pointer-events-auto');
         }
-        if (fadeLeft) fadeLeft.classList.remove('opacity-0');
       } else {
         if (leftBtn) {
           leftBtn.classList.add('opacity-0', 'pointer-events-none');
           leftBtn.classList.remove('opacity-100', 'pointer-events-auto');
         }
-        if (fadeLeft) fadeLeft.classList.add('opacity-0');
       }
 
-      // Right button & fade mask
+      // Right button
       if (container.scrollLeft < maxScroll - 10) {
         if (rightBtn) {
           rightBtn.classList.remove('opacity-0', 'pointer-events-none');
           rightBtn.classList.add('opacity-100', 'pointer-events-auto');
         }
-        if (fadeRight) fadeRight.classList.remove('opacity-0');
       } else {
         if (rightBtn) {
           rightBtn.classList.add('opacity-0', 'pointer-events-none');
           rightBtn.classList.remove('opacity-100', 'pointer-events-auto');
         }
-        if (fadeRight) fadeRight.classList.add('opacity-0');
       }
     }
 
@@ -3352,6 +3399,52 @@
     window.scrollCategoryPills = scrollCategoryPills;
     window.updateCategoryScrollButtons = updateCategoryScrollButtons;
     window.initCategoryPillsScroll = initCategoryPillsScroll;
+
+    // ==========================================
+    // CATEGORY NEWS SEARCH CONTROLS
+    // ==========================================
+    function initCategoryNewsSearch() {
+      const input = document.getElementById('category-news-search-input');
+      const clearBtn = document.getElementById('category-news-search-clear-btn');
+      if (!input || input.dataset.searchInit === 'true') return;
+      input.dataset.searchInit = 'true';
+
+      input.addEventListener('input', (e) => {
+        const val = e.target.value;
+        state.categorySearchQuery = val.trim();
+        if (clearBtn) {
+          if (val.trim().length > 0) {
+            clearBtn.classList.remove('hidden');
+          } else {
+            clearBtn.classList.add('hidden');
+          }
+        }
+        renderNews();
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          clearCategoryNewsSearch();
+        }
+      });
+    }
+
+    function clearCategoryNewsSearch() {
+      state.categorySearchQuery = '';
+      const input = document.getElementById('category-news-search-input');
+      const clearBtn = document.getElementById('category-news-search-clear-btn');
+      if (input) {
+        input.value = '';
+        input.focus();
+      }
+      if (clearBtn) {
+        clearBtn.classList.add('hidden');
+      }
+      renderNews();
+    }
+
+    window.clearCategoryNewsSearch = clearCategoryNewsSearch;
+    window.initCategoryNewsSearch = initCategoryNewsSearch;
 
     async function loadLiveNews() {
       try {
@@ -3565,9 +3658,27 @@
         renderUkraineDigestBanner();
       }
 
-      const filtered = state.articles.filter(item => 
+      const categoryEligible = state.articles.filter(item => 
         isArticleEligibleForDisplay(item, state.newsCategoryFilter, state.selectedLanguage)
       );
+
+      // Search query filtering within current category
+      const query = (state.categorySearchQuery || '').trim().toLowerCase();
+      let filtered = categoryEligible;
+
+      if (query) {
+        const terms = query.split(/\s+/).filter(Boolean);
+        filtered = categoryEligible.filter(article => {
+          const curLang = state.lang || 'ru';
+          const sumText = (article.summaries && (article.summaries[curLang] || article.summaries.ru || article.summaries.en)) || article.summary || article.short_summary || '';
+          const titleText = (article.titles && article.titles[curLang]) || article.title || '';
+          const keyPoints = Array.isArray(article.key_points) ? article.key_points.join(' ') : (article.key_points || '');
+          const whyMatters = article.why_it_matters || '';
+          const source = (article.source || '') + ' ' + (article.sourceName || '') + ' ' + (article.url || '');
+          const corpus = `${titleText} ${sumText} ${keyPoints} ${whyMatters} ${source}`.toLowerCase();
+          return terms.every(term => corpus.includes(term));
+        });
+      }
 
       // Sort: Chronological by publication time (latest news first)
       filtered.sort((a, b) => {
@@ -3576,13 +3687,40 @@
         return bDate - aDate;
       });
 
-      // Synchronize active category pill count badge directly with displayed cards
+      // Synchronize category pill count badge and search count badge
       const activePillBadge = document.querySelector('.news-cat-pill.border-sky-400 .news-cat-pill-count');
       if (activePillBadge) {
-        activePillBadge.textContent = filtered.length;
+        activePillBadge.textContent = categoryEligible.length;
+      }
+
+      const searchCountBadge = document.getElementById('category-news-search-count-badge');
+      if (searchCountBadge) {
+        if (query) {
+          searchCountBadge.textContent = `${filtered.length} из ${categoryEligible.length}`;
+          searchCountBadge.className = 'inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-bold bg-sky-500/20 text-sky-300 border border-sky-400/40 shadow-sm';
+        } else {
+          searchCountBadge.textContent = `${categoryEligible.length} новостей`;
+          searchCountBadge.className = 'inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-slate-800/80 text-slate-400 border border-slate-700/50';
+        }
       }
 
       if (filtered.length === 0) {
+        if (query) {
+          container.innerHTML = `
+            <div class="col-span-full py-12 text-center text-slate-400 glass-panel rounded-3xl p-6 border border-slate-800 shadow-xl">
+              <span class="text-3xl block mb-2">🔍</span>
+              <p class="text-base font-bold text-slate-200 max-w-lg mx-auto leading-relaxed">
+                По запросу «<span class="text-sky-300 font-bold">${escapeHtml(query)}</span>» ничего не найдено в категории «${escapeHtml(state.newsCategoryFilter || 'Новости')}»
+              </p>
+              <p class="text-xs text-slate-400 mt-1.5">Попробуйте изменить поисковый запрос или сбросить фильтр.</p>
+              <button type="button" onclick="clearCategoryNewsSearch()" class="mt-4 px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-semibold text-xs transition-all shadow-lg shadow-sky-500/25 cursor-pointer">
+                ✕ Сбросить поиск
+              </button>
+            </div>
+          `;
+          return;
+        }
+
         let msg = 'В этой выборке пока нет новостей.';
         const catName = state.newsCategoryFilter || 'Украина';
         const catLower = catName.toLowerCase();
@@ -5797,6 +5935,7 @@
     try { setDynamicCategory(state.newsCategoryFilter || 'Украина'); } catch (e) { console.error('Error during setDynamicCategory:', e); }
     try { updateDeleteCategoryBtn(); } catch (e) { console.error('Error during updateDeleteCategoryBtn:', e); }
     try { initCategoryPillsScroll(); } catch (e) { console.error('Error during initCategoryPillsScroll:', e); }
+    try { initCategoryNewsSearch(); } catch (e) { console.error('Error during initCategoryNewsSearch:', e); }
     try { loadLiveNews(); } catch (e) { console.error('Error during loadLiveNews:', e); }
     try { loadManagedDevices(); } catch (e) { console.error('Error during loadManagedDevices:', e); }
     try { loadRouterStats(); } catch (e) { console.error('Error during loadRouterStats:', e); }

@@ -127,21 +127,64 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
         </button>
 
-        <!-- Left fade mask -->
-        <div id="category-scroll-fade-left" class="pointer-events-none absolute left-0 top-0 bottom-0 w-8 sm:w-12 bg-gradient-to-r from-slate-950 via-slate-950/80 to-transparent z-10 opacity-0 transition-opacity duration-200"></div>
-
-        <!-- Pills Container -->
-        <div id="category-pills-container" class="flex items-center gap-2 overflow-x-auto py-1 px-1 scroll-smooth w-full select-none cursor-grab active:cursor-grabbing">
+        <!-- Pills Container (clean horizontal scroll with edge breathing room) -->
+        <div id="category-pills-container" class="flex items-center gap-2 overflow-x-auto py-1 px-8 scroll-smooth w-full select-none cursor-grab active:cursor-grabbing scrollbar-none">
           <button type="button" class="news-cat-pill px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 bg-sky-500 text-white" onclick="setDynamicCategory('Украина')">🇺🇦 Украина</button>
         </div>
-
-        <!-- Right fade mask -->
-        <div id="category-scroll-fade-right" class="pointer-events-none absolute right-0 top-0 bottom-0 w-8 sm:w-12 bg-gradient-to-l from-slate-950 via-slate-950/80 to-transparent z-10 opacity-0 transition-opacity duration-200"></div>
 
         <!-- Right Scroll Button -->
         <button id="category-scroll-right-btn" type="button" onclick="scrollCategoryPills(260)" class="absolute right-0 z-20 w-8 h-8 rounded-full bg-slate-900/95 hover:bg-sky-500 text-slate-300 hover:text-white border border-slate-700/80 shadow-xl shadow-black/60 backdrop-blur-md flex items-center justify-center transition-all duration-200 opacity-0 pointer-events-none cursor-pointer focus:outline-none hover:scale-110 active:scale-95" title="Прокрутить вправо" aria-label="Прокрутить вправо">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
         </button>
+      </div>
+
+      <!-- ======================================================= -->
+      <!-- CATEGORY NEWS LIVE SEARCH BAR                           -->
+      <!-- ======================================================= -->
+      <div id="category-news-search-container" class="relative w-full my-1.5">
+        <div class="relative flex items-center w-full rounded-2xl bg-slate-900/70 hover:bg-slate-900/90 focus-within:bg-slate-900/95 border border-slate-700/70 focus-within:border-sky-500/80 shadow-md shadow-black/30 backdrop-blur-md transition-all duration-200">
+          <!-- Search Icon -->
+          <div class="absolute left-3.5 sm:left-4 flex items-center pointer-events-none text-sky-400/80">
+            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+          </div>
+
+          <!-- Input Field -->
+          <input 
+            id="category-news-search-input" 
+            type="text" 
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="Поиск новостей в этой категории..." 
+            class="w-full pl-10 sm:pl-12 pr-28 sm:pr-36 py-2.5 sm:py-3 bg-transparent text-xs sm:text-sm text-slate-100 placeholder-slate-400 font-medium focus:outline-none focus:ring-0"
+          />
+
+          <!-- Right side controls: Clear button + Counter Badge -->
+          <div class="absolute right-2.5 sm:right-3 flex items-center gap-2">
+            <!-- Clear Button (hidden by default) -->
+            <button 
+              id="category-news-search-clear-btn" 
+              type="button" 
+              onclick="clearCategoryNewsSearch()" 
+              class="hidden p-1 sm:p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors focus:outline-none cursor-pointer"
+              title="Очистить поиск"
+              aria-label="Очистить поиск"
+            >
+              <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+
+            <!-- Results Counter Badge -->
+            <span 
+              id="category-news-search-count-badge" 
+              class="inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-slate-800/80 text-slate-400 border border-slate-700/50"
+            >
+              0 новостей
+            </span>
+          </div>
+        </div>
       </div>
 
       <!-- ======================================================= -->
@@ -1558,6 +1601,6 @@
   <!-- STANDALONE JAVASCRIPT (ZERO DEPENDENCIES) -->
   <!-- ========================================== -->
 
-  <script src="js/app.js?v=2026_10_05_categories_active_v16"></script>
+  <script src="js/app.js?v=2026_10_05_category_search_v17"></script>
 </body>
 </html>
