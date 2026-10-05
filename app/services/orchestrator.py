@@ -126,6 +126,11 @@ class PipelineOrchestrator:
                 ("Fireship: Code & Tech", "https://www.youtube.com/feeds/videos.xml?channel_id=UCsBjURrPoezykLs9EqgamOA"),
                 ("Украинская правда", "https://www.pravda.com.ua/rss/"),
                 ("LIGA.net", "https://news.liga.net/ua/all/rss.xml"),
+                ("Formula 1 Official RSS", "https://www.formula1.com/en/latest/all.xml"),
+                ("Marca: Primera Division", "https://objetos.estaticos-marca.com/rss/futbol/primera-division.xml"),
+                ("AS: Primera Division", "https://as.com/rss/futbol/primera.xml"),
+                ("Хабр: DevOps", "https://habr.com/ru/rss/hub/devops/all/?fl=ru"),
+                ("Хабр: Linux", "https://habr.com/ru/rss/hub/linux/all/?fl=ru"),
             ]
             for name, feed_url in rss_sources:
                 try:

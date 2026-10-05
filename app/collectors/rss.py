@@ -7,7 +7,6 @@ import feedparser
 import httpx
 
 from app.collectors.base import BaseCollector, CollectedItem
-from app.services.image_scraper import fetch_article_image
 
 logger = logging.getLogger("news_ai.collectors.rss")
 
@@ -90,6 +89,7 @@ class RSSCollector(BaseCollector):
             async def _enrich_one(it: CollectedItem):
                 async with sem:
                     try:
+                        from app.services.image_scraper import fetch_article_image
                         img = await fetch_article_image(it.original_url, client=client, timeout=6.0)
                         if img:
                             it.raw_content = f'<img src="{img}" /><br>' + (it.raw_content or "")

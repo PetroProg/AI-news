@@ -679,6 +679,12 @@
         if (t.includes('робот') || t.includes('figure 0') || t.includes('boston dynamics')) {
           return 'Технологии';
         }
+        if (s.includes('opennet') || s.includes('devops') || s.includes('linux')) {
+          return 'DevOps & Linux';
+        }
+        if (s.includes('formula1') || s.includes('formula 1') || s.includes('f1') || t.includes('formula 1') || t.includes('гран-при') || t.includes('ферстаппен') || t.includes('red bull')) {
+          return 'F1';
+        }
         if (s.includes('marca') || s.includes('primera') || s.includes('sportsru') || s.includes('fabrizio') || s.includes('terrikon') || s.includes('uefa') ||
             t.includes('месси') || t.includes('messi') || t.includes('барселона') || t.includes('barcelona') || t.includes('интер майами') || t.includes('ла лига') || t.includes('лига чемпионов') || t.includes('лига наций') || t.includes('лига европы')) {
           return 'Футбол';

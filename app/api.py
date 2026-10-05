@@ -224,8 +224,8 @@ def infer_category_from_source(source_name: str) -> str:
         return "CS2"
     if any(k in s for k in ["python", "rust", "golang", "go", "c++", "tproger", "habr", "proglib", "dev"]):
         return "IT"
-    if any(k in s for k in ["linux", "opennet"]):
-        return "Linux & Infrastructure"
+    if any(k in s for k in ["linux", "opennet", "devops"]):
+        return "DevOps & Linux"
     if "ai" in s or "нейро" in s:
         return "AI"
     return "IT"
@@ -920,7 +920,7 @@ async def get_news_feed(
     stmt = (
         select(Article)
         .options(selectinload(Article.summary), selectinload(Article.category), selectinload(Article.source))
-        .where(Article.status.in_([ArticleStatus.SUMMARIZED, ArticleStatus.REPORTED]))
+        .where(Article.status.in_([ArticleStatus.SUMMARIZED, ArticleStatus.REPORTED, ArticleStatus.PROCESSED]))
         .order_by(Article.published_at.desc())
         .limit(limit)
     )
@@ -994,6 +994,11 @@ async def get_news_feed(
         is_f1 = any(k in source_combined for k in ["formula 1", "formula1", "f1", "формула-1"]) or \
                 (raw_cat and raw_cat.lower() == "f1") or \
                 any(k in title_lower for k in F1_INDICATORS)
+        is_devops_linux = (
+            any(k in source_combined for k in ["opennet", "devops", "linux"]) or
+            (raw_cat and any(k in raw_cat.lower() for k in ["linux", "devops"])) or
+            any(k in title_lower for k in ["ядро linux", "ubuntu", "debian", "arch linux", "kernel", "docker", "kubernetes", "k8s", "ansible"])
+        )
         is_gaming = any(k in source_combined for k in ["csgo", "cs3", "clashroyalepin", "hltv", "game", "киберспорт"]) or \
                     any(k in title_lower for k in GAMING_INDICATORS)
         is_ukraine = not is_it_ai_offtopic and not is_world_politics and (
@@ -1009,6 +1014,8 @@ async def get_news_feed(
             cat_name = "Футбол"
         elif is_f1:
             cat_name = "F1"
+        elif is_devops_linux:
+            cat_name = "DevOps & Linux"
         elif is_ukraine:
             cat_name = "Украина"
         elif is_gaming:
@@ -1017,6 +1024,8 @@ async def get_news_feed(
             cat_name = raw_cat
             if any(k in raw_cat.lower() for k in ["мировая политика", "политика", "мир", "world"]):
                 cat_name = "Мировая политика"
+            elif any(k in raw_cat.lower() for k in ["linux", "devops"]):
+                cat_name = "DevOps & Linux"
             elif ("аналитик" in raw_cat.lower() or "dev" in raw_cat.lower() or "it" in raw_cat.lower()) and any(k in title_lower for k in GAMING_INDICATORS):
                 cat_name = "CS2"
             elif cat_name.lower() in ["игры & киберспорт", "игры и киберспорт", "gaming", "cs2"]:
@@ -1093,7 +1102,7 @@ async def get_news_feed(
         is_priority = (len(matched_kws) > 0 or is_final_or_winner or has_ukr_priority or has_f1_priority or has_football_priority) and not is_meme_or_ad and not is_operational_alert
 
 
-        score = float(art.importance_score or 5.0)
+        score = float(art.importance_score or 7.0)
         if is_operational_alert:
             score = min(score, 5.0)
         elif is_meme_or_ad and score > 4.0:
@@ -1117,15 +1126,22 @@ async def get_news_feed(
         if has_ukr_letters and (cat_name == "Украина" or "novynaukr" in source_combined):
             continue
 
-        # Require a valid AI summary
-        if not art.summary or not art.summary.short_summary:
+        # Require a valid AI summary or substantive content fallback
+        has_ai_summary = bool(art.summary and art.summary.short_summary and len(art.summary.short_summary.strip()) > 10)
+        has_content = bool((art.cleaned_content and len(art.cleaned_content.strip()) > 20) or (art.raw_content and len(art.raw_content.strip()) > 20))
+        if not has_ai_summary and not has_content:
             continue
 
         # Quality filter for Ukraine category: minimum substance in summary
         if cat_name == "Украина":
-            summary_txt = (art.summary.short_summary or "").strip()
-            if len(summary_txt) < 40:
+            summary_txt = (art.summary.short_summary or "").strip() if art.summary else ""
+            if not summary_txt or len(summary_txt) < 40:
                 continue
+
+        clean_c = ContentCleaner.clean(art.cleaned_content or art.raw_content or "")
+        summary_val = ContentCleaner.clean(art.summary.short_summary) if has_ai_summary else (clean_c[:220] + "..." if len(clean_c) > 220 else clean_c)
+        if not summary_val:
+            summary_val = "Краткое резюме формируется."
 
         news_items.append({
             "id": art.id,
@@ -1136,7 +1152,7 @@ async def get_news_feed(
             "category": cat_name,
             "published_at": art.published_at.isoformat() if art.published_at else None,
             "importance_score": score,
-            "summary": ContentCleaner.clean(art.summary.short_summary) if art.summary else (art.cleaned_content[:200] + "..." if art.cleaned_content else "Краткое резюме формируется."),
+            "summary": summary_val,
             "why_it_matters": art.summary.why_it_matters if art.summary else None,
             "key_points": art.summary.key_points if art.summary else [],
             "model_used": art.summary.model_used if art.summary else None,
