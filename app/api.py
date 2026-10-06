@@ -1048,7 +1048,8 @@ async def get_news_feed(
 
         # Priority Keywords Detection & CS:GO Final Winner & Meme / Sarcasm Guard
         text_for_check = title_lower + " " + content_lower
-        is_meme_or_ad = any(stop in text_for_check for stop in ["тир-2", "тир 2", "cs.money", "розыгрыш", "бесплатно", "скины", "скин ", "рулетк", "щитпост", "удивительном мире"])
+        MEME_SARCASM_STOPS = ["тир-2", "тир 2", "cs.money", "розыгрыш", "бесплатно", "скины", "скин ", "рулетк", "щитпост", "удивительном мире", "случайно перешел", "случайно перешёл", "перешел играть за", "перешёл играть за", "на сервере", "committed suicide", "рофл", "курьез", "курьёз", "забавный момент", "прикол", "фейл"]
+            is_meme_or_ad = any(stop in text_for_check for stop in MEME_SARCASM_STOPS)
         matched_kws = [kw for kw in PRIORITY_KEYWORDS if kw in text_for_check]
         is_digest = any(d in text_for_check for d in ["#дайджест", "дайджест", "утренний дайджест", "новости дня", "главное за день", "итоги недели", "итоги дня", "ура, воскресенье"])
         is_round_only = any(r in text_for_check for r in ["финальный раунд", "финальном раунде", "финального раунда", "финальные раунды"])

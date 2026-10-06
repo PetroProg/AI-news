@@ -251,7 +251,8 @@ class SummarizerService:
             # Priority keyword boost & meme guard
             score = float(analysis.importance_score)
             text_for_check = title_lower + " " + content_lower
-            is_meme_or_ad = any(stop in text_for_check for stop in ["тир-2", "тир 2", "cs.money", "розыгрыш", "бесплатно", "скины", "скин ", "рулетк", "щитпост", "удивительном мире"])
+            MEME_SARCASM_STOPS = ["тир-2", "тир 2", "cs.money", "розыгрыш", "бесплатно", "скины", "скин ", "рулетк", "щитпост", "удивительном мире", "случайно перешел", "случайно перешёл", "перешел играть за", "перешёл играть за", "на сервере", "committed suicide", "рофл", "курьез", "курьёз", "забавный момент", "прикол", "фейл"]
+            is_meme_or_ad = any(stop in text_for_check for stop in MEME_SARCASM_STOPS)
             if is_meme_or_ad and score > 4.0:
                 score = 3.0
                 logger.info("Article ID %d detected as meme/ad/sarcasm. Reduced score to %.1f", article.id, score)
