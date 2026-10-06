@@ -65,6 +65,11 @@ class Settings(BaseSettings):
     WINDOWS_SSH_USER: str = "Admin"
     WINDOWS_SSH_KEY_PATH: str = "/home/appuser/.ssh/id_ed25519"
 
+    # AdGuard Home DNS Shield
+    ADGUARD_URL: str = "http://news_ai_adguard:3000"
+    ADGUARD_USER: str = "admin"
+    ADGUARD_PASSWORD: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:
