@@ -6,7 +6,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
 import httpx
-import yt_dlp
+try:
+    import yt_dlp
+except ImportError:
+    yt_dlp = None
 
 from app.collectors.base import BaseCollector, CollectedItem
 from app.processing.cleaner import ContentCleaner
