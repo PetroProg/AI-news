@@ -22,7 +22,7 @@ logger = logging.getLogger("news_ai.services.report")
 class ReportBuilderService:
     """Aggregates, ranks, filters, and formats curated daily digests."""
 
-    MIN_IMPORTANCE_THRESHOLD = 8.0
+    MIN_IMPORTANCE_THRESHOLD = 7.5
 
     def __init__(self, session: AsyncSession) -> None:
         self.session = session

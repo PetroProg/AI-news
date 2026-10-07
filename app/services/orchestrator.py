@@ -95,16 +95,13 @@ class PipelineOrchestrator:
         logger.info("  STARTING AUTONOMOUS PIPELINE: %s", report_type.value.upper())
         logger.info("==================================================")
 
-        # 1. Check if the PC was already online before sending Wake-on-LAN
+        # 1. Check if the PC was already online before the pipeline
+        # We record this state to determine if we should put it to sleep at the end.
         was_already_online = await self.is_pc_already_online()
         if was_already_online:
             logger.info("AI GPU Worker PC was ALREADY ONLINE before pipeline started. Will NOT put to sleep at the end.")
         else:
-            try:
-                send_wake_on_lan()
-                logger.info("Sent WoL magic packet to %s (booting in parallel with collection)", settings.WOL_MAC_ADDRESS)
-            except Exception as exc:
-                logger.error("Failed to send WoL packet: %s", exc)
+            logger.info("PC is offline. We will wake it up later just before AI Summarization.")
 
         async with async_session_maker() as session:
             # 3. Collection Phase (RSS + Telegram)
@@ -131,6 +128,9 @@ class PipelineOrchestrator:
                 ("Спорт-Экспресс", "https://www.sport-express.ru/services/materials/news/se/"),
                 ("Хабр: DevOps", "https://habr.com/ru/rss/hub/devops/all/?fl=ru"),
                 ("Хабр: Linux", "https://habr.com/ru/rss/hub/linux/all/?fl=ru"),
+                ("3DNews", "https://3dnews.ru/news/rss/"),
+                ("iXBT", "https://www.ixbt.com/export/news.rss"),
+                ("The Verge", "https://www.theverge.com/rss/index.xml"),
             ]
             for name, feed_url in rss_sources:
                 try:
@@ -150,7 +150,6 @@ class PipelineOrchestrator:
                 "ai_newz",
                 "devops_def",
                 "newcsgo",
-                "cs3news",
                 "ClashRoyalePin",
                 "NovynaUKR",
                 "sportsru",
@@ -178,6 +177,29 @@ class PipelineOrchestrator:
             await processing.process_collected_articles()
 
             # 5. AI Summarization Phase (batch of top unsummarized articles)
+            if not was_already_online:
+                from datetime import datetime
+                import asyncio
+                now = datetime.now()
+                
+                if report_type == ReportType.MORNING and now.hour < 8:
+                    wait_secs = (datetime(now.year, now.month, now.day, 8, 0, 0) - now).total_seconds()
+                    if wait_secs > 0:
+                        logger.info("Strict rule: It is before 08:00 AM. Waiting %d seconds before waking PC...", wait_secs)
+                        await asyncio.sleep(wait_secs)
+                        now = datetime.now()
+
+                if report_type == ReportType.EVENING and now.hour >= 22:
+                    logger.warning("Strict rule: It is 22:00 or later. Skipping PC wake to avoid night disturbance.")
+                else:
+                    try:
+                        send_wake_on_lan()
+                        logger.info("Sent WoL magic packet to wake GPU worker just in time for summarization!")
+                        logger.info("Waiting 45 seconds for PC to boot up before verifying...")
+                        await asyncio.sleep(45)
+                    except Exception as exc:
+                        logger.error("Failed to send WoL packet: %s", exc)
+
             gpu_timeout = 60 if was_already_online else 150
             logger.info("Verifying AI GPU worker reachability (timeout: %ds)...", gpu_timeout)
             gpu_online = await self.wait_for_gpu_node(timeout_seconds=gpu_timeout)
