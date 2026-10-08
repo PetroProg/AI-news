@@ -920,7 +920,7 @@ async def get_news_feed(
     stmt = (
         select(Article)
         .options(selectinload(Article.summary), selectinload(Article.category), selectinload(Article.source))
-        .where(Article.status.in_([ArticleStatus.SUMMARIZED, ArticleStatus.REPORTED, ArticleStatus.PROCESSED]))
+        .where(Article.status.in_([ArticleStatus.SUMMARIZED, ArticleStatus.REPORTED]))
         .order_by(Article.published_at.desc())
         .limit(limit)
     )
