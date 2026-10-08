@@ -124,6 +124,8 @@ class PipelineOrchestrator:
                 ("Украинская правда", "https://www.pravda.com.ua/rss/"),
                 ("LIGA.net", "https://news.liga.net/ua/all/rss.xml"),
                 ("Formula 1 Official RSS", "https://www.formula1.com/en/latest/all.xml"),
+                ("Marca Football", "https://e00-marca.uecdn.es/rss/en/football.xml"),
+                ("SkySports Football", "https://www.skysports.com/rss/12040"),
                 ("Sports.ru Главное", "https://www.sports.ru/rss/main.xml"),
                 ("Спорт-Экспресс", "https://www.sport-express.ru/services/materials/news/se/"),
                 ("Хабр: DevOps", "https://habr.com/ru/rss/hub/devops/all/?fl=ru"),
@@ -152,9 +154,7 @@ class PipelineOrchestrator:
                 "newcsgo",
                 "ClashRoyalePin",
                 "NovynaUKR",
-                "sportsru",
-                "championat",
-                "matchpremier"
+                "fabrizioromano_ru",
             ]
             for ch in tg_channels:
                 try:
