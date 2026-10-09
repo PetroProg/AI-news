@@ -192,3 +192,37 @@ async def send_remote_sleep(
     except Exception as exc:
         logger.error("Failed to send remote sleep to %s: %s", ssh_host, exc)
         return False
+
+
+async def check_gpu_load(
+    host: str | None = None,
+    user: str | None = None,
+    key_path: str | None = None,
+) -> int | None:
+    """Checks the GPU utilization on the Windows PC via SSH."""
+    import logging
+    import asyncssh
+    
+    logger = logging.getLogger("news_ai.bot.utils")
+    ssh_host = host or settings.WINDOWS_SSH_HOST
+    ssh_user = user or settings.WINDOWS_SSH_USER
+    ssh_key = key_path or settings.WINDOWS_SSH_KEY_PATH
+
+    try:
+        async with asyncssh.connect(
+            ssh_host,
+            username=ssh_user,
+            client_keys=[ssh_key],
+            known_hosts=None,
+        ) as conn:
+            res = await conn.run("nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits", term_type="vt100")
+            output = res.stdout or ""
+            cleaned = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]|\x1b\].*?\x07', '', output).strip()
+            # It might still contain other junk like \r\n, let's just find the first number
+            m = re.search(r'\d+', cleaned)
+            if m:
+                return int(m.group(0))
+            return None
+    except Exception as exc:
+        logger.warning("Could not check GPU load on %s via SSH: %s", ssh_host, exc)
+        return None

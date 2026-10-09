@@ -205,11 +205,31 @@ class PipelineOrchestrator:
             gpu_online = await self.wait_for_gpu_node(timeout_seconds=gpu_timeout)
 
             if gpu_online:
+                from app.bot.utils import check_gpu_load
+                import asyncio
+                
+                for attempt in range(3):
+                    gpu_load = await check_gpu_load()
+                    if gpu_load is not None and gpu_load > 50:
+                        logger.warning(f"GPU load is {gpu_load}% (>50%). User might be gaming. Delaying for 1 hour (Attempt {attempt+1}/3).")
+                        if self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
+                            try:
+                                await self.bot.send_message(
+                                    chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
+                                    text=f"?? *?????????? ????????? ?? {gpu_load}%*. ????????, ?? ???????.\n?????????? ???????????? ?? 1 ???...",
+                                    parse_mode="Markdown"
+                                )
+                            except Exception:
+                                pass
+                        await asyncio.sleep(3600)
+                    else:
+                        break
+                        
                 if self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
                     try:
                         await self.bot.send_message(
                             chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
-                            text="🟢 *GPU-нода подключена!* Начинаю суммаризацию на RTX 3060...",
+                            text="?? *GPU-???? ?????????? ? ????????!* ??????? ???????????? ?? RTX 3060...",
                             parse_mode="Markdown"
                         )
                     except Exception:
