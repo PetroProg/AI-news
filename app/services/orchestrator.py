@@ -126,8 +126,6 @@ class PipelineOrchestrator:
                 ("Formula 1 Official RSS", "https://www.formula1.com/en/latest/all.xml"),
                 ("Marca Football", "https://e00-marca.uecdn.es/rss/en/football.xml"),
                 ("SkySports Football", "https://www.skysports.com/rss/12040"),
-                ("Sports.ru Главное", "https://www.sports.ru/rss/main.xml"),
-                ("Спорт-Экспресс", "https://www.sport-express.ru/services/materials/news/se/"),
                 ("Хабр: DevOps", "https://habr.com/ru/rss/hub/devops/all/?fl=ru"),
                 ("Хабр: Linux", "https://habr.com/ru/rss/hub/linux/all/?fl=ru"),
                 ("3DNews", "https://3dnews.ru/news/rss/"),
@@ -216,7 +214,7 @@ class PipelineOrchestrator:
                             try:
                                 await self.bot.send_message(
                                     chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
-                                    text=f"?? *?????????? ????????? ?? {gpu_load}%*. ????????, ?? ???????.\n?????????? ???????????? ?? 1 ???...",
+                                    text=f"⚠️ *Видеокарта нагружена на {gpu_load}%*. Вероятно, вы играете.\nОткладываю суммаризацию на 1 час...",
                                     parse_mode="Markdown"
                                 )
                             except Exception:
@@ -229,7 +227,7 @@ class PipelineOrchestrator:
                     try:
                         await self.bot.send_message(
                             chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
-                            text="?? *GPU-???? ?????????? ? ????????!* ??????? ???????????? ?? RTX 3060...",
+                            text="🟢 *GPU-нода подключена и свободна!* Начинаю суммаризацию на RTX 3060...",
                             parse_mode="Markdown"
                         )
                     except Exception:
