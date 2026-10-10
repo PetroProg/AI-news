@@ -4,9 +4,6 @@ def get_main_keyboard() -> ReplyKeyboardMarkup:
     """Mobile-friendly dashboard keyboard with balanced button widths."""
     keyboard = [
         [
-            KeyboardButton(text="📰 Свежий дайджест")
-        ],
-        [
             KeyboardButton(text="🚀 Полный запуск"),
             KeyboardButton(text="⚡ Сгенерировать")
         ],
