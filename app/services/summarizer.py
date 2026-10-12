@@ -204,28 +204,34 @@ class SummarizerService:
                 "орбан", "венгри", "фицо", "словаки", "вучич", "серби", "белград", "израиль", "нетаньяху",
                 "сектор газа", "хамас", "хезболла", "ливан", "бейрут", " иран", "ирана", "иране", "ирану", "ираном", "иранск",
                 "тегеран", "пезешкиан", "китай", "пекин", "си цзиньпин", "тайвань", "кндр", "северная корея", "южная корея",
-                "пхеньян", "сеул", "ким чен", "египет", "датск", "дания ", " дании", "рубио", "госдеп", "латви", "чехия", "чешск", "чехии"
+                "пхеньян", "сеул", "ким чен", "египет", "датск", "дания ", " дании", "рубио", "госдеп", "латви", "чехия", "чешск", "чехии",
+                "космос", "астроном", "магнетар", "телескоп", "nasa", "spacex", "starship", "орбита", "галактик", "вселенн", "экзопланет", "джеймс уэбб", "хаббл", "einstein probe"
             ]
 
             has_ukr_core = any(k in title_lower or k in content_lower for k in ukr_core_indicators)
+            is_ukr_source = any(k in combined_source for k in ["pravda.com.ua", "liga.net", "novynaukr", "украин", "украина", "україна"])
 
-            is_world_politics = (
+            is_world = (
                 (analysis.category and any(k in analysis.category.lower() for k in ["мировая политика", "политика", "мир", "world"])) or
                 (any(k in title_lower for k in world_politics_indicators) and not has_ukr_core)
             )
 
-            is_ukraine = not is_world_politics and (
+            is_ukraine = not is_world and (
                 ("novynaukr" in combined_source) or 
-                (analysis.category and "украин" in analysis.category.lower())
+                (analysis.category and "украин" in analysis.category.lower() and (has_ukr_core or is_ukr_source))
             )
+
+            # Safety guard: if LLM categorized as Ukraine but it has NO Ukraine indicators and source is NOT Ukrainian -> route to 'Мир'
+            if not is_ukraine and not is_world and (analysis.category and "украин" in analysis.category.lower()) and not has_ukr_core and not is_ukr_source:
+                is_world = True
 
             is_swiss = any(acc in combined_source for acc in ["rtsinfo", "rtsarchives", "blick_media", "20minutesonline", "instagram"]) or \
                        (analysis.category and "swiss" in analysis.category.lower())
 
             if is_swiss:
                 chosen_category = "Swiss"
-            elif is_world_politics:
-                chosen_category = "Мировая политика"
+            elif is_world:
+                chosen_category = "Мир"
             elif is_ukraine:
                 chosen_category = "Украина"
             elif is_gaming or (analysis.category and analysis.category.lower() in ["игры & киберспорт", "игры и киберспорт", "gaming", "cs2"]):

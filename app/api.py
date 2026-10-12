@@ -108,7 +108,8 @@ WORLD_POLITICS_INDICATORS = [
     "сектор газа", "хамас", "хезболла", "ливан", "бейрут", " иран", "ирана", "иране", "ирану", "ираном", "иранск",
     "тегеран", "пезешкиан", "китай", "пекин", "си цзиньпин", "тайвань", "кндр", "северная корея", "южная корея", "пхеньян",
     "сеул", "ким чен", "египет", "датск", "дания ", " дании", "рубио", "госдеп", "латви", "чехия", "чешск", "чехии",
-    "военные нато случайно обстреляли"
+    "военные нато случайно обстреляли",
+    "космос", "астроном", "магнетар", "телескоп", "nasa", "spacex", "starship", "орбита", "галактик", "вселенн", "экзопланет", "джеймс уэбб", "хаббл", "einstein probe"
 ]
 
 # Cache for HLTV ranking
@@ -983,7 +984,9 @@ async def get_news_feed(
             "дрон", "бпла", "пво"
         ])
 
-        is_world_politics = (
+        is_ukr_source = any(k in source_combined for k in ["pravda.com.ua", "liga.net", "novynaukr", "украин", "украина", "україна"])
+
+        is_world = (
             (raw_cat and any(k in raw_cat.lower() for k in ["мировая политика", "политика", "мир", "world"])) or
             (any(k in title_lower for k in WORLD_POLITICS_INDICATORS) and not has_ukr_core)
         )
@@ -1009,15 +1012,19 @@ async def get_news_feed(
             (raw_cat and any(k in raw_cat.lower() for k in ["linux", "devops"])) or
             any(k in title_lower for k in ["ядро linux", "ubuntu", "debian", "arch linux", "kernel", "docker", "kubernetes", "k8s", "ansible"])
         )
-        is_ukraine = not is_it_ai_offtopic and not is_world_politics and (
-            any(k in source_combined for k in ["pravda.com.ua", "liga.net", "novynaukr", "украин", "украина", "україна"]) or 
-            (raw_cat and "украин" in raw_cat.lower())
+        is_ukraine = not is_it_ai_offtopic and not is_world and (
+            is_ukr_source or 
+            (raw_cat and "украин" in raw_cat.lower() and (has_ukr_core or is_ukr_source))
         )
+
+        # Fallback guard: non-ukrainian news tagged as Ukraine -> 'Мир'
+        if not is_ukraine and not is_world and raw_cat and "украин" in raw_cat.lower() and not has_ukr_core and not is_ukr_source:
+            is_world = True
 
         if is_it_ai_offtopic:
             cat_name = "AI & Нейросети"
-        elif is_world_politics:
-            cat_name = "Мировая политика"
+        elif is_world:
+            cat_name = "Мир"
         elif is_football:
             cat_name = "Футбол"
         elif is_f1:
@@ -1031,7 +1038,7 @@ async def get_news_feed(
         elif raw_cat:
             cat_name = raw_cat
             if any(k in raw_cat.lower() for k in ["мировая политика", "политика", "мир", "world"]):
-                cat_name = "Мировая политика"
+                cat_name = "Мир"
             elif any(k in raw_cat.lower() for k in ["linux", "devops"]):
                 cat_name = "DevOps & Linux"
             elif ("аналитик" in raw_cat.lower() or "dev" in raw_cat.lower() or "it" in raw_cat.lower()) and any(k in title_lower for k in GAMING_INDICATORS):

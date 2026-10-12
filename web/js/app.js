@@ -715,7 +715,7 @@
         return 'Поиск в «Украина» (события, регионы, ПВО, энергетика, сводки)...';
       }
       if (c.includes('политик') || c === 'мир' || c.includes('world')) {
-        return 'Поиск в «Мировая политика» (страны, лидеры, выборы, договоры)...';
+        return 'Поиск в «Мир» (страны, мировые события, космос, наука, лидеры)...';
       }
       if (c.includes('swiss') || c.includes('швейцар')) {
         return 'Поиск в «Swiss» (новости Швейцарии, события, кантоны)...';
@@ -760,7 +760,7 @@
           t.includes('вучич') || t.includes('серби') || t.includes('орбан') || t.includes('венгри') ||
           t.includes('фицо') || t.includes('кндр') || t.includes('си цзиньпин') || t.includes('египет')
         )) {
-          return 'Мировая политика';
+          return 'Мир';
         }
 
         if (s.includes('novynaukr') || s.includes('novyna_ukr')) {
@@ -773,7 +773,7 @@
 
       const lower = c.toLowerCase();
       if (lower.includes('мировая политика') || lower.includes('политик') || lower.includes('мир') || lower.includes('world')) {
-        return 'Мировая политика';
+        return 'Мир';
       }
       if (lower.includes('технолог') || lower.includes('technology') || lower.includes('робот') || lower.includes('robot')) {
         return 'Технологии';
@@ -791,16 +791,23 @@
         return 'CS2';
       }
       if (lower.includes('украин') || lower.includes('україна') || lower.includes('ukraine') || lower.includes('novynaukr')) {
+        const s = ((item && (item.source || item.source_name)) || '').toLowerCase();
+        const t = ((item && (item.title || item.russian_title)) || '').toLowerCase();
+        const hasCore = ['украин', 'україна', 'киев', 'київ', 'днепр', 'дніпро', 'всу', 'зеленск', 'покровск', 'харьков', 'одесс', 'шахед', 'обстрел', 'дрон', 'бпла', 'пво', 'оккупант', 'фронт'].some(k => t.includes(k));
+        const isUkrSrc = ['pravda.com.ua', 'liga.net', 'novynaukr', 'украин', 'украина', 'україна'].some(k => s.includes(k));
+        if (!hasCore && !isUkrSrc) {
+          return 'Мир';
+        }
         return 'Украина';
       }
 
       const map = {
-        'мировая политика': 'Мировая политика',
-        'политика': 'Мировая политика',
-        'мир': 'Мировая политика',
-        'world': 'Мировая политика',
-        'новости мира': 'Мировая политика',
-        'международные': 'Мировая политика',
+        'мировая политика': 'Мир',
+        'политика': 'Мир',
+        'мир': 'Мир',
+        'world': 'Мир',
+        'новости мира': 'Мир',
+        'международные': 'Мир',
         'футбол': 'Футбол',
         'football': 'Футбол',
         'soccer': 'Футбол',
@@ -3283,7 +3290,7 @@
       const topAllCount = state.articles.filter(a => isArticleEligibleForDisplay(a, 'all')).length;
 
       // Always guarantee essential categories are present even if article count is 0
-      const essentialCats = ['Футбол', 'F1', 'IT', 'Технологии', 'CS2', 'Украина', 'Мировая политика', 'Swiss', 'AI & Нейросети', 'DevOps & Linux'];
+      const essentialCats = ['Футбол', 'F1', 'IT', 'Технологии', 'CS2', 'Украина', 'Мир', 'Swiss', 'AI & Нейросети', 'DevOps & Linux'];
       essentialCats.forEach(ec => {
         if (catCounts[ec] === undefined) {
           catCounts[ec] = 0;
@@ -3781,7 +3788,7 @@
         } else if (catLower === 'cs2' || catLower.includes('игры') || catLower.includes('gaming')) {
           msg = 'В категории «CS2» действует фильтр качества (оценка ≥ 7.0). Актуальный рейтинг HLTV доступен в панели справа.';
         } else if (catLower.includes('мировая политика') || catLower.includes('политик') || catLower === 'мир') {
-          msg = 'В категории «Мировая политика» новости отбираются по международным событиям, выборам и геополитике.';
+          msg = 'В категории «Мир» новости отбираются по международным событиям, науке, космосу и геополитике.';
         } else if (catLower.includes('украин') || catLower.includes('ukraine')) {
           msg = 'В категории «Украина» отображаются проверенные новости. Оперативная сводка атак и ПВО доступна в панели справа.';
         }
