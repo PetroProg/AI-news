@@ -100,6 +100,18 @@ FOOTBALL_PRIORITY = [
     "интер майами", "inter miami", "майами", "интер-майами"
 ]
 
+TECH_INDICATORS = [
+    "смартфон", "телефон", "складн", "айфон", "iphone", "ipad", "macbook",
+    "huawei", "xiaomi", "samsung", "honor", "vivo", "oppo", "realme", "oneplus", "pixel",
+    "гаджет", "девайс", "планшет", "умные часы", "смарт-час", "смарт-очк", "наушник",
+    "ноутбук", "процессор", "видеокарт", "чип", "geforce", "radeon", "rtx", "gtx",
+    "intel", "amd", "nvidia", "qualcomm", "snapdragon", "exynos", "mediatek", "dimensity",
+    "материнск", "монитор", "дисплей", "oled", "amoled", "экран", "ссд", "ssd", "железо",
+    "кулер", "аккумулятор", "батаре", "зарядк", "робот", "робототехник", "boston dynamics",
+    "figure 0", "tesla bot", "optimus", "playstation", "xbox", "nintendo", "рынок смартфонов",
+    "рынок пк", "флагманск", "камера"
+]
+
 WORLD_POLITICS_INDICATORS = [
     "трамп", "trump", "байден", "biden", "харрис", "harris", "пентагон", "белый дом", "white house",
     "конгресс сша", "сенат сша", "new york times", "politico", "республиканц", "демократ", "выборы в сша",
@@ -986,7 +998,12 @@ async def get_news_feed(
 
         is_ukr_source = any(k in source_combined for k in ["pravda.com.ua", "liga.net", "novynaukr", "украин", "украина", "україна"])
 
-        is_world = (
+        is_tech = (
+            (raw_cat and any(k in raw_cat.lower() for k in ["технолог", "technology", "гаджет", "девайс", "железо"])) or
+            any(k in title_lower for k in TECH_INDICATORS)
+        )
+
+        is_world = not is_tech and (
             (raw_cat and any(k in raw_cat.lower() for k in ["мировая политика", "политика", "мир", "world"])) or
             (any(k in title_lower for k in WORLD_POLITICS_INDICATORS) and not has_ukr_core)
         )
@@ -1023,18 +1040,20 @@ async def get_news_feed(
 
         if is_it_ai_offtopic:
             cat_name = "AI & Нейросети"
-        elif is_world:
-            cat_name = "Мир"
         elif is_football:
             cat_name = "Футбол"
         elif is_f1:
             cat_name = "F1"
-        elif is_devops_linux:
-            cat_name = "DevOps & Linux"
-        elif is_ukraine:
-            cat_name = "Украина"
         elif is_gaming:
             cat_name = "CS2"
+        elif is_devops_linux:
+            cat_name = "DevOps & Linux"
+        elif is_tech:
+            cat_name = "Технологии"
+        elif is_world:
+            cat_name = "Мир"
+        elif is_ukraine:
+            cat_name = "Украина"
         elif raw_cat:
             cat_name = raw_cat
             if any(k in raw_cat.lower() for k in ["мировая политика", "политика", "мир", "world"]):

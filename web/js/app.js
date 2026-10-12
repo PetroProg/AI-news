@@ -772,11 +772,13 @@
       c = c.replace(/^Категория\s*[\(:]?/i, '').replace(/[\)]+$/g, '').trim();
 
       const lower = c.toLowerCase();
+      const isTech = ['смартфон', 'телефон', 'складн', 'айфон', 'iphone', 'ipad', 'macbook', 'huawei', 'xiaomi', 'samsung', 'honor', 'vivo', 'oppo', 'realme', 'oneplus', 'pixel', 'гаджет', 'девайс', 'планшет', 'умные часы', 'смарт-час', 'наушник', 'ноутбук', 'процессор', 'видеокарт', 'чип', 'geforce', 'radeon', 'rtx', 'gtx', 'intel', 'amd', 'nvidia', 'qualcomm', 'snapdragon', 'дисплей', 'oled', 'amoled', 'экран', 'ссд', 'ssd', 'железо', 'робот', 'boston dynamics', 'флагманск', 'камера'].some(k => t.includes(k) || (rawCat && rawCat.toLowerCase().includes(k)));
+
+      if (isTech || lower.includes('технолог') || lower.includes('technology') || lower.includes('робот') || lower.includes('robot')) {
+        return 'Технологии';
+      }
       if (lower.includes('мировая политика') || lower.includes('политик') || lower.includes('мир') || lower.includes('world')) {
         return 'Мир';
-      }
-      if (lower.includes('технолог') || lower.includes('technology') || lower.includes('робот') || lower.includes('robot')) {
-        return 'Технологии';
       }
       if (lower.includes('футбол') || lower.includes('football') || lower.includes('soccer') || lower.includes('laliga') || lower.includes('ла лига')) {
         return 'Футбол';

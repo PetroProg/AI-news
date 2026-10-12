@@ -211,18 +211,33 @@ class SummarizerService:
             has_ukr_core = any(k in title_lower or k in content_lower for k in ukr_core_indicators)
             is_ukr_source = any(k in combined_source for k in ["pravda.com.ua", "liga.net", "novynaukr", "украин", "украина", "україна"])
 
-            is_world = (
+            is_tech = (
+                (analysis.category and any(k in analysis.category.lower() for k in ["технолог", "technology", "робот", "robot", "гаджет", "gadget", "железо", "hardware"])) or
+                any(k in title_lower for k in [
+                    "смартфон", "телефон", "складн", "айфон", "iphone", "ipad", "macbook",
+                    "huawei", "xiaomi", "samsung", "honor", "vivo", "oppo", "realme", "oneplus", "pixel",
+                    "гаджет", "девайс", "планшет", "умные часы", "смарт-час", "смарт-очк", "наушник",
+                    "ноутбук", "процессор", "видеокарт", "чип", "geforce", "radeon", "rtx", "gtx",
+                    "intel", "amd", "nvidia", "qualcomm", "snapdragon", "exynos", "mediatek", "dimensity",
+                    "материнск", "монитор", "дисплей", "oled", "amoled", "экран", "ссд", "ssd",
+                    "железо", "кулер", "аккумулятор", "батаре", "зарядк", "робот", "робототехник",
+                    "boston dynamics", "figure 0", "tesla bot", "optimus", "playstation", "xbox", "nintendo",
+                    "рынок смартфонов", "рынок пк", "флагманск", "камера"
+                ])
+            )
+
+            is_world = not is_tech and (
                 (analysis.category and any(k in analysis.category.lower() for k in ["мировая политика", "политика", "мир", "world"])) or
                 (any(k in title_lower for k in world_politics_indicators) and not has_ukr_core)
             )
 
-            is_ukraine = not is_world and (
+            is_ukraine = not is_world and not is_tech and (
                 ("novynaukr" in combined_source) or 
                 (analysis.category and "украин" in analysis.category.lower() and (has_ukr_core or is_ukr_source))
             )
 
-            # Safety guard: if LLM categorized as Ukraine but it has NO Ukraine indicators and source is NOT Ukrainian -> route to 'Мир'
-            if not is_ukraine and not is_world and (analysis.category and "украин" in analysis.category.lower()) and not has_ukr_core and not is_ukr_source:
+            # Safety guard: if LLM categorized as Ukraine but it has NO Ukraine indicators and source is NOT Ukrainian -> route to 'Мир' or 'Технологии'
+            if not is_ukraine and not is_world and not is_tech and (analysis.category and "украин" in analysis.category.lower()) and not has_ukr_core and not is_ukr_source:
                 is_world = True
 
             is_swiss = any(acc in combined_source for acc in ["rtsinfo", "rtsarchives", "blick_media", "20minutesonline", "instagram"]) or \
@@ -230,18 +245,18 @@ class SummarizerService:
 
             if is_swiss:
                 chosen_category = "Swiss"
+            elif is_gaming or (analysis.category and analysis.category.lower() in ["игры & киберспорт", "игры и киберспорт", "gaming", "cs2"]):
+                chosen_category = "CS2"
+            elif (analysis.category and any(k in analysis.category.lower() for k in ["ai", "нейро", "интеллект", "llm", "машинн", "ml"])) or ("huggingface" in combined_source):
+                chosen_category = "AI & Нейросети"
+            elif (analysis.category and any(k in analysis.category.lower() for k in ["linux", "devops", "opennet", "инфраструктур", "сервер"])) or ("opennet" in combined_source):
+                chosen_category = "DevOps & Linux"
+            elif is_tech:
+                chosen_category = "Технологии"
             elif is_world:
                 chosen_category = "Мир"
             elif is_ukraine:
                 chosen_category = "Украина"
-            elif is_gaming or (analysis.category and analysis.category.lower() in ["игры & киберспорт", "игры и киберспорт", "gaming", "cs2"]):
-                chosen_category = "CS2"
-            elif (analysis.category and any(k in analysis.category.lower() for k in ["linux", "devops", "opennet", "инфраструктур", "сервер"])) or ("opennet" in combined_source):
-                chosen_category = "DevOps & Linux"
-            elif (analysis.category and any(k in analysis.category.lower() for k in ["ai", "нейро", "интеллект", "llm", "машинн", "ml"])) or ("huggingface" in combined_source):
-                chosen_category = "AI & Нейросети"
-            elif (analysis.category and any(k in analysis.category.lower() for k in ["технолог", "technology", "робот", "robot", "гаджет", "gadget", "железо", "hardware"])) or any(k in title_lower for k in ["робот", "figure 0", "boston dynamics"]):
-                chosen_category = "Технологии"
             elif analysis.category and analysis.category.lower() in ["it & аналитика", "it-аналитик", "development", "programming", "разработка", "код"]:
                 chosen_category = "IT"
             else:
