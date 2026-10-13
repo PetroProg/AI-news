@@ -4212,7 +4212,15 @@
       if (loadEl && h.load) loadEl.textContent = `📈 Load: ${h.load.min1}`;
 
       const batEl = document.getElementById('srv-battery-text');
-      if (batEl && h.battery) batEl.textContent = `🔋 ${h.battery.status || (h.battery.level + '%')}`;
+      if (batEl && h.battery) {
+        let bText = h.battery.status || '';
+        const bLvl = h.battery.level !== undefined && h.battery.level !== null ? h.battery.level : null;
+        if (bLvl !== null && !bText.includes(`${bLvl}%`)) {
+          bText = `${bLvl}% ${bText}`.trim();
+        }
+        if (!bText) bText = '100% (Сеть)';
+        batEl.textContent = `🔋 ${bText}`;
+      }
 
       // Update service status dots if elements exist
       if (Array.isArray(h.services)) {
@@ -4358,7 +4366,19 @@
           meta: [
             { icon: '⏱', text: h.uptime || '17д 19ч', title: 'Время работы без перезагрузки' },
             { icon: '📈', text: `Load: ${h.load?.min1 !== undefined ? h.load.min1 : '1.35'}`, title: 'Load Average' },
-            { icon: '🔋', text: h.battery?.status || 'Full (Сеть)', title: 'Питание сервера' }
+            {
+              icon: '🔋',
+              text: (() => {
+                if (!h.battery) return '100% (Сеть)';
+                let bText = h.battery.status || '';
+                const bLvl = h.battery.level !== undefined && h.battery.level !== null ? h.battery.level : null;
+                if (bLvl !== null && !bText.includes(`${bLvl}%`)) {
+                  bText = `${bLvl}% ${bText}`.trim();
+                }
+                return bText || '100% (Сеть)';
+              })(),
+              title: 'Питание и заряд аккумулятора сервера'
+            }
           ],
           servicesTitle: 'СЛУЖБЫ СЕРВЕРА (БЫСТРЫЙ ПЕРЕХОД)',
           servicesSub: 'порт-форвардинг активен',

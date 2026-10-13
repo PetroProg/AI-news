@@ -2018,9 +2018,29 @@ async def get_server_health() -> Dict[str, Any]:
                         temps.append(s.get("value", 0))
                     elif s.get("type") == "battery" or "BAT" in str(s.get("label", "")):
                         battery_data["level"] = s.get("value", 100)
-                        battery_data["status"] = f"{s.get('status', 'Full')} (Сеть)"
+                        b_val = s.get("value", 100)
+                        b_raw = s.get("status", "Full")
+                        battery_data["status"] = f"{b_val}% {b_raw} (Сеть)"
                 if temps:
                     cpu_data["temp_c"] = max(temps)
+
+            # Direct sysfs ground truth check
+            try:
+                from app.services.battery_monitor import get_server_battery
+                b_cap, b_st, b_adp = get_server_battery()
+                if b_cap is not None:
+                    battery_data["level"] = b_cap
+                    if b_adp:
+                        if b_st == "Full" or b_cap >= 99:
+                            battery_data["status"] = f"{b_cap}% (Сеть)"
+                        elif b_st == "Charging":
+                            battery_data["status"] = f"{b_cap}% Charging (Сеть)"
+                        else:
+                            battery_data["status"] = f"{b_cap}% (Сеть)"
+                    else:
+                        battery_data["status"] = f"{b_cap}% (От батареи)"
+            except Exception:
+                pass
 
             # Uptime
             if not isinstance(resps[4], Exception) and resps[4].status_code == 200:
