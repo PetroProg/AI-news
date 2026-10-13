@@ -727,12 +727,20 @@
     }
 
     function normalizeCategory(rawCat, item) {
+      const s = ((item && ((item.source || item.source_name || '') + ' ' + (item.source_url || '') + ' ' + (item.url || ''))) || '').toLowerCase();
+      const t = ((item && (item.title || item.russian_title || '')) || '').toLowerCase();
+
+      // Check tech keywords from title, source or rawCat
+      const isTech = [
+        'смартфон', 'телефон', 'складн', 'айфон', 'iphone', 'ipad', 'macbook',
+        'huawei', 'xiaomi', 'samsung', 'honor', 'vivo', 'oppo', 'realme', 'oneplus', 'pixel',
+        'гаджет', 'девайс', 'планшет', 'умные часы', 'смарт-час', 'наушник',
+        'ноутбук', 'процессор', 'видеокарт', 'чип', 'geforce', 'radeon', 'rtx', 'gtx',
+        'intel', 'amd', 'nvidia', 'qualcomm', 'snapdragon', 'дисплей', 'oled', 'amoled',
+        'экран', 'ссд', 'ssd', 'железо', 'робот', 'boston dynamics', 'figure 0', 'флагманск', 'камера'
+      ].some(k => t.includes(k) || (rawCat && String(rawCat).toLowerCase().includes(k)));
+
       if (item) {
-        const s = ((item.source || '') + ' ' + (item.source_url || '') + ' ' + (item.url || '')).toLowerCase();
-        const t = (item.title || '').toLowerCase();
-        if (t.includes('робот') || t.includes('figure 0') || t.includes('boston dynamics')) {
-          return 'Технологии';
-        }
         if (s.includes('opennet') || s.includes('devops') || s.includes('linux')) {
           return 'DevOps & Linux';
         }
@@ -751,6 +759,10 @@
           return 'Swiss';
         }
 
+        if (isTech) {
+          return 'Технологии';
+        }
+
         const hasUkrCore = ['украин', 'україна', 'киев', 'київ', 'днепр', 'дніпро', 'всу', 'зеленск', 'покровск', 'харьков', 'одесс', 'шахед', 'обстрел', 'дрон', 'бпла', 'пво', 'оккупант', 'фронт'].some(k => t.includes(k));
         if (!hasUkrCore && (
           t.includes('трамп') || t.includes('trump') || t.includes('байден') || t.includes('biden') ||
@@ -767,14 +779,17 @@
           return 'Украина';
         }
       }
+
+      if (isTech) {
+        return 'Технологии';
+      }
+
       if (!rawCat) return 'IT';
       let c = cleanText(rawCat);
       c = c.replace(/^Категория\s*[\(:]?/i, '').replace(/[\)]+$/g, '').trim();
 
       const lower = c.toLowerCase();
-      const isTech = ['смартфон', 'телефон', 'складн', 'айфон', 'iphone', 'ipad', 'macbook', 'huawei', 'xiaomi', 'samsung', 'honor', 'vivo', 'oppo', 'realme', 'oneplus', 'pixel', 'гаджет', 'девайс', 'планшет', 'умные часы', 'смарт-час', 'наушник', 'ноутбук', 'процессор', 'видеокарт', 'чип', 'geforce', 'radeon', 'rtx', 'gtx', 'intel', 'amd', 'nvidia', 'qualcomm', 'snapdragon', 'дисплей', 'oled', 'amoled', 'экран', 'ссд', 'ssd', 'железо', 'робот', 'boston dynamics', 'флагманск', 'камера'].some(k => t.includes(k) || (rawCat && rawCat.toLowerCase().includes(k)));
-
-      if (isTech || lower.includes('технолог') || lower.includes('technology') || lower.includes('робот') || lower.includes('robot')) {
+      if (lower.includes('технолог') || lower.includes('technology') || lower.includes('робот') || lower.includes('robot')) {
         return 'Технологии';
       }
       if (lower.includes('мировая политика') || lower.includes('политик') || lower.includes('мир') || lower.includes('world')) {
@@ -793,8 +808,6 @@
         return 'CS2';
       }
       if (lower.includes('украин') || lower.includes('україна') || lower.includes('ukraine') || lower.includes('novynaukr')) {
-        const s = ((item && (item.source || item.source_name)) || '').toLowerCase();
-        const t = ((item && (item.title || item.russian_title)) || '').toLowerCase();
         const hasCore = ['украин', 'україна', 'киев', 'київ', 'днепр', 'дніпро', 'всу', 'зеленск', 'покровск', 'харьков', 'одесс', 'шахед', 'обстрел', 'дрон', 'бпла', 'пво', 'оккупант', 'фронт'].some(k => t.includes(k));
         const isUkrSrc = ['pravda.com.ua', 'liga.net', 'novynaukr', 'украин', 'украина', 'україна'].some(k => s.includes(k));
         if (!hasCore && !isUkrSrc) {
