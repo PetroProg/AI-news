@@ -1138,7 +1138,19 @@ async def get_news_feed(
 
 
         score = float(art.importance_score or 7.0)
-        if is_operational_alert:
+        OPINION_LISTICLE_STOPS = [
+            "победители и проигравшие", "победителей и проигравших", "winners and losers", "winners & losers",
+            "power rankings", "рейтинг силы", "рейтинги силы", "кто впечатлил", "кто разочаровал",
+            "уроки для беттеров", "уроков для беттеров", "для беттеров", "ставки на", "советы по ставкам",
+            "лучшие и худшие", "худшие и лучшие", "who impressed", "takeaways from", "главные выводы",
+            "итоги уикенда от", "по мнению lawrence", "southwell", "hereford", "wolverhampton", "season ticket"
+        ]
+        sum_lower = (art.summary.short_summary.lower() if art.summary and art.summary.short_summary else "")
+        is_opinion_or_listicle = any(stop in text_for_check for stop in OPINION_LISTICLE_STOPS) or \
+                                 any(stop in sum_lower for stop in ["по мнению lawrence", "по мнению обозревателя", "по мнению журналиста", "выиграли и проиграли на"])
+        if is_opinion_or_listicle:
+            score = 3.0
+        elif is_operational_alert:
             score = min(score, 5.0)
         elif is_meme_or_ad and score > 4.0:
             score = 3.0

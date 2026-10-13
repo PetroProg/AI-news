@@ -146,6 +146,8 @@ class SummarizerService:
 
         def article_priority_weight(a: Article) -> int:
             t = ((a.title or "") + " " + (a.raw_content or "")).lower()
+            if any(op in t for op in ["winners and losers", "winners & losers", "победители и проигравшие", "победителей и проигравших", "power rankings", "беттер", "ставки на", "лучшие и худшие"]):
+                return -50
             if any(uk in t for uk in ["вышло обновление", "вышел патч", "огромное обновление", "крупное обновление", "ночной патч", "cs2 update", "release notes"]):
                 return 100
             if any(fk in t for fk in ["чемпион", "победитель", "гранд-финал", "выиграл турнир"]):
@@ -277,6 +279,21 @@ class SummarizerService:
             if is_meme_or_ad and score > 4.0:
                 score = 3.0
                 logger.info("Article ID %d detected as meme/ad/sarcasm. Reduced score to %.1f", article.id, score)
+
+            OPINION_LISTICLE_STOPS = [
+                "победители и проигравшие", "победителей и проигравших", "winners and losers", "winners & losers",
+                "power rankings", "рейтинг силы", "рейтинги силы", "кто впечатлил", "кто разочаровал",
+                "уроки для беттеров", "уроков для беттеров", "для беттеров", "ставки на", "советы по ставкам",
+                "лучшие и худшие", "худшие и лучшие", "who impressed", "takeaways from", "главные выводы",
+                "итоги уикенда от", "по мнению lawrence", "по мнению обозревателя", "по мнению журналиста",
+                "season ticket", "southwell", "hereford", "wolverhampton"
+            ]
+            sum_lower = (analysis.short_summary or "").lower()
+            is_opinion_or_listicle = any(stop in text_for_check for stop in OPINION_LISTICLE_STOPS) or \
+                                     any(stop in sum_lower for stop in ["по мнению lawrence", "по мнению обозревателя", "по мнению журналиста", "выиграли и проиграли на"])
+            if is_opinion_or_listicle:
+                score = min(score, 3.0)
+                logger.info("Article ID %d detected as subjective opinion/listicle without context. Reduced score to %.1f", article.id, score)
 
             is_ukr_micro_alert = False
             if chosen_category == "Украина":

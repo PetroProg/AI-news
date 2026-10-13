@@ -125,7 +125,7 @@ class PipelineOrchestrator:
                 ("LIGA.net", "https://news.liga.net/ua/all/rss.xml"),
                 ("Formula 1 Official RSS", "https://www.formula1.com/en/latest/all.xml"),
                 ("Marca Football", "https://e00-marca.uecdn.es/rss/en/football.xml"),
-                ("SkySports Football", "https://www.skysports.com/rss/12040"),
+                ("SkySports Football", "https://www.skysports.com/rss/12010"),
                 ("Хабр: DevOps", "https://habr.com/ru/rss/hub/devops/all/?fl=ru"),
                 ("Хабр: Linux", "https://habr.com/ru/rss/hub/linux/all/?fl=ru"),
                 ("3DNews", "https://3dnews.ru/news/rss/"),

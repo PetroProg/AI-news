@@ -3076,6 +3076,18 @@
         return false;
       }
 
+      // Filter out subjective opinion pieces, listicles, betting advice, or columns without substance
+      const summaryText = String(item.summary || item.short_summary || (item.summaries && (item.summaries.ru || item.summaries.en)) || '').toLowerCase();
+      const isOpinionListicle = [
+        'победители и проигравшие', 'победителей и проигравших', 'winners and losers', 'winners & losers',
+        'power rankings', 'рейтинг силы', 'кто впечатлил', 'кто разочаровал', 'уроки для беттеров',
+        'уроков для беттеров', 'для беттеров', 'советы по ставкам', 'лучшие и худшие', 'худшие и лучшие',
+        'season ticket', 'southwell', 'hereford'
+      ].some(k => rawTitle.includes(k) || summaryText.includes(k));
+      if (isOpinionListicle) {
+        return false;
+      }
+
       // Safeguard: Never display untranslated Ukrainian characters in Russian interface
       const curLang = state.lang || 'ru';
       const rawSummary = (item.summaries && (item.summaries[curLang] || item.summaries.ru || item.summaries.en || item.summaries.fr)) || item.summary || item.short_summary || '';
