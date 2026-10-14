@@ -206,37 +206,76 @@ class PipelineOrchestrator:
                 from app.bot.utils import check_gpu_load
                 import asyncio
                 
+                threshold = getattr(settings, "GPU_LOAD_THRESHOLD", 15)
+                gpu_ready = False
                 for attempt in range(3):
                     gpu_load = await check_gpu_load()
-                    if gpu_load is not None and gpu_load > 50:
-                        logger.warning(f"GPU load is {gpu_load}% (>50%). User might be gaming. Delaying for 1 hour (Attempt {attempt+1}/3).")
+                    if gpu_load is not None and gpu_load >= threshold:
+                        logger.warning(
+                            f"GPU load is {gpu_load}% (>={threshold}%). User might be gaming. Delaying for 1 hour (Attempt {attempt+1}/3)."
+                        )
                         if self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
                             try:
                                 await self.bot.send_message(
                                     chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
-                                    text=f"⚠️ *Видеокарта нагружена на {gpu_load}%*. Вероятно, вы играете.\nОткладываю суммаризацию на 1 час...",
+                                    text=(
+                                        f"⚠️ *Видеокарта нагружена на {gpu_load}%* (порог: {threshold}%).\n"
+                                        f"Вероятно, запущена игра или 3D-приложение.\n"
+                                        f"Откладываю суммаризацию на 1 час (попытка {attempt+1}/3)..."
+                                    ),
                                     parse_mode="Markdown"
                                 )
                             except Exception:
                                 pass
                         await asyncio.sleep(3600)
                     else:
+                        gpu_ready = True
                         break
                         
-                if self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
+                if gpu_ready:
+                    if self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
+                        try:
+                            await self.bot.send_message(
+                                chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
+                                text=(
+                                    f"🟢 *GPU-нода подключена и свободна!* (нагрузка {gpu_load if gpu_load is not None else 0}% < {threshold}%).\n"
+                                    f"Начинаю суммаризацию на RTX 3060..."
+                                ),
+                                parse_mode="Markdown"
+                            )
+                        except Exception:
+                            pass
+                    summarizer = SummarizerService(session=session)
                     try:
-                        await self.bot.send_message(
-                            chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
-                            text="🟢 *GPU-нода подключена и свободна!* Начинаю суммаризацию на RTX 3060...",
-                            parse_mode="Markdown"
-                        )
+                        await summarizer.summarize_pending_articles(limit=30)
+                    except Exception as sum_err:
+                        logger.error("Error during GPU summarization: %s", sum_err, exc_info=True)
+                else:
+                    logger.warning(f"GPU remained busy (>={threshold}%) after 3 attempts. Falling back to local Ollama on server...")
+                    local_available = False
+                    try:
+                        async with httpx.AsyncClient(timeout=3.0) as client:
+                            resp = await client.get("http://localhost:11434/api/tags")
+                            local_available = (resp.status_code == 200)
                     except Exception:
-                        pass
-                summarizer = SummarizerService(session=session)
-                try:
-                    await summarizer.summarize_pending_articles(limit=30)
-                except Exception as sum_err:
-                    logger.error("Error during GPU summarization: %s", sum_err, exc_info=True)
+                        local_available = False
+
+                    if local_available:
+                        local_ai = OllamaClient(base_url="http://localhost:11434", model="qwen2.5:0.5b", timeout=120.0)
+                        summarizer = SummarizerService(session=session, ai_client=local_ai)
+                        try:
+                            await summarizer.summarize_pending_articles(limit=15)
+                        except Exception as sum_err:
+                            logger.error("Error during local summarizer fallback: %s", sum_err, exc_info=True)
+                        if self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
+                            try:
+                                await self.bot.send_message(
+                                    chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
+                                    text=f"⚠️ *Предупреждение*: Видеокарта была занята игрой (>={threshold}%). Чтобы не прерывать игру, дайджест составлен на локальной резервной модели.",
+                                    parse_mode="Markdown"
+                                )
+                            except Exception:
+                                pass
             else:
                 logger.warning("AI GPU worker did not respond within %ds. Attempting fallback to local Ollama (qwen2.5:0.5b)...", gpu_timeout)
                 # Try fallback to local Ollama on host

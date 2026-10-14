@@ -65,6 +65,9 @@ class Settings(BaseSettings):
     WINDOWS_SSH_USER: str = "Admin"
     WINDOWS_SSH_KEY_PATH: str = "/home/appuser/.ssh/id_ed25519"
 
+    # GPU Workstation Activity Threshold (delay pipeline if GPU load >= threshold)
+    GPU_LOAD_THRESHOLD: int = 15
+
     # AdGuard Home DNS Shield
     ADGUARD_URL: str = "http://news_ai_adguard:3000"
     ADGUARD_USER: str = "admin"
