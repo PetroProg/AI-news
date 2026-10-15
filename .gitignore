@@ -47,3 +47,4 @@ media/
 # AdGuard Home runtime data
 adguard/work/
 adguard/conf/AdGuardHome.yaml
+beszel_data/

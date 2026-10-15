@@ -1954,64 +1954,88 @@ async def get_router_stats() -> Dict[str, Any]:
 async def get_server_health() -> Dict[str, Any]:
     """
     Мониторинг ресурсов сервера (Server Health):
-    CPU (загрузка, температура, частота, модель),
-    RAM (занято, свободно, всего, %),
-    Диск (занято, свободно, всего, %),
+    Интеграция с Beszel Hub (живые тайм-серии, спарклайны CPU/RAM/SSD),
+    Glances (сенсоры, модель CPU),
     Uptime, Load Average, Статус батареи ноутбука,
     а также статус ключевых запущенных служб.
     """
     glances_url = "http://172.18.0.1:61208/api/4"
 
-    cpu_data = {"name": "Intel Celeron N3060", "percent": 0.0, "cores": 2, "temp_c": None, "freq_ghz": 1.6}
-    mem_data = {"percent": 0.0, "used_gb": 0.0, "total_gb": 3.2, "free_gb": 0.0}
-    disk_data = {"percent": 0.0, "used_gb": 0.0, "total_gb": 98.0, "free_gb": 0.0}
+    cpu_data = {"name": "Intel Celeron N3060", "percent": 0.0, "cores": 2, "temp_c": None, "freq_ghz": 1.6, "sparkline": []}
+    mem_data = {"percent": 0.0, "used_gb": 0.0, "total_gb": 3.2, "free_gb": 0.0, "sparkline": []}
+    disk_data = {"percent": 0.0, "used_gb": 0.0, "total_gb": 98.0, "free_gb": 0.0, "sparkline": []}
     load_data = {"min1": 0.0, "min5": 0.0, "min15": 0.0}
     battery_data = {"level": 100, "status": "Full (Сеть)"}
     uptime_str = "—"
+    source = "glances"
 
-    # 1. Fetch system metrics via Glances REST API
+    # 1. Fetch Beszel real-time metrics & historical sparklines
     try:
-        async with httpx.AsyncClient(timeout=1.2) as client:
+        from app.services.beszel_client import get_server_beszel_metrics
+        b_data = await get_server_beszel_metrics()
+        if b_data:
+            source = "beszel"
+            if "cpu" in b_data:
+                cpu_data["percent"] = b_data["cpu"].get("percent", cpu_data["percent"])
+                if b_data["cpu"].get("temp_c") is not None:
+                    cpu_data["temp_c"] = b_data["cpu"]["temp_c"]
+                if b_data["cpu"].get("cores"):
+                    cpu_data["cores"] = b_data["cpu"]["cores"]
+                cpu_data["sparkline"] = b_data["cpu"].get("sparkline", [])
+
+            if "memory" in b_data:
+                mem_data["percent"] = b_data["memory"].get("percent", mem_data["percent"])
+                mem_data["used_gb"] = b_data["memory"].get("used_gb", mem_data["used_gb"])
+                mem_data["total_gb"] = b_data["memory"].get("total_gb", mem_data["total_gb"])
+                mem_data["free_gb"] = round(mem_data["total_gb"] - mem_data["used_gb"], 2)
+                mem_data["sparkline"] = b_data["memory"].get("sparkline", [])
+
+            if "disk" in b_data:
+                disk_data["percent"] = b_data["disk"].get("percent", disk_data["percent"])
+                disk_data["used_gb"] = b_data["disk"].get("used_gb", disk_data["used_gb"])
+                disk_data["total_gb"] = b_data["disk"].get("total_gb", disk_data["total_gb"])
+                disk_data["free_gb"] = round(disk_data["total_gb"] - disk_data["used_gb"], 1)
+                disk_data["sparkline"] = b_data["disk"].get("sparkline", [])
+
+            if b_data.get("load"):
+                load_data.update(b_data["load"])
+
+            if b_data.get("uptime") and b_data["uptime"] != "—":
+                uptime_str = b_data["uptime"]
+    except Exception as e:
+        logger.warning(f"Beszel metrics fetch error: {e}")
+
+    # 2. Fetch Glances system metrics as supplement or fallback
+    try:
+        async with httpx.AsyncClient(timeout=1.0) as client:
             q_task = client.get(f"{glances_url}/quicklook")
-            m_task = client.get(f"{glances_url}/mem")
-            f_task = client.get(f"{glances_url}/fs")
             s_task = client.get(f"{glances_url}/sensors")
-            u_task = client.get(f"{glances_url}/uptime")
-            l_task = client.get(f"{glances_url}/load")
+            tasks = [q_task, s_task]
+            if source != "beszel":
+                tasks.extend([
+                    client.get(f"{glances_url}/mem"),
+                    client.get(f"{glances_url}/fs"),
+                    client.get(f"{glances_url}/uptime"),
+                    client.get(f"{glances_url}/load")
+                ])
 
-            resps = await asyncio.gather(q_task, m_task, f_task, s_task, u_task, l_task, return_exceptions=True)
+            resps = await asyncio.gather(*tasks, return_exceptions=True)
 
-            # Quicklook
+            # Quicklook (for CPU name and fallback percent)
             if not isinstance(resps[0], Exception) and resps[0].status_code == 200:
                 q_json = resps[0].json()
-                cpu_data["name"] = q_json.get("cpu_name", "Intel Celeron N3060").strip()
-                cpu_data["percent"] = round(q_json.get("cpu", 0.0), 1)
-                cpu_data["cores"] = q_json.get("cpu_phys_core", 2)
+                if "cpu_name" in q_json:
+                    cpu_data["name"] = q_json.get("cpu_name", "Intel Celeron N3060").strip()
+                if source != "beszel":
+                    cpu_data["percent"] = round(q_json.get("cpu", 0.0), 1)
+                    cpu_data["cores"] = q_json.get("cpu_phys_core", 2)
                 freq_hz = q_json.get("cpu_hz_current") or q_json.get("cpu_hz")
                 if freq_hz:
                     cpu_data["freq_ghz"] = round(freq_hz / 1e9, 2)
 
-            # Memory
+            # Sensors & Battery from Glances
             if not isinstance(resps[1], Exception) and resps[1].status_code == 200:
-                m_json = resps[1].json()
-                mem_data["percent"] = round(m_json.get("percent", 0.0), 1)
-                mem_data["total_gb"] = round(m_json.get("total", 0) / (1024**3), 2)
-                mem_data["used_gb"] = round(m_json.get("used", 0) / (1024**3), 2)
-                mem_data["free_gb"] = round(m_json.get("available", 0) / (1024**3), 2)
-
-            # Filesystem / Disk
-            if not isinstance(resps[2], Exception) and resps[2].status_code == 200:
-                fs_list = resps[2].json()
-                if isinstance(fs_list, list) and len(fs_list) > 0:
-                    primary_fs = fs_list[0]
-                    disk_data["percent"] = round(primary_fs.get("percent", 0.0), 1)
-                    disk_data["total_gb"] = round(primary_fs.get("size", 0) / (1024**3), 1)
-                    disk_data["used_gb"] = round(primary_fs.get("used", 0) / (1024**3), 1)
-                    disk_data["free_gb"] = round(primary_fs.get("free", 0) / (1024**3), 1)
-
-            # Sensors & Battery
-            if not isinstance(resps[3], Exception) and resps[3].status_code == 200:
-                sensors = resps[3].json()
+                sensors = resps[1].json()
                 temps = []
                 for s in sensors:
                     if s.get("type") == "temperature_core" or "Core" in str(s.get("label", "")):
@@ -2021,41 +2045,55 @@ async def get_server_health() -> Dict[str, Any]:
                         b_val = s.get("value", 100)
                         b_raw = s.get("status", "Full")
                         battery_data["status"] = f"{b_val}% {b_raw} (Сеть)"
-                if temps:
+                if temps and cpu_data.get("temp_c") is None:
                     cpu_data["temp_c"] = max(temps)
 
-            # Direct sysfs ground truth check
-            try:
-                from app.services.battery_monitor import get_server_battery
-                b_cap, b_st, b_adp = get_server_battery()
-                if b_cap is not None:
-                    battery_data["level"] = b_cap
-                    if b_adp:
-                        if b_st == "Full" or b_cap >= 99:
-                            battery_data["status"] = f"{b_cap}% (Сеть)"
-                        elif b_st == "Charging":
-                            battery_data["status"] = f"{b_cap}% Charging (Сеть)"
-                        else:
-                            battery_data["status"] = f"{b_cap}% (Сеть)"
-                    else:
-                        battery_data["status"] = f"{b_cap}% (От батареи)"
-            except Exception:
-                pass
+            # Fallback metrics if Beszel was not used
+            if source != "beszel" and len(resps) >= 6:
+                if not isinstance(resps[2], Exception) and resps[2].status_code == 200:
+                    m_json = resps[2].json()
+                    mem_data["percent"] = round(m_json.get("percent", 0.0), 1)
+                    mem_data["total_gb"] = round(m_json.get("total", 0) / (1024**3), 2)
+                    mem_data["used_gb"] = round(m_json.get("used", 0) / (1024**3), 2)
+                    mem_data["free_gb"] = round(m_json.get("available", 0) / (1024**3), 2)
+                if not isinstance(resps[3], Exception) and resps[3].status_code == 200:
+                    fs_list = resps[3].json()
+                    if isinstance(fs_list, list) and len(fs_list) > 0:
+                        primary_fs = fs_list[0]
+                        disk_data["percent"] = round(primary_fs.get("percent", 0.0), 1)
+                        disk_data["total_gb"] = round(primary_fs.get("size", 0) / (1024**3), 1)
+                        disk_data["used_gb"] = round(primary_fs.get("used", 0) / (1024**3), 1)
+                        disk_data["free_gb"] = round(primary_fs.get("free", 0) / (1024**3), 1)
+                if not isinstance(resps[4], Exception) and resps[4].status_code == 200:
+                    uptime_val = resps[4].json()
+                    if isinstance(uptime_val, str):
+                        uptime_str = uptime_val.replace("days", "дней").replace("day", "день")
+                if not isinstance(resps[5], Exception) and resps[5].status_code == 200:
+                    l_json = resps[5].json()
+                    load_data["min1"] = round(l_json.get("min1", 0.0), 2)
+                    load_data["min5"] = round(l_json.get("min5", 0.0), 2)
+                    load_data["min15"] = round(l_json.get("min15", 0.0), 2)
 
-            # Uptime
-            if not isinstance(resps[4], Exception) and resps[4].status_code == 200:
-                uptime_val = resps[4].json()
-                if isinstance(uptime_val, str):
-                    uptime_str = uptime_val.replace("days", "дней").replace("day", "день")
-
-            # Load
-            if not isinstance(resps[5], Exception) and resps[5].status_code == 200:
-                l_json = resps[5].json()
-                load_data["min1"] = round(l_json.get("min1", 0.0), 2)
-                load_data["min5"] = round(l_json.get("min5", 0.0), 2)
-                load_data["min15"] = round(l_json.get("min15", 0.0), 2)
     except Exception as e:
         logger.warning(f"Glances server health error: {e}")
+
+    # Direct sysfs ground truth check (Preserves laptop battery monitoring & alerts)
+    try:
+        from app.services.battery_monitor import get_server_battery
+        b_cap, b_st, b_adp = get_server_battery()
+        if b_cap is not None:
+            battery_data["level"] = b_cap
+            if b_adp:
+                if b_st == "Full" or b_cap >= 99:
+                    battery_data["status"] = f"{b_cap}% (Сеть)"
+                elif b_st == "Charging":
+                    battery_data["status"] = f"{b_cap}% Charging (Сеть)"
+                else:
+                    battery_data["status"] = f"{b_cap}% (Сеть)"
+            else:
+                battery_data["status"] = f"{b_cap}% (От батареи)"
+    except Exception:
+        pass
 
     # Fallback uptime from /proc/uptime
     if uptime_str == "—":
@@ -2069,22 +2107,25 @@ async def get_server_health() -> Dict[str, Any]:
         except Exception:
             pass
 
-    # 2. Check running services
+    # 3. Check running services
     srv_checks = {
         "ainews": True,
         "glances": False,
         "ollama": False,
-        "rssbridge": False
+        "rssbridge": False,
+        "beszel": False,
     }
     try:
         async with httpx.AsyncClient(timeout=0.6) as client:
             t_gl = client.get("http://172.18.0.1:61208/api/4/quicklook")
             t_ol = client.get("http://news_ai_ollama:11434/api/tags")
             t_rss = client.get("http://news_ai_rss_bridge:80/")
-            r_gl, r_ol, r_rss = await asyncio.gather(t_gl, t_ol, t_rss, return_exceptions=True)
+            t_bz = client.get("http://172.18.0.1:8090/api/health")
+            r_gl, r_ol, r_rss, r_bz = await asyncio.gather(t_gl, t_ol, t_rss, t_bz, return_exceptions=True)
             srv_checks["glances"] = not isinstance(r_gl, Exception) and (200 <= r_gl.status_code < 400 or r_gl.status_code == 405)
             srv_checks["ollama"] = not isinstance(r_ol, Exception) and (200 <= r_ol.status_code < 400)
             srv_checks["rssbridge"] = not isinstance(r_rss, Exception) and (200 <= r_rss.status_code < 400)
+            srv_checks["beszel"] = not isinstance(r_bz, Exception) and (200 <= r_bz.status_code < 400)
     except Exception:
         pass
 
@@ -2096,6 +2137,15 @@ async def get_server_health() -> Dict[str, Any]:
             "port": 8000,
             "desc": "Веб-интерфейс и API новостей",
             "online": srv_checks["ainews"],
+            "url_path": "/"
+        },
+        {
+            "id": "beszel",
+            "name": "Beszel Hub",
+            "icon": "📈",
+            "port": 8090,
+            "desc": "Мониторинг ресурсов и метрики",
+            "online": srv_checks["beszel"],
             "url_path": "/"
         },
         {
@@ -2131,6 +2181,7 @@ async def get_server_health() -> Dict[str, Any]:
         "hostname": "petroprog",
         "os": "Ubuntu Server 26.04",
         "uptime": uptime_str,
+        "source": source,
         "cpu": cpu_data,
         "memory": mem_data,
         "disk": disk_data,

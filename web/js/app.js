@@ -4173,6 +4173,7 @@
       const cpuText = document.getElementById('srv-cpu-text');
       const cpuBar = document.getElementById('srv-cpu-bar');
       const cpuTemp = document.getElementById('srv-cpu-temp');
+      const cpuChart = document.getElementById('srv-cpu-chart');
       if (cpuText && h.cpu) cpuText.textContent = `${h.cpu.percent}%`;
       if (cpuBar && h.cpu) {
         cpuBar.style.width = `${Math.min(100, Math.max(5, h.cpu.percent))}%`;
@@ -4183,9 +4184,13 @@
         }
       }
       if (cpuTemp && h.cpu?.temp_c) cpuTemp.textContent = `${h.cpu.temp_c}°C`;
+      if (cpuChart && Array.isArray(h.cpu?.sparkline) && h.cpu.sparkline.length > 0) {
+        cpuChart.innerHTML = generateSparklineSvg(h.cpu.sparkline, 180, 34, '#38bdf8', 'srv-cpu-grad');
+      }
 
       const ramText = document.getElementById('srv-ram-text');
       const ramBar = document.getElementById('srv-ram-bar');
+      const ramChart = document.getElementById('srv-ram-chart');
       if (ramText && h.memory) {
         ramText.innerHTML = `${h.memory.percent}% <span class="text-slate-400 text-[10px] font-normal">(${h.memory.used_gb} / ${h.memory.total_gb} GB)</span>`;
       }
@@ -4197,13 +4202,20 @@
           ramBar.className = 'h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500';
         }
       }
+      if (ramChart && Array.isArray(h.memory?.sparkline) && h.memory.sparkline.length > 0) {
+        ramChart.innerHTML = generateSparklineSvg(h.memory.sparkline, 180, 34, '#10b981', 'srv-ram-grad');
+      }
 
       const diskText = document.getElementById('srv-disk-text');
       const diskBar = document.getElementById('srv-disk-bar');
+      const diskChart = document.getElementById('srv-disk-chart');
       if (diskText && h.disk) {
         diskText.innerHTML = `${h.disk.percent}% <span class="text-slate-400 text-[10px] font-normal">(${h.disk.used_gb} / ${h.disk.total_gb} GB)</span>`;
       }
       if (diskBar && h.disk) diskBar.style.width = `${Math.min(100, Math.max(5, h.disk.percent))}%`;
+      if (diskChart && Array.isArray(h.disk?.sparkline) && h.disk.sparkline.length > 0) {
+        diskChart.innerHTML = generateSparklineSvg(h.disk.sparkline, 180, 34, '#a855f7', 'srv-disk-grad');
+      }
 
       const upEl = document.getElementById('srv-uptime-text');
       if (upEl && h.uptime) upEl.textContent = `⏱️ ${h.uptime}`;
@@ -4220,6 +4232,12 @@
         }
         if (!bText) bText = '100% (Сеть)';
         batEl.textContent = `🔋 ${bText}`;
+      }
+
+      const srvBadge = document.getElementById('srv-health-badge');
+      if (srvBadge) {
+        const isBz = h.source === 'beszel';
+        srvBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ${isBz ? 'beszel live' : 'live'}`;
       }
 
       // Update service status dots if elements exist
@@ -4307,6 +4325,53 @@
     }
 
     // ==========================================
+    // ==========================================
+    // BESZEL SVG SPARKLINE GENERATOR
+    // ==========================================
+    function generateSparklineSvg(dataPoints, width = 180, height = 34, strokeColor = '#38bdf8', gradientId = 'grad-cpu', maxVal = 100) {
+      if (!Array.isArray(dataPoints) || dataPoints.length === 0) {
+        dataPoints = [0];
+      }
+      const pts = dataPoints.length === 1 ? [dataPoints[0], dataPoints[0]] : dataPoints;
+      const len = pts.length;
+      const padTop = 3;
+      const padBottom = 2;
+      const innerH = height - padTop - padBottom;
+      
+      const coords = pts.map((val, idx) => {
+        const x = (idx / (len - 1)) * width;
+        const v = typeof val === 'number' ? val : 0;
+        const clamped = Math.max(0, Math.min(maxVal, v));
+        const y = padTop + (1 - (clamped / maxVal)) * innerH;
+        return { x: Number(x.toFixed(1)), y: Number(y.toFixed(1)) };
+      });
+
+      let d = `M ${coords[0].x} ${coords[0].y}`;
+      for (let i = 0; i < coords.length - 1; i++) {
+        const p0 = coords[i];
+        const p1 = coords[i + 1];
+        const cpx = Number(((p0.x + p1.x) / 2).toFixed(1));
+        d += ` C ${cpx} ${p0.y}, ${cpx} ${p1.y}, ${p1.x} ${p1.y}`;
+      }
+
+      const last = coords[coords.length - 1];
+      const areaD = `${d} L ${width} ${height} L 0 ${height} Z`;
+
+      return `
+        <svg viewBox="0 0 ${width} ${height}" class="w-full h-8 overflow-visible block" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="${gradientId}" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="${strokeColor}" stop-opacity="0.32"/>
+              <stop offset="100%" stop-color="${strokeColor}" stop-opacity="0.0"/>
+            </linearGradient>
+          </defs>
+          <path d="${areaD}" fill="url(#${gradientId})" />
+          <path d="${d}" fill="none" stroke="${strokeColor}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+          <circle cx="${last.x}" cy="${last.y}" r="2.5" fill="${strokeColor}" />
+        </svg>
+      `;
+    }
+
     // DEVICE TELEMETRY & SERVICES METADATA
     // ==========================================
     function getDeviceTelemetryAndServices(device, serverHealth) {
@@ -4319,23 +4384,27 @@
       // 1. Ноутбук-сервер (Real live data from /api/server/health)
       if (isServer) {
         const h = serverHealth || {
-          cpu: { percent: 45, temp_c: 52, name: 'Intel Celeron N3060' },
-          memory: { percent: 43, used_gb: 1.4, total_gb: 3.2 },
-          disk: { percent: 40, used_gb: 37, total_gb: 98 },
-          battery: { level: 100, status: 'Full (Сеть)' },
+          source: 'beszel',
+          cpu: { percent: 45, temp_c: 52, name: 'Intel Celeron N3060', sparkline: [40, 42, 45] },
+          memory: { percent: 58, used_gb: 1.86, total_gb: 3.23, sparkline: [55, 56, 58] },
+          disk: { percent: 52, used_gb: 50.7, total_gb: 97.9, sparkline: [52, 52, 52] },
+          battery: { level: 98, status: '98% (Сеть)' },
           load: { min1: 1.35 },
-          uptime: '17д 19ч',
+          uptime: '2д 4ч',
           services: [
             { id: 'ainews', online: true },
+            { id: 'beszel', online: true },
             { id: 'glances', online: true },
             { id: 'ollama', online: true },
             { id: 'rssbridge', online: true }
           ]
         };
 
+        const isBeszel = h.source === 'beszel';
+
         return {
-          telemetryTitle: 'МОНИТОРИНГ РЕСУРСОВ СЕРВЕРА',
-          liveBadge: isOnline ? 'live' : 'offline',
+          telemetryTitle: isBeszel ? 'МОНИТОРИНГ РЕСУРСОВ СЕРВЕРА (BESZEL)' : 'МОНИТОРИНГ РЕСУРСОВ СЕРВЕРА',
+          liveBadge: isOnline ? (isBeszel ? 'beszel live' : 'live') : 'offline',
           bars: [
             {
               label: 'CPU:',
@@ -4344,27 +4413,36 @@
               valueText: `${h.cpu?.percent ?? 0}%`,
               percent: h.cpu?.percent ?? 0,
               color: 'from-sky-500 to-indigo-500',
-              idPrefix: 'srv-cpu'
+              idPrefix: 'srv-cpu',
+              sparkline: h.cpu?.sparkline || [],
+              chartColor: '#38bdf8',
+              chartGradId: 'srv-cpu-grad'
             },
             {
               label: 'RAM:',
               badge: null,
-              valueText: `${h.memory?.percent ?? 0}% <span class="text-slate-400 text-[10px] font-normal">(${h.memory?.used_gb ?? '1.4'} / ${h.memory?.total_gb ?? '3.2'} GB)</span>`,
+              valueText: `${h.memory?.percent ?? 0}% <span class="text-slate-400 text-[10px] font-normal">(${h.memory?.used_gb ?? '1.8'} / ${h.memory?.total_gb ?? '3.2'} GB)</span>`,
               percent: h.memory?.percent ?? 0,
               color: 'from-emerald-500 to-teal-400',
-              idPrefix: 'srv-ram'
+              idPrefix: 'srv-ram',
+              sparkline: h.memory?.sparkline || [],
+              chartColor: '#10b981',
+              chartGradId: 'srv-ram-grad'
             },
             {
               label: 'Диск SSD:',
               badge: null,
-              valueText: `${h.disk?.percent ?? 0}% <span class="text-slate-400 text-[10px] font-normal">(${h.disk?.used_gb ?? '37'} / ${h.disk?.total_gb ?? '98'} GB)</span>`,
+              valueText: `${h.disk?.percent ?? 0}% <span class="text-slate-400 text-[10px] font-normal">(${h.disk?.used_gb ?? '50'} / ${h.disk?.total_gb ?? '98'} GB)</span>`,
               percent: h.disk?.percent ?? 0,
               color: 'from-purple-500 to-pink-500',
-              idPrefix: 'srv-disk'
+              idPrefix: 'srv-disk',
+              sparkline: h.disk?.sparkline || [],
+              chartColor: '#a855f7',
+              chartGradId: 'srv-disk-grad'
             }
           ],
           meta: [
-            { icon: '⏱', text: h.uptime || '17д 19ч', title: 'Время работы без перезагрузки' },
+            { icon: '⏱', text: h.uptime || '2д 4ч', title: 'Время работы без перезагрузки' },
             { icon: '📈', text: `Load: ${h.load?.min1 !== undefined ? h.load.min1 : '1.35'}`, title: 'Load Average' },
             {
               icon: '🔋',
@@ -4389,6 +4467,15 @@
               icon: '🤖',
               port: ':8000',
               url: `http://${currentHost}:8000`,
+              online: true,
+              hoverColor: 'sky'
+            },
+            {
+              id: 'beszel',
+              name: 'Beszel Hub',
+              icon: '📈',
+              port: ':8090',
+              url: `http://${currentHost}:8090`,
               online: true,
               hoverColor: 'sky'
             },
@@ -4421,10 +4508,10 @@
             }
           ],
           footerAction: {
-            text: 'Glances ↗',
-            url: `http://${currentHost}:61208`,
+            text: 'Beszel Hub ↗',
+            url: `http://${currentHost}:8090`,
             iconSvg: '<path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/>',
-            color: 'emerald'
+            color: 'sky'
           }
         };
       }
@@ -5014,17 +5101,24 @@
             : '';
           const valueId = b.idPrefix ? `id="${b.idPrefix}-text"` : '';
           const barId = b.idPrefix ? `id="${b.idPrefix}-bar"` : '';
+          const chartId = b.idPrefix ? `id="${b.idPrefix}-chart"` : '';
+
+          const hasSparkline = Array.isArray(b.sparkline) && b.sparkline.length > 0;
+          const chartHtml = hasSparkline 
+            ? `<div ${chartId} class="w-full my-1">${generateSparklineSvg(b.sparkline, 180, 34, b.chartColor, b.chartGradId)}</div>` 
+            : '';
 
           return `
-            <div class="space-y-1.5 p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/70">
+            <div class="space-y-1.5 p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/70 hover:border-slate-700/80 transition-all">
               <div class="flex items-center justify-between text-[11px]">
-                <span class="text-slate-400 flex items-center gap-1">
+                <span class="text-slate-300 font-medium flex items-center gap-1.5">
                   <span>${b.label}</span>
                   ${badgeHtml}
                 </span>
                 <span ${valueId} class="text-white font-mono font-bold">${b.valueText}</span>
               </div>
-              <div class="w-full h-2 rounded-full bg-slate-800/90 overflow-hidden">
+              ${chartHtml}
+              <div class="w-full h-1.5 rounded-full bg-slate-800/90 overflow-hidden">
                 <div ${barId} class="h-full rounded-full bg-gradient-to-r ${b.color} transition-all duration-500" style="width: ${Math.min(100, Math.max(5, b.percent))}%"></div>
               </div>
             </div>
@@ -5104,7 +5198,7 @@
               </span>
             </div>
 
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div class="${isServerNode ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2' : 'grid grid-cols-2 sm:grid-cols-4 gap-2.5'}">
               ${servicesTilesHtml}
             </div>
           </div>
@@ -5943,6 +6037,12 @@
     if (qrBtn) qrBtn.onclick = openVpnQrModal;
 
     // Background auto-refresh for VPN & DNS
+    setInterval(() => {
+      if (state.currentTab === 'devices') {
+        loadServerHealth();
+      }
+    }, 4000);
+
     setInterval(() => {
       if (state.currentTab === 'vpn') {
         loadVpnTraffic();

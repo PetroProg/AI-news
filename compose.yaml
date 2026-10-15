@@ -103,6 +103,26 @@ services:
           cpus: '0.5'
           memory: 150M
 
+  beszel:
+    image: henrygd/beszel:latest
+    container_name: news_ai_beszel
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./beszel_data:/beszel_data
+
+  beszel-agent:
+    image: henrygd/beszel-agent:latest
+    container_name: news_ai_beszel_agent
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /:/extra-filesystems/root:ro
+    environment:
+      PORT: 45876
+      KEY: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICbRVS+Gxhg1lG4yf9a+3r5wTQifXYksN0PJYowTIuop"
+
 volumes:
   postgres_data:
     driver: local
