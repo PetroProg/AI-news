@@ -205,14 +205,39 @@ class PipelineOrchestrator:
             if gpu_online:
                 from app.bot.utils import check_gpu_load
                 import asyncio
-                
+
+                # If PC was just woken up by WoL, give Windows/CUDA 5 seconds to settle boot spikes
+                if not was_already_online:
+                    await asyncio.sleep(5)
+
                 threshold = getattr(settings, "GPU_LOAD_THRESHOLD", 15)
                 gpu_ready = False
+                gpu_load = 0
                 for attempt in range(3):
+                    # If we delayed 1 hour on a previous attempt, check if PC went to sleep in the meantime
+                    if attempt > 0:
+                        if not await self.is_pc_already_online():
+                            logger.info("PC went to sleep during 1-hour gaming delay. Waking it up via WoL...")
+                            send_wake_on_lan()
+                            await asyncio.sleep(45)
+                        gpu_online = await self.wait_for_gpu_node(timeout_seconds=120)
+                        if not gpu_online:
+                            logger.warning("GPU worker did not come back online after 1h delay.")
+                            break
+
                     gpu_load = await check_gpu_load()
-                    if gpu_load is not None and gpu_load >= threshold:
+                    if gpu_load is None:
+                        # Double-check if Ollama HTTP is still alive
+                        if not await self.is_pc_already_online():
+                            logger.warning("GPU load check returned None and PC is unreachable.")
+                            gpu_ready = False
+                            break
+                        # Ollama is alive, treat as 0% load
+                        gpu_load = 0
+
+                    if gpu_load >= threshold:
                         logger.warning(
-                            f"GPU load is {gpu_load}% (>={threshold}%). User might be gaming. Delaying for 1 hour (Attempt {attempt+1}/3)."
+                            f"Sustained GPU load is {gpu_load}% (>={threshold}%). User might be gaming. Delaying for 1 hour (Attempt {attempt+1}/3)."
                         )
                         if self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
                             try:
@@ -231,7 +256,7 @@ class PipelineOrchestrator:
                     else:
                         gpu_ready = True
                         break
-                        
+
                 if gpu_ready:
                     if self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
                         try:
@@ -251,7 +276,7 @@ class PipelineOrchestrator:
                     except Exception as sum_err:
                         logger.error("Error during GPU summarization: %s", sum_err, exc_info=True)
                 else:
-                    logger.warning(f"GPU remained busy (>={threshold}%) after 3 attempts. Falling back to local Ollama on server...")
+                    logger.warning(f"GPU remained busy or unreachable after checks. Falling back to local Ollama on server...")
                     local_available = False
                     try:
                         async with httpx.AsyncClient(timeout=3.0) as client:
@@ -271,14 +296,13 @@ class PipelineOrchestrator:
                             try:
                                 await self.bot.send_message(
                                     chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
-                                    text=f"⚠️ *Предупреждение*: Видеокарта была занята игрой (>={threshold}%). Чтобы не прерывать игру, дайджест составлен на локальной резервной модели.",
+                                    text=f"⚠️ *Предупреждение*: Видеокарта была занята или недоступна. Дайджест составлен на локальной резервной модели.",
                                     parse_mode="Markdown"
                                 )
                             except Exception:
                                 pass
             else:
                 logger.warning("AI GPU worker did not respond within %ds. Attempting fallback to local Ollama (qwen2.5:0.5b)...", gpu_timeout)
-                # Try fallback to local Ollama on host
                 local_available = False
                 try:
                     async with httpx.AsyncClient(timeout=3.0) as client:
@@ -352,21 +376,27 @@ class PipelineOrchestrator:
             logger.info("Skipping sleep: PC was already online before pipeline started (user was already at computer).")
         else:
             try:
-                logger.info("Putting AI GPU worker back to sleep (checking user activity first)...")
-                slept = await send_remote_sleep(force=False, max_idle_minutes=10)
-                if not slept:
-                    logger.info("PC sleep was cancelled due to detected user activity.")
-                    if self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
-                        try:
-                            await self.bot.send_message(
-                                chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
-                                text="ℹ️ *Компьютер оставлен включённым*: обнаружена активность пользователя (мышь/клавиатура).",
-                                parse_mode="Markdown"
-                            )
-                        except Exception:
-                            pass
+                if not await self.is_pc_already_online():
+                    logger.info("GPU worker PC is already asleep or offline. No sleep command needed.")
                 else:
-                    logger.info("GPU worker PC successfully put to sleep.")
+                    from app.bot.utils import is_windows_user_active
+                    logger.info("Putting AI GPU worker back to sleep (checking user activity first)...")
+                    user_active = await is_windows_user_active(max_idle_minutes=10)
+                    if user_active:
+                        logger.info("PC sleep was cancelled due to detected user activity.")
+                        if self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
+                            try:
+                                await self.bot.send_message(
+                                    chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
+                                    text="ℹ️ *Компьютер оставлен включённым*: обнаружена активность пользователя (мышь/клавиатура).",
+                                    parse_mode="Markdown"
+                                )
+                            except Exception:
+                                pass
+                    else:
+                        slept = await send_remote_sleep(force=True)
+                        if slept:
+                            logger.info("GPU worker PC successfully put to sleep.")
             except Exception as exc:
                 logger.error("Failed to put GPU PC to sleep: %s", exc)
 

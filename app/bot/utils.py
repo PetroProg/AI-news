@@ -99,6 +99,7 @@ async def is_windows_user_active(
             username=ssh_user,
             client_keys=[ssh_key],
             known_hosts=None,
+            connect_timeout=6.0,
         ) as conn:
             res = await conn.run("cmd.exe /c quser", term_type="vt100")
             output = res.stdout or ""
@@ -178,6 +179,7 @@ async def send_remote_sleep(
             username=ssh_user,
             client_keys=[ssh_key],
             known_hosts=None,
+            connect_timeout=6.0,
         ) as conn:
             try:
                 await asyncio.wait_for(
@@ -198,15 +200,24 @@ async def check_gpu_load(
     host: str | None = None,
     user: str | None = None,
     key_path: str | None = None,
+    samples: int = 3,
+    interval_sec: float = 3.5,
 ) -> int | None:
-    """Checks the GPU utilization on the Windows PC via SSH."""
+    """Checks the sustained GPU utilization on the Windows PC via SSH.
+
+    Takes an initial reading; if it is >= threshold, takes additional readings
+    spaced by `interval_sec` and returns the minimum (sustained) load so momentary
+    boot/CUDA initialization spikes do not falsely trigger gaming detection.
+    """
+    import asyncio
     import logging
     import asyncssh
-    
+
     logger = logging.getLogger("news_ai.bot.utils")
     ssh_host = host or settings.WINDOWS_SSH_HOST
     ssh_user = user or settings.WINDOWS_SSH_USER
     ssh_key = key_path or settings.WINDOWS_SSH_KEY_PATH
+    threshold = getattr(settings, "GPU_LOAD_THRESHOLD", 15)
 
     try:
         async with asyncssh.connect(
@@ -214,15 +225,29 @@ async def check_gpu_load(
             username=ssh_user,
             client_keys=[ssh_key],
             known_hosts=None,
+            connect_timeout=6.0,
         ) as conn:
-            res = await conn.run("nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits", term_type="vt100")
-            output = res.stdout or ""
-            cleaned = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]|\x1b\].*?\x07', '', output).strip()
-            # It might still contain other junk like \r\n, let's just find the first number
-            m = re.search(r'\d+', cleaned)
-            if m:
-                return int(m.group(0))
-            return None
+            readings: list[int] = []
+            for i in range(max(1, samples)):
+                res = await conn.run(
+                    "nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits",
+                    term_type="vt100",
+                )
+                output = res.stdout or ""
+                cleaned = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]|\x1b\].*?\x07', '', output).strip()
+                m = re.search(r'\d+', cleaned)
+                if not m:
+                    return None
+                val = int(m.group(0))
+                readings.append(val)
+                if val < threshold:
+                    return val
+                if i < samples - 1:
+                    await asyncio.sleep(interval_sec)
+
+            sustained = min(readings)
+            logger.info("GPU load samples on %s: %s -> sustained: %d%%", ssh_host, readings, sustained)
+            return sustained
     except Exception as exc:
         logger.warning("Could not check GPU load on %s via SSH: %s", ssh_host, exc)
         return None
