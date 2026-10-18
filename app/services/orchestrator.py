@@ -203,85 +203,62 @@ class PipelineOrchestrator:
             gpu_online = await self.wait_for_gpu_node(timeout_seconds=gpu_timeout)
 
             if gpu_online:
-                from app.bot.utils import check_gpu_load, is_windows_user_active
+                from app.bot.utils import check_gpu_load
                 import asyncio
 
                 threshold = getattr(settings, "GPU_LOAD_THRESHOLD", 15)
                 gpu_ready = False
                 gpu_load = 0
 
-                # If the PC was asleep/offline and we just woke it via WoL, check if a user is actually at the PC.
-                # If no user is active at the keyboard/mouse, skip gaming delay altogether!
-                if not was_already_online:
-                    user_present = await is_windows_user_active(max_idle_minutes=5)
-                    if not user_present:
-                        logger.info("PC was woken via WoL and no user activity detected. Proceeding directly with GPU summarization.")
+                for attempt in range(3):
+                    if attempt > 0:
+                        if not await self.is_pc_already_online():
+                            logger.info("PC went to sleep during 1-hour gaming delay. Waking it up via WoL...")
+                            send_wake_on_lan()
+                            await asyncio.sleep(45)
+                            gpu_online = await self.wait_for_gpu_node(timeout_seconds=120)
+                            if not gpu_online:
+                                logger.warning("GPU worker did not come back online after 1h delay.")
+                                break
+
+                    gpu_load = await check_gpu_load()
+                    if gpu_load is None:
+                        if not await self.is_pc_already_online():
+                            logger.warning("GPU load check returned None and PC is unreachable.")
+                            gpu_ready = False
+                            break
+                        gpu_load = 0
+
+                    if gpu_load >= threshold:
+                        logger.warning(
+                            f"Sustained real GPU load is {gpu_load}% (>={threshold}%). User is gaming. Delaying for 1 hour (Attempt {attempt+1}/3)."
+                        )
+                        if self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
+                            try:
+                                await self.bot.send_message(
+                                    chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
+                                    text=(
+                                        f"⚠️ *Видеокарта нагружена на {gpu_load}%* (порог: {threshold}%).\n"
+                                        f"Вероятно, запущена игра или 3D-приложение.\n"
+                                        f"Откладываю суммаризацию на 1 час (попытка {attempt+1}/3)..."
+                                    ),
+                                    parse_mode="Markdown"
+                                )
+                            except Exception:
+                                pass
+                        if attempt < 2:
+                            await asyncio.sleep(3600)
+                    else:
                         gpu_ready = True
-                        gpu_load = await check_gpu_load(samples=1) or 0
+                        break
 
-                if not gpu_ready:
-                    for attempt in range(3):
-                        if attempt > 0:
-                            if not await self.is_pc_already_online():
-                                logger.info("PC went to sleep during 1-hour gaming delay. Waking it up via WoL...")
-                                send_wake_on_lan()
-                                await asyncio.sleep(45)
-                                gpu_online = await self.wait_for_gpu_node(timeout_seconds=120)
-                                if not gpu_online:
-                                    logger.warning("GPU worker did not come back online after 1h delay.")
-                                    break
-                                # Since PC went to sleep, user stopped gaming!
-                                logger.info("PC was asleep after gaming delay — user is no longer gaming. Proceeding with summarization.")
-                                gpu_ready = True
-                                gpu_load = await check_gpu_load(samples=1) or 0
-                                break
-
-                        # Check if user is actually active on the PC before assuming they are gaming
-                        user_present = await is_windows_user_active(max_idle_minutes=15)
-                        if not user_present:
-                            logger.info("No active user input on PC (idle >= 15m). Proceeding with GPU summarization.")
-                            gpu_ready = True
-                            gpu_load = await check_gpu_load(samples=1) or 0
-                            break
-
-                        gpu_load = await check_gpu_load()
-                        if gpu_load is None:
-                            if not await self.is_pc_already_online():
-                                logger.warning("GPU load check returned None and PC is unreachable.")
-                                gpu_ready = False
-                                break
-                            gpu_load = 0
-
-                        if gpu_load >= threshold:
-                            logger.warning(
-                                f"Sustained real GPU load is {gpu_load}% (>={threshold}%) and user is active. Delaying for 1 hour (Attempt {attempt+1}/3)."
-                            )
-                            if self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
-                                try:
-                                    await self.bot.send_message(
-                                        chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
-                                        text=(
-                                            f"⚠️ *Видеокарта нагружена на {gpu_load}%* (порог: {threshold}%).\n"
-                                            f"Вероятно, запущена игра или 3D-приложение.\n"
-                                            f"Откладываю суммаризацию на 1 час (попытка {attempt+1}/3)..."
-                                        ),
-                                        parse_mode="Markdown"
-                                    )
-                                except Exception:
-                                    pass
-                            if attempt < 2:
-                                await asyncio.sleep(3600)
-                        else:
-                            gpu_ready = True
-                            break
-
-                if gpu_ready:
+                if gpu_ready and gpu_load < threshold:
                     if self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
                         try:
                             await self.bot.send_message(
                                 chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
                                 text=(
-                                    f"🟢 *GPU-нода подключена и свободна!* (нагрузка {gpu_load if gpu_load is not None else 0}% < {threshold}%).\n"
+                                    f"🟢 *GPU-нода подключена и свободна!* (нагрузка {gpu_load}% < {threshold}%).\n"
                                     f"Начинаю суммаризацию на RTX 3060..."
                                 ),
                                 parse_mode="Markdown"

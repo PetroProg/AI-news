@@ -112,9 +112,11 @@ async def is_windows_user_active(
                 line_lower = line.lower()
                 # Check for active console or RDP session
                 if any(kw in line_lower for kw in ["console", "активно", "active"]):
-                    # 'отсутствует' (RU), 'none' (EN), or standalone '.' means 0 idle time (active right now)
-                    # 'none' or 'отсутствует' does not mean active user
-                    pass
+                    parts = line.split()
+                    # In quser, 'none', '.', 'нет', or 'отсутствует' means IDLE TIME is 0 (user is active right now)
+                    if any(p.lower() in ("none", ".", "нет", "отсутствует", "0") for p in parts):
+                        logger.info("Windows user activity detected on %s: active right now (idle 0m).", ssh_host)
+                        return True
 
                     # Match HH:MM idle format (e.g. '0:04' or '1:15')
                     m_time = re.search(r'\b(\d+):(\d+)\b', line)
