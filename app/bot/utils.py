@@ -201,13 +201,16 @@ async def check_gpu_load(
     user: str | None = None,
     key_path: str | None = None,
     samples: int = 3,
-    interval_sec: float = 3.5,
+    interval_sec: float = 3.0,
 ) -> int | None:
-    """Checks the sustained GPU utilization on the Windows PC via SSH.
+    """Checks the real 3D/compute GPU utilization on the Windows PC via SSH.
 
-    Takes an initial reading; if it is >= threshold, takes additional readings
-    spaced by `interval_sec` and returns the minimum (sustained) load so momentary
-    boot/CUDA initialization spikes do not falsely trigger gaming detection.
+    Queries `utilization.gpu,pstate,clocks.current.graphics,power.draw`.
+    Note: In idle desktop states (P8/P5 at 210-405 MHz), `nvidia-smi` reports
+    20-40% utilization relative to the 210 MHz clock (which is only ~2-4% of
+    the GPU's actual 1800+ MHz P0 capacity). We normalize utilization by clock
+    when in low-power P-states so desktop apps (DWM, Steam helper, browsers)
+    never falsely trigger gaming detection.
     """
     import asyncio
     import logging
@@ -228,25 +231,45 @@ async def check_gpu_load(
             connect_timeout=6.0,
         ) as conn:
             readings: list[int] = []
+            raw_details: list[str] = []
             for i in range(max(1, samples)):
                 res = await conn.run(
-                    "nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits",
+                    'nvidia-smi "--query-gpu=utilization.gpu,pstate,clocks.current.graphics,power.draw" "--format=csv,noheader,nounits"',
                     term_type="vt100",
                 )
                 output = res.stdout or ""
                 cleaned = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]|\x1b\].*?\x07', '', output).strip()
-                m = re.search(r'\d+', cleaned)
-                if not m:
-                    return None
-                val = int(m.group(0))
-                readings.append(val)
+                lines = [ln.strip() for ln in cleaned.splitlines() if ln.strip() and "," in ln]
+                if not lines:
+                    m = re.search(r'\d+', cleaned)
+                    if not m:
+                        return None
+                    val = int(m.group(0))
+                    readings.append(val)
+                else:
+                    parts = [p.strip() for p in lines[-1].split(",")]
+                    raw_util = int(re.search(r'\d+', parts[0]).group(0)) if len(parts) > 0 and re.search(r'\d+', parts[0]) else 0
+                    pstate = parts[1].upper() if len(parts) > 1 else "P0"
+                    clock_mhz = int(re.search(r'\d+', parts[2]).group(0)) if len(parts) > 2 and re.search(r'\d+', parts[2]) else 1800
+                    power_str = parts[3] if len(parts) > 3 else "0"
+
+                    # If in low-power idle states (P8/P5/P4/P3 or clock < 800 MHz), normalize against 1800 MHz P0 clock
+                    if pstate not in ("P0", "P1", "P2") or clock_mhz < 800:
+                        val = int(round(raw_util * min(1.0, clock_mhz / 1800.0)))
+                    else:
+                        val = raw_util
+
+                    raw_details.append(f"{raw_util}%@{pstate}/{clock_mhz}MHz/{power_str}W->{val}%")
+                    readings.append(val)
+
                 if val < threshold:
+                    logger.info("GPU check on %s: %s (below %d%% threshold)", ssh_host, raw_details[-1] if raw_details else val, threshold)
                     return val
                 if i < samples - 1:
                     await asyncio.sleep(interval_sec)
 
             sustained = min(readings)
-            logger.info("GPU load samples on %s: %s -> sustained: %d%%", ssh_host, readings, sustained)
+            logger.info("GPU load samples on %s: %s -> sustained real load: %d%%", ssh_host, ", ".join(raw_details), sustained)
             return sustained
     except Exception as exc:
         logger.warning("Could not check GPU load on %s via SSH: %s", ssh_host, exc)
