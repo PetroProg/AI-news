@@ -77,15 +77,17 @@ async def is_windows_user_active(
     host: str | None = None,
     user: str | None = None,
     key_path: str | None = None,
-    max_idle_minutes: int = 10,
+    max_idle_minutes: int = 5,
 ) -> bool:
     """Checks via SSH whether an interactive console user is actively using the Windows PC.
 
-    Returns True if an active user session is found with idle time < max_idle_minutes.
-    Returns False if the PC is idle, locked, or no interactive session is active.
+    Uses the scheduled task `CheckUserIdle` (running interactively in Session 1)
+    to query the Win32 `GetLastInputInfo` API. This accurately detects true physical
+    mouse and keyboard idle time.
+    Note: `quser` on Windows 10/11 client always reports IDLE TIME as 'none' on
+    local console sessions, so `quser` must NOT be used to infer active user presence.
     """
     import logging
-    import re
     import asyncssh
 
     logger = logging.getLogger("news_ai.bot.utils")
@@ -100,41 +102,32 @@ async def is_windows_user_active(
             client_keys=[ssh_key],
             known_hosts=None,
             connect_timeout=6.0,
+            encoding=None,
         ) as conn:
-            res = await conn.run("cmd.exe /c quser", term_type="vt100")
-            output = res.stdout or ""
+            # Trigger interactive task to query GetLastInputInfo in Session 1
+            cmd = r'cmd.exe /c "chcp 65001 >nul && schtasks /run /tn CheckUserIdle && ping 127.0.0.1 -n 2 >nul && type C:\Users\Admin\Desktop\project-news\idle.txt"'
+            res = await conn.run(cmd, timeout=8.0)
+            raw_bytes = res.stdout if isinstance(res.stdout, bytes) else (res.stdout or "").encode()
+            output = raw_bytes.decode("utf-8", errors="ignore")
 
-            # Strip ANSI escape sequences from terminal output
-            cleaned = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]|\x1b\].*?\x07', '', output)
-            lines = [l.strip() for l in cleaned.splitlines() if l.strip()]
+            idle_mins = None
+            for line in reversed(output.splitlines()):
+                line = line.strip()
+                try:
+                    idle_mins = float(line)
+                    break
+                except ValueError:
+                    continue
 
-            for line in lines[1:]:  # skip header row
-                line_lower = line.lower()
-                # Check for active console or RDP session
-                if any(kw in line_lower for kw in ["console", "активно", "active"]):
-                    parts = line.split()
-                    # In quser, 'none', '.', 'нет', or 'отсутствует' means IDLE TIME is 0 (user is active right now)
-                    if any(p.lower() in ("none", ".", "нет", "отсутствует", "0") for p in parts):
-                        logger.info("Windows user activity detected on %s: active right now (idle 0m).", ssh_host)
-                        return True
+            if idle_mins is not None:
+                if idle_mins < max_idle_minutes:
+                    logger.info("Windows user activity detected on %s: idle for %.1f min (< threshold %d min).", ssh_host, idle_mins, max_idle_minutes)
+                    return True
+                else:
+                    logger.info("No active user interaction on %s: idle for %.1f min (>= threshold %d min).", ssh_host, idle_mins, max_idle_minutes)
+                    return False
 
-                    # Match HH:MM idle format (e.g. '0:04' or '1:15')
-                    m_time = re.search(r'\b(\d+):(\d+)\b', line)
-                    if m_time:
-                        idle_mins = int(m_time.group(1)) * 60 + int(m_time.group(2))
-                        if idle_mins < max_idle_minutes:
-                            logger.info("Windows user activity detected: idle for %d min (< threshold %d min).", idle_mins, max_idle_minutes)
-                            return True
-
-                    # Match standalone minutes before date (e.g. '  4  19.09.2026')
-                    m_mins = re.search(r'\s+(\d+)\s+\d{2}\.\d{2}\.', line)
-                    if m_mins:
-                        idle_mins = int(m_mins.group(1))
-                        if idle_mins < max_idle_minutes:
-                            logger.info("Windows user activity detected: idle for %d min (< threshold %d min).", idle_mins, max_idle_minutes)
-                            return True
-
-            logger.info("No active user interaction found on %s (idle exceeds %d min).", ssh_host, max_idle_minutes)
+            logger.warning("Could not parse idle minutes from CheckUserIdle on %s. Raw output: %r", ssh_host, output)
             return False
     except Exception as exc:
         logger.warning("Could not check user activity on %s via SSH: %s", ssh_host, exc)

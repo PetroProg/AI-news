@@ -376,7 +376,8 @@ class PipelineOrchestrator:
                 else:
                     from app.bot.utils import is_windows_user_active
                     logger.info("Putting AI GPU worker back to sleep (checking user activity first)...")
-                    user_active = await is_windows_user_active(max_idle_minutes=10)
+                    # Check if user has actively touched mouse/keyboard within the last 5 minutes
+                    user_active = await is_windows_user_active(max_idle_minutes=5)
                     if user_active:
                         logger.info("PC sleep was cancelled due to detected user activity.")
                         if self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
