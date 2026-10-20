@@ -112,7 +112,7 @@ async def is_windows_user_active(
 
             idle_mins = None
             for line in reversed(output.splitlines()):
-                line = line.strip()
+                line = line.strip().replace(",", ".")
                 try:
                     idle_mins = float(line)
                     break
