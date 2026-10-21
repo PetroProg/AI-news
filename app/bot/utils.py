@@ -73,20 +73,25 @@ def split_message(text: str, max_length: int = 4000) -> List[str]:
     return chunks
 
 
-async def is_windows_user_active(
+async def get_windows_idle_info(
     host: str | None = None,
     user: str | None = None,
     key_path: str | None = None,
-    max_idle_minutes: int = 5,
-) -> bool:
-    """Checks via SSH whether an interactive console user is actively using the Windows PC.
+) -> dict | None:
+    """Queries the Windows PC via SSH to get detailed user input and uptime stats.
 
     Uses the scheduled task `CheckUserIdle` (running interactively in Session 1)
-    to query the Win32 `GetLastInputInfo` API. This accurately detects true physical
-    mouse and keyboard idle time.
-    Note: `quser` on Windows 10/11 client always reports IDLE TIME as 'none' on
-    local console sessions, so `quser` must NOT be used to infer active user presence.
+    to query the Win32 `GetLastInputInfo` API.
+    Returns a dict with:
+      - idle_sec (float)
+      - idle_min (float)
+      - uptime_sec (float)
+      - uptime_min (float)
+      - dw_time (int)
+      - tick_count (int)
+    or None if query failed.
     """
+    import json
     import logging
     import asyncssh
 
@@ -104,34 +109,116 @@ async def is_windows_user_active(
             connect_timeout=6.0,
             encoding=None,
         ) as conn:
-            # Trigger interactive task to query GetLastInputInfo in Session 1
             cmd = r'cmd.exe /c "chcp 65001 >nul && schtasks /run /tn CheckUserIdle && ping 127.0.0.1 -n 2 >nul && type C:\Users\Admin\Desktop\project-news\idle.txt"'
             res = await conn.run(cmd, timeout=8.0)
             raw_bytes = res.stdout if isinstance(res.stdout, bytes) else (res.stdout or "").encode()
             output = raw_bytes.decode("utf-8", errors="ignore")
 
-            idle_mins = None
             for line in reversed(output.splitlines()):
-                line = line.strip().replace(",", ".")
+                line = line.strip()
+                if line.startswith("{") and line.endswith("}"):
+                    try:
+                        return json.loads(line)
+                    except Exception:
+                        continue
+                # Fallback for plain float
                 try:
-                    idle_mins = float(line)
-                    break
+                    val = float(line.replace(",", "."))
+                    return {
+                        "idle_sec": val * 60.0,
+                        "idle_min": val,
+                        "uptime_sec": 999999.0,
+                        "uptime_min": 16666.0,
+                        "dw_time": 0,
+                        "tick_count": 0,
+                    }
                 except ValueError:
                     continue
 
-            if idle_mins is not None:
-                if idle_mins < max_idle_minutes:
-                    logger.info("Windows user activity detected on %s: idle for %.1f min (< threshold %d min).", ssh_host, idle_mins, max_idle_minutes)
-                    return True
-                else:
-                    logger.info("No active user interaction on %s: idle for %.1f min (>= threshold %d min).", ssh_host, idle_mins, max_idle_minutes)
-                    return False
-
-            logger.warning("Could not parse idle minutes from CheckUserIdle on %s. Raw output: %r", ssh_host, output)
-            return False
+            logger.warning("Could not parse idle stats from CheckUserIdle on %s. Raw output: %r", ssh_host, output)
+            return None
     except Exception as exc:
-        logger.warning("Could not check user activity on %s via SSH: %s", ssh_host, exc)
+        logger.warning("Could not query user idle stats on %s via SSH: %s", ssh_host, exc)
+        return None
+
+
+async def is_windows_user_active(
+    host: str | None = None,
+    user: str | None = None,
+    key_path: str | None = None,
+    max_idle_minutes: int = 5,
+    initial_dw_time: int | None = None,
+) -> bool:
+    """Checks via SSH whether an interactive console user is actively using the Windows PC.
+
+    Accounts for machine uptime and startup initialization:
+    1. If initial_dw_time was captured at wake-up and hasn't changed -> False (zero input events)
+    2. If PC is freshly booted (uptime < max_idle_minutes) and last input was during system boot (<= 90s) -> False
+    3. If PC has been running normally (uptime >= max_idle_minutes): user active if idle_min < max_idle_minutes
+    """
+    import logging
+    logger = logging.getLogger("news_ai.bot.utils")
+    ssh_host = host or settings.WINDOWS_SSH_HOST
+
+    info = await get_windows_idle_info(host=host, user=user, key_path=key_path)
+    if not info:
         return False
+
+    idle_sec = float(info.get("idle_sec", 0.0))
+    idle_min = float(info.get("idle_min", idle_sec / 60.0))
+    uptime_sec = float(info.get("uptime_sec", 999999.0))
+    uptime_min = float(info.get("uptime_min", uptime_sec / 60.0))
+    dw_time = int(info.get("dw_time", 0))
+
+    # 1. Delta check: If baseline dw_time was recorded when PC came online, and it has not changed,
+    # zero physical input events have occurred while pipeline was running.
+    if initial_dw_time is not None and dw_time != 0 and dw_time == initial_dw_time:
+        logger.info(
+            "Windows PC %s has zero new input events since wake-up (dw_time unchanged: %d). User is NOT active.",
+            ssh_host, dw_time
+        )
+        return False
+
+    # 2. Fresh boot / wake check:
+    # If the PC has only been awake for less than max_idle_minutes, idle_min cannot possibly reach max_idle_minutes.
+    # Check if the last input occurred during system boot/logon (first 90s of uptime).
+    if uptime_min < max_idle_minutes:
+        last_input_uptime_sec = uptime_sec - idle_sec
+        if last_input_uptime_sec <= 90.0:
+            logger.info(
+                "Windows PC %s freshly booted (uptime %.1fm); last input was system startup at %.1fs. User is NOT active.",
+                ssh_host, uptime_min, last_input_uptime_sec
+            )
+            return False
+        else:
+            # Input occurred AFTER startup sequence. Check if it was recent (< 3 min)
+            if idle_sec < 180.0:
+                logger.info(
+                    "Windows user activity detected on %s: active input after boot (idle %.1fs < 180s).",
+                    ssh_host, idle_sec
+                )
+                return True
+            else:
+                logger.info(
+                    "Windows PC on %s idle since last activity (idle %.1fs >= 180s).",
+                    ssh_host, idle_sec
+                )
+                return False
+
+    # 3. Standard check for PC that has been online for a while (uptime >= max_idle_minutes)
+    if idle_sec < 60.0:
+        logger.info("Windows user actively at PC on %s: input detected %.1fs ago.", ssh_host, idle_sec)
+        return True
+
+    if idle_min < max_idle_minutes:
+        logger.info(
+            "Windows user activity detected on %s: idle for %.1f min (< threshold %d min).",
+            ssh_host, idle_min, max_idle_minutes
+        )
+        return True
+
+    logger.info("No active user interaction on %s: idle for %.1f min (>= threshold %d min).", ssh_host, idle_min, max_idle_minutes)
+    return False
 
 
 async def send_remote_sleep(

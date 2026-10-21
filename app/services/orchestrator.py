@@ -202,6 +202,19 @@ class PipelineOrchestrator:
             logger.info("Verifying AI GPU worker reachability (timeout: %ds)...", gpu_timeout)
             gpu_online = await self.wait_for_gpu_node(timeout_seconds=gpu_timeout)
 
+            initial_idle_info = None
+            if gpu_online and not was_already_online:
+                try:
+                    from app.bot.utils import get_windows_idle_info
+                    initial_idle_info = await get_windows_idle_info()
+                    if initial_idle_info:
+                        logger.info(
+                            "Captured initial PC input timestamp on wake-up: dw_time=%s",
+                            initial_idle_info.get("dw_time")
+                        )
+                except Exception as exc:
+                    logger.warning("Could not capture initial idle info: %s", exc)
+
             if gpu_online:
                 from app.bot.utils import check_gpu_load
                 import asyncio
@@ -376,8 +389,8 @@ class PipelineOrchestrator:
                 else:
                     from app.bot.utils import is_windows_user_active
                     logger.info("Putting AI GPU worker back to sleep (checking user activity first)...")
-                    # Check if user has actively touched mouse/keyboard within the last 5 minutes
-                    user_active = await is_windows_user_active(max_idle_minutes=5)
+                    init_dw = initial_idle_info.get("dw_time") if (not was_already_online and 'initial_idle_info' in locals() and initial_idle_info) else None
+                    user_active = await is_windows_user_active(max_idle_minutes=5, initial_dw_time=init_dw)
                     if user_active:
                         logger.info("PC sleep was cancelled due to detected user activity.")
                         if self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
