@@ -539,8 +539,8 @@
       try { renderNews(); } catch (e) { console.error('Error rendering news:', e); }
       try { renderDevices(); } catch (e) { console.error('Error rendering devices:', e); }
       try { if (typeof updateVpnUI === 'function') updateVpnUI(); } catch (e) { console.error('Error updating VPN UI:', e); }
-      try { renderDnsLog(); } catch (e) { console.error('Error rendering DNS log:', e); }
-      try { updateNetworkAnalytics(); } catch (e) { console.error('Error updating network analytics:', e); }
+      try { if (typeof renderDnsLog === 'function') renderDnsLog(); } catch (e) { console.error('Error rendering DNS log:', e); }
+      try { if (typeof updateNetworkAnalytics === 'function') updateNetworkAnalytics(); } catch (e) { console.error('Error updating network analytics:', e); }
     }
 
     // Tab Switching
@@ -3072,8 +3072,8 @@
       const score = item.importance_score ? Number(item.importance_score) : 0;
 
       // Strict user constraint: Football news must have score >= 8.0; other categories >= 5.1
-      const isFootballCategory = itemCat.includes('футбол') || itemCat.includes('football');
-      if (isFootballCategory) {
+      const isFootballItem = itemCat.includes('футбол') || itemCat.includes('football');
+      if (isFootballItem) {
         if (score < 8.0) {
           return false;
         }
