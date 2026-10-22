@@ -1169,7 +1169,11 @@ async def get_news_feed(
             continue
 
         # Strict rule: for football, score must be at least 8.0; for other categories >= 5.1
-        if cat_name == "Футбол":
+        if cat_name == "Футбол" or is_football:
+            # Strict guard: completely exclude women's football
+            article_text_check = (art.title + " " + (art.cleaned_content or "") + " " + (art.raw_content or "")).lower()
+            if any(w in article_text_check for w in ["женск", "женщин", "womens", "women's", "female", "wsl", "lionesses", "жфк"]):
+                continue
             if score < 8.0:
                 continue
         elif score < 5.1:

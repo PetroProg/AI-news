@@ -341,7 +341,15 @@ class SummarizerService:
 
             has_swiss_priority = (chosen_category == "Swiss") and any(kw in text_for_check for kw in SWISS_PRIORITY_KEYWORDS)
 
-            is_top_football = (chosen_category == "Футбол") and any(kw in text_for_check for kw in [
+            WOMEN_FOOTBALL_KEYWORDS = [
+                "женск", "женщин", "womens", "women's", "female", "wsl", "lionesses", "жфк"
+            ]
+            is_women_football = any(w in text_for_check for w in WOMEN_FOOTBALL_KEYWORDS)
+            if is_women_football and (chosen_category == "Футбол" or is_football):
+                score = 1.0
+                logger.info("Article ID %d detected as women's football. Forced score to 1.0", article.id)
+
+            is_top_football = (chosen_category == "Футбол") and not is_women_football and any(kw in text_for_check for kw in [
                 "лига чемпионов", "champions league", "класико", "clasico", "эль-класико",
                 "барселон", "barcelona", "месси", "messi", "ямаль", "yamal", "here we go",
                 "золотой мяч", "ballon d'or", "трансфер", "transfer", "реал мадрид", "real madrid",

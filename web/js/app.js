@@ -654,10 +654,14 @@
         'https://images.unsplash.com/photo-1526470608268-f674ce90ebd4?auto=format&fit=crop&w=800&q=80'
       ],
       football: [
-        'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=1200&q=85',
         'https://images.unsplash.com/photo-1522778119026-d647f0596c20?auto=format&fit=crop&w=1200&q=85',
         'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=85',
-        'https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?auto=format&fit=crop&w=1200&q=85'
+        'https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?auto=format&fit=crop&w=1200&q=85',
+        'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1200&q=85',
+        'https://images.unsplash.com/photo-1556056504-5c7696c4c28d?auto=format&fit=crop&w=1200&q=85',
+        'https://images.unsplash.com/photo-1517466787929-bc90951d0974?auto=format&fit=crop&w=1200&q=85',
+        'https://images.unsplash.com/photo-1518091043644-c1d4457512c6?auto=format&fit=crop&w=1200&q=85',
+        'https://images.unsplash.com/photo-1508087625439-de3978963553?auto=format&fit=crop&w=1200&q=85'
       ],
       f1: [
         'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=1200&q=85',
@@ -890,9 +894,51 @@
       return '⚡';
     }
 
+    window.getCategoryFallbackImage = getCategoryFallbackImage;
+    function getCategoryFallbackImage(category, index = 0) {
+      const c = (category || '').toLowerCase();
+      if (c === 'футбол' || c.includes('football')) {
+        const pool = THEMATIC_IMAGES.football;
+        return pool[Math.abs(index) % pool.length];
+      }
+      if (c === 'f1' || c.includes('формул') || c.includes('formula')) {
+        const pool = THEMATIC_IMAGES.f1;
+        return pool[Math.abs(index) % pool.length];
+      }
+      if (c === 'swiss' || c.includes('швейцар')) {
+        const pool = THEMATIC_IMAGES.swiss;
+        return pool[Math.abs(index) % pool.length];
+      }
+      if (c === 'cs2' || c.includes('игры') || c.includes('киберспорт')) {
+        const pool = THEMATIC_IMAGES.csgo;
+        return pool[Math.abs(index) % pool.length];
+      }
+      if (c.includes('украин') || c.includes('ukraine')) {
+        const pool = THEMATIC_IMAGES.ukraine;
+        return pool[Math.abs(index) % pool.length];
+      }
+      if (c.includes('linux') || c.includes('devops')) {
+        const pool = THEMATIC_IMAGES.linux;
+        return pool[Math.abs(index) % pool.length];
+      }
+      if (c.includes('ai') || c.includes('нейро')) {
+        const pool = THEMATIC_IMAGES.ai;
+        return pool[Math.abs(index) % pool.length];
+      }
+      if (c.includes('it') || c.includes('разработ')) {
+        const pool = THEMATIC_IMAGES.dev;
+        return pool[Math.abs(index) % pool.length];
+      }
+      return THEMATIC_IMAGES.tech[0];
+    }
+
     function upgradeImageUrl(url) {
       if (!url) return '';
       let cleanUrl = String(url).replace(/&amp;/g, '&');
+      // Do not alter signed Guardian CDN URLs to avoid invalidating HMAC signatures
+      if (cleanUrl.includes('guim.co.uk') && cleanUrl.includes('&s=')) {
+        return cleanUrl;
+      }
       // Upgrade Marca / Unidad Editorial thumbnails: 17910383221445_150x0.jpg -> 17910383221445.jpg
       cleanUrl = cleanUrl.replace(/_\d+x\d+\.(jpe?g|png|webp)/i, '.$1');
       // Upgrade generic size query params
@@ -3248,6 +3294,15 @@
 
       // 7. Football Filter: Priority keywords Месси, Барселона, Испания, Интер Майами
       const isFootballCategory = targetCatLower === 'футбол' || targetCatLower.includes('футбол') || targetCatLower.includes('football');
+      if (isFootballCategory || isFootballItem) {
+        // Strict guard: Completely exclude women's football
+        const isWomenFootball = [
+          'женск', 'женщин', 'womens', "women's", 'female', 'wsl', 'lionesses', 'жфк'
+        ].some(w => ((item.title || '') + ' ' + (item.summary || '') + ' ' + (item.why_it_matters || '') + ' ' + (item.source || '')).toLowerCase().includes(w));
+        if (isWomenFootball) {
+          return false;
+        }
+      }
       if (isFootballCategory) {
 
         // Strict guard: Exclude non-football sports (CS2, hockey, tennis, basketball, combat)
@@ -3833,6 +3888,7 @@
         const score = article.importance_score ? Number(article.importance_score).toFixed(1) : '5.0';
         const summary = cleanText((article.summaries && article.summaries[state.lang]) || article.summary || '');
         const whyItMatters = cleanText(article.why_it_matters || '');
+        const fallbackImg = getCategoryFallbackImage(category, index);
         const image = getArticleImage(article, index);
         const videoSrc = article.video_url || (article.raw_content && (article.raw_content.match(/<video[^>]+src=["']([^"']+)["']/) || [])[1]) || '';
         const hasVideo = Boolean(videoSrc);
@@ -3949,7 +4005,7 @@
           </div>
         ` : `
           <div class="relative w-full aspect-video overflow-hidden bg-slate-950 cursor-pointer group/img card-media-preview" title="Нажмите, чтобы приблизить фото">
-            <img src="${image}" alt="${title}" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80'" class="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-500 opacity-90 group-hover/img:opacity-100 cursor-pointer">
+            <img src="${image}" alt="${title}" onerror="this.onerror=null;this.src='${fallbackImg}'" class="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-500 opacity-90 group-hover/img:opacity-100 cursor-pointer">
             <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent pointer-events-none"></div>
             
             <!-- Hover Zoom Pill Button -->
