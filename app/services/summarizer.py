@@ -35,7 +35,7 @@ CS_FINAL_KEYWORDS = [
     "гранд-финал", "гранд финал", "grand final", "tournament winner", "crowned champions"
 ]
 GAMING_INDICATORS = [
-    "csgo", "cs3", "clashroyalepin", "hltv", "game", "игры", "киберспорт",
+    "csgo", "cs3", "clashroyalepin", "hltv", "игры", "киберспорт",
     "cs2", "cs:go", "starladder", "vitality", "navi", "s1mple", "m0nesy",
     "donk", "zywoo", "clash royale", "bcgame", "fut", "blast", "esl"
 ]
@@ -152,6 +152,8 @@ class SummarizerService:
                 return 100
             if any(fk in t for fk in ["чемпион", "победитель", "гранд-финал", "выиграл турнир"]):
                 return 80
+            if any(fb in t for fb in ["барселона", "barcelona", "барса", "месси", "messi", "класико", "clasico", "лига чемпионов", "champions league", "ла лига", "laliga", "here we go"]):
+                return 85
             if any(sk in t for sk in SWISS_PRIORITY_KEYWORDS):
                 return 75
             if any(pk in t for pk in ["s1mple", "simple", "navi", "дніпро", "днепр", "нато", "оон"]):
@@ -190,8 +192,21 @@ class SummarizerService:
             # Deterministic Category Assignment
             title_lower = (article.title or "").lower()
             content_lower = (article.cleaned_content or article.raw_content or "").lower()
-            is_gaming = any(k in combined_source for k in ["csgo", "cs3", "clashroyalepin", "hltv", "game", "киберспорт"]) or \
-                        any(k in title_lower for k in GAMING_INDICATORS)
+
+            # Football Source & Keyword detection
+            is_football_source = any(k in combined_source for k in [
+                "skysports_football", "bbc_football", "guardian_football",
+                "newsbarca", "champ_football", "transferyi", "football", "sportsru_football"
+            ]) and not any(k in combined_source for k in ["f1", "formula1", "motorsport"])
+
+            is_football = is_football_source or (
+                analysis.category and any(k in analysis.category.lower() for k in ["футбол", "football"])
+            )
+
+            is_gaming = not is_football and (
+                any(k in combined_source for k in ["csgo", "cs3", "clashroyalepin", "hltv", "киберспорт"]) or
+                any(k in title_lower for k in GAMING_INDICATORS)
+            )
 
             ukr_core_indicators = [
                 "украин", "україна", "киев", "київ", "днепр", "дніпро", "всу", "зеленск",
@@ -245,8 +260,16 @@ class SummarizerService:
             is_swiss = any(acc in combined_source for acc in ["rtsinfo", "rtsarchives", "blick_media", "20minutesonline", "instagram"]) or \
                        (analysis.category and "swiss" in analysis.category.lower())
 
+            if is_football:
+                is_gaming = False
+                is_world = False
+                is_tech = False
+                is_ukraine = False
+
             if is_swiss:
                 chosen_category = "Swiss"
+            elif is_football:
+                chosen_category = "Футбол"
             elif is_gaming or (analysis.category and analysis.category.lower() in ["игры & киберспорт", "игры и киберспорт", "gaming", "cs2"]):
                 chosen_category = "CS2"
             elif (analysis.category and any(k in analysis.category.lower() for k in ["ai", "нейро", "интеллект", "llm", "машинн", "ml"])) or ("huggingface" in combined_source):
@@ -318,6 +341,14 @@ class SummarizerService:
 
             has_swiss_priority = (chosen_category == "Swiss") and any(kw in text_for_check for kw in SWISS_PRIORITY_KEYWORDS)
 
+            is_top_football = (chosen_category == "Футбол") and any(kw in text_for_check for kw in [
+                "лига чемпионов", "champions league", "класико", "clasico", "эль-класико",
+                "барселон", "barcelona", "месси", "messi", "ямаль", "yamal", "here we go",
+                "золотой мяч", "ballon d'or", "трансфер", "transfer", "реал мадрид", "real madrid",
+                "манчестер", "manchester", "арсенал", "arsenal", "бавария", "bayern", "псж", "psg",
+                "гвардиола", "guardiola", "флик", "flick", "ла лига", "laliga", "апл", "premier league"
+            ])
+
             if is_cs_update and not is_meme_or_ad:
                 score = 9.5
                 logger.info("Article ID %d matched CS2 game update/patch! Set top score to %.1f", article.id, score)
@@ -327,6 +358,9 @@ class SummarizerService:
             elif has_swiss_priority and not is_meme_or_ad:
                 score = max(score, 8.5)
                 logger.info("Article ID %d matched Swiss priority keywords! Set score to %.1f", article.id, score)
+            elif is_top_football and score >= 6.0 and not is_meme_or_ad and not is_digest:
+                score = min(10.0, max(score, 8.0))
+                logger.info("Article ID %d matched top football priority! Boosted score to %.1f", article.id, score)
             elif has_priority and not is_meme_or_ad and not is_digest and score >= 5.5:
                 score = min(10.0, max(score, 8.5))
                 logger.info("Article ID %d matched priority keywords! Boosted score to %.1f", article.id, score)

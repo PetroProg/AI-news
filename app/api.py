@@ -1017,7 +1017,11 @@ async def get_news_feed(
             "бокс", "ufc", "мма", "mma", "нокаут", "нфл", "корги"
         ])
         is_football = not is_gaming and not is_other_sports and (
-            any(k in source_combined for k in ["sportsru", "sports.ru", "championat", "matchpremier", "sport-express", "fabrizio", "terrikon", "uefa", "футбол", "football"]) or
+            any(k in source_combined for k in [
+                "sportsru", "sports.ru", "championat", "matchpremier", "sport-express", "fabrizio",
+                "terrikon", "uefa", "футбол", "football",
+                "newsbarca", "barca", "transferyi", "champ_football", "skysports", "bbc", "guardian"
+            ]) or
             (raw_cat and ("футбол" in raw_cat.lower() or "football" in raw_cat.lower())) or
             any(k in title_lower for k in FOOTBALL_INDICATORS)
         )
@@ -1164,17 +1168,16 @@ async def get_news_feed(
         if is_operational_alert:
             continue
 
-        # Strict rule: user is not interested in news below 5.1
-        if score < 5.1:
+        # Strict rule: for football, score must be at least 8.0; for other categories >= 5.1
+        if cat_name == "Футбол":
+            if score < 8.0:
+                continue
+        elif score < 5.1:
             continue
 
         # Safeguard: Never display untranslated Ukrainian titles in the feed
         has_ukr_letters = any(c in "ієїґІЄЇҐ" for c in (art.title or ""))
         if has_ukr_letters and (cat_name == "Украина" or "novynaukr" in source_combined):
-            continue
-
-        # Safeguard: Never display raw Spanish articles in Russian feed
-        if art.language == "es" or any(s in source_combined for s in ["marca", "as:"]):
             continue
 
         # Require a valid AI summary or substantive content fallback
@@ -1232,22 +1235,20 @@ async def get_news_feed(
 
         is_dup = False
 
-        # 1. Check image hash with earlier items (cross-source duplicate)
+        # 1. Check image hash with earlier items (cross-source or same-source duplicate)
         if item_img_hash:
             for prev_src, prev_hash, _ in seen_media_hashes:
-                if prev_src != item["source"]:
-                    if ContentDeduplicator.hamming_distance(item_img_hash, prev_hash) <= 6:
-                        is_dup = True
-                        break
+                if ContentDeduplicator.hamming_distance(item_img_hash, prev_hash) <= 6:
+                    is_dup = True
+                    break
 
-        # 2. Check title similarity with earlier items
+        # 2. Check title similarity with earlier items (cross-source or same-source duplicate)
         if not is_dup and stems:
             for prev_src, prev_stems in seen_title_stems:
-                if prev_src != item["source"]:
-                    jaccard, overlap, _ = ContentDeduplicator.calculate_similarity(stems, prev_stems)
-                    if jaccard >= 0.45 or overlap >= 0.70:
-                        is_dup = True
-                        break
+                jaccard, overlap, _ = ContentDeduplicator.calculate_similarity(stems, prev_stems)
+                if jaccard >= 0.40 or overlap >= 0.65:
+                    is_dup = True
+                    break
 
         if not is_dup:
             deduped_items.append(item)

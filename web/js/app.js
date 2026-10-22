@@ -3071,8 +3071,13 @@
 
       const score = item.importance_score ? Number(item.importance_score) : 0;
 
-      // Strict user constraint: News below 5.1 are not interesting
-      if (score < 5.1) {
+      // Strict user constraint: Football news must have score >= 8.0; other categories >= 5.1
+      const isFootballCategory = itemCat.includes('футбол') || itemCat.includes('football');
+      if (isFootballCategory) {
+        if (score < 8.0) {
+          return false;
+        }
+      } else if (score < 5.1) {
         return false;
       }
 
@@ -3244,18 +3249,6 @@
       // 7. Football Filter: Priority keywords Месси, Барселона, Испания, Интер Майами
       const isFootballCategory = targetCatLower === 'футбол' || targetCatLower.includes('футбол') || targetCatLower.includes('football');
       if (isFootballCategory) {
-        // Strict guard: Never display raw Spanish articles in Russian football interface
-        const curLang = state.lang || 'ru';
-        if (curLang === 'ru') {
-          const titleStr = item.title || '';
-          const sumStr = (item.summaries && (item.summaries.ru || item.summaries[curLang])) || item.summary || item.short_summary || '';
-          const hasCyrillic = /[а-яёА-ЯЁ]/.test(titleStr);
-          const hasSpanishKeywords = ['estará', 'baja', 'canteras', 'futbolistas', 'partido', 'lesión', 'fichaje', 'primer equipo', 'semana'].some(w => (titleStr + ' ' + sumStr).toLowerCase().includes(w));
-          const isSpanishSource = ((item.source || '') + ' ' + (item.url || '')).toLowerCase().includes('marca') || ((item.source || '') + ' ' + (item.url || '')).toLowerCase().includes('as.com');
-          if (hasSpanishKeywords || (!hasCyrillic && isSpanishSource)) {
-            return false;
-          }
-        }
 
         // Strict guard: Exclude non-football sports (CS2, hockey, tennis, basketball, combat)
         const isNonFootballItem = [
