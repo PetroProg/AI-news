@@ -935,10 +935,21 @@
     function upgradeImageUrl(url) {
       if (!url) return '';
       let cleanUrl = String(url).replace(/&amp;/g, '&');
-      // Do not alter signed Guardian CDN URLs to avoid invalidating HMAC signatures
-      if (cleanUrl.includes('guim.co.uk') && cleanUrl.includes('&s=')) {
+
+      // Upgrade Guardian images: extract direct high-res master photo
+      if (cleanUrl.includes('guim.co.uk')) {
+        const m = cleanUrl.match(/guim\.co\.uk\/(?:img\/)?media\/([^\?#]+)/);
+        if (m) {
+          return `https://media.guim.co.uk/${m[1]}`;
+        }
+      }
+
+      // Upgrade BBC thumbnails: /240/ -> /1024/
+      if (cleanUrl.includes('ichef.bbci.co.uk')) {
+        cleanUrl = cleanUrl.replace(/\/ace\/standard\/\d+\//, '/ace/standard/1024/');
         return cleanUrl;
       }
+
       // Upgrade Marca / Unidad Editorial thumbnails: 17910383221445_150x0.jpg -> 17910383221445.jpg
       cleanUrl = cleanUrl.replace(/_\d+x\d+\.(jpe?g|png|webp)/i, '.$1');
       // Upgrade generic size query params
@@ -3598,7 +3609,7 @@
     // Media (Image & Video) Zoom / Lightbox Modal Handlers
     let isImageScaledUp = false;
 
-    function openMediaZoom(type, src, title, poster) {
+    function openMediaZoom(type, src, title, poster, fallbackUrl) {
       const modal = document.getElementById('image-zoom-modal');
       const img = document.getElementById('zoom-modal-img');
       const vid = document.getElementById('zoom-modal-video');
@@ -3636,6 +3647,14 @@
           vid.classList.add('hidden');
         }
         if (img) {
+          img.onload = function() {
+            if (this.naturalWidth && (this.naturalWidth < 350 || this.naturalHeight < 250)) {
+              if (fallbackUrl) {
+                this.src = fallbackUrl;
+                if (origBtn) origBtn.href = fallbackUrl;
+              }
+            }
+          };
           img.src = src;
           img.alt = title || '';
           img.classList.remove('hidden');
@@ -3671,8 +3690,8 @@
       document.body.style.overflow = 'hidden';
     }
 
-    function openImageZoom(src, title) {
-      openMediaZoom('image', src, title);
+    function openImageZoom(src, title, fallbackUrl) {
+      openMediaZoom('image', src, title, null, fallbackUrl);
     }
 
     function openVideoZoom(src, title, poster) {
@@ -4005,7 +4024,7 @@
           </div>
         ` : `
           <div class="relative w-full aspect-video overflow-hidden bg-slate-950 cursor-pointer group/img card-media-preview" title="Нажмите, чтобы приблизить фото">
-            <img src="${image}" alt="${title}" onerror="this.onerror=null;this.src='${fallbackImg}'" class="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-500 opacity-90 group-hover/img:opacity-100 cursor-pointer">
+            <img src="${image}" alt="${title}" onload="if (this.naturalWidth && (this.naturalWidth < 350 || this.naturalHeight < 250)) { this.onerror = null; this.src = '${fallbackImg}'; }" onerror="this.onerror=null;this.src='${fallbackImg}'" class="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-500 opacity-90 group-hover/img:opacity-100 cursor-pointer">
             <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent pointer-events-none"></div>
             
             <!-- Hover Zoom Pill Button -->
@@ -4128,8 +4147,11 @@
             e.preventDefault();
             e.stopPropagation();
             const currentImg = mediaEl.querySelector('img');
-            const currentSrc = (currentImg && currentImg.src) ? currentImg.src : image;
-            openImageZoom(currentSrc, title);
+            let currentSrc = (currentImg && currentImg.src) ? currentImg.src : image;
+            if (currentImg && currentImg.naturalWidth && (currentImg.naturalWidth < 350 || currentImg.naturalHeight < 250)) {
+              currentSrc = fallbackImg;
+            }
+            openImageZoom(currentSrc, title, fallbackImg);
           });
         }
 

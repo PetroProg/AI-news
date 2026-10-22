@@ -35,12 +35,16 @@ def extract_article_media(raw_content: str) -> Tuple[List[str], Optional[str]]:
     candidates = []
     seen = set()
     for u in posters + html_imgs + md_imgs + direct_imgs:
-        clean_u = u.replace('\\"', '').replace('\\/', '/').strip()
+        clean_u = u.replace('\"', '').replace('\/', '/').strip()
+        if 'guim.co.uk' in clean_u:
+            clean_u = re.sub(r'https?://i\.guim\.co\.uk/img/media/([^?#"\']+)\?[^"\']*', r'https://media.guim.co.uk/\1', clean_u)
+        if 'ichef.bbci.co.uk' in clean_u:
+            clean_u = re.sub(r'/ace/standard/\d+/', '/ace/standard/1024/', clean_u)
         if clean_u in seen:
             continue
         seen.add(clean_u)
         lower_u = clean_u.lower()
-        if any(bad in lower_u for bad in ["pixel", "avatar", "gravatar", "1x1", "icon", "badge", "emoji", "tracker"]):
+        if any(bad in lower_u for bad in ['pixel', 'avatar', 'gravatar', '1x1', 'icon', 'badge', 'emoji', 'tracker', 'width=140', 'width=120', 'width=150']):
             continue
         candidates.append(clean_u)
 
