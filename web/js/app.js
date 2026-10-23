@@ -6203,6 +6203,200 @@
       };
     }
 
+    // ==========================================
+    // PWA (Progressive Web App) & Offline Support
+    // ==========================================
+    let deferredPwaPrompt = null;
+    const HTTPS_PWA_URL = 'https://petroprog.tail703e6c.ts.net:8444';
+
+    function isStandalonePwa() {
+      return (
+        window.matchMedia('(display-mode: standalone)').matches ||
+        window.matchMedia('(display-mode: window-controls-overlay)').matches ||
+        window.navigator.standalone === true
+      );
+    }
+
+    function updatePwaInstallButtonUI() {
+      const btn = document.getElementById('pwa-install-btn');
+      if (!btn) return;
+      if (isStandalonePwa()) {
+        btn.classList.add('hidden');
+        btn.style.display = 'none';
+      } else {
+        btn.classList.remove('hidden');
+        btn.style.display = 'flex';
+      }
+    }
+
+    function updateOnlineStatusBadge() {
+      const badge = document.getElementById('app-connection-badge');
+      if (!badge) return;
+      if (navigator.onLine) {
+        badge.textContent = 'Live';
+        badge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-sky-500/15 text-sky-300 border border-sky-500/30';
+      } else {
+        badge.textContent = 'Оффлайн • Кэш';
+        badge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40';
+      }
+    }
+
+    window.openPwaInstallModal = function () {
+      const modal = document.getElementById('pwa-install-modal');
+      const body = document.getElementById('pwa-modal-body');
+      const openHttpsBtn = document.getElementById('pwa-open-https-btn');
+      if (!modal || !body) return;
+
+      const isHttpInsecure = window.location.protocol === 'http:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+      if (isHttpInsecure) {
+        if (openHttpsBtn) openHttpsBtn.classList.remove('hidden');
+        body.innerHTML = `
+          <div class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 space-y-1.5">
+            <div class="font-bold text-amber-300 flex items-center gap-1.5">⚠️ Требуется защищенное HTTPS-соединение</div>
+            <p class="text-[11px] text-amber-100/90">
+              Сейчас сайт открыт по обычному <code>http://</code>. Браузеры разрешают скачивание и установку PWA-приложений только через защищенный протокол <b>HTTPS</b>.
+            </p>
+          </div>
+          <p class="text-xs text-slate-300">
+            Нажмите зеленую кнопку <b>«Открыть по HTTPS и скачать»</b> ниже — откроется защищенная версия с официальным сертификатом, где сразу будет доступна установка в 1 клик.
+          </p>
+        `;
+      } else if (isIOS) {
+        if (openHttpsBtn) openHttpsBtn.classList.add('hidden');
+        body.innerHTML = `
+          <div class="p-3.5 rounded-2xl bg-sky-500/10 border border-sky-500/30 space-y-2">
+            <div class="font-bold text-sky-300">Установка на iPhone / iPad (Safari):</div>
+            <ol class="list-decimal list-inside space-y-1.5 text-[11px] text-slate-200">
+              <li>Нажмите иконку <b>«Поделиться»</b> (квадрат со стрелкой вверх внизу экрана).</li>
+              <li>Прокрутите меню вниз и выберите <b>«На экран "Домой"»</b> (Add to Home Screen).</li>
+              <li>Нажмите <b>«Добавить»</b> в правом верхнем углу.</li>
+            </ol>
+          </div>
+        `;
+      } else {
+        if (openHttpsBtn) openHttpsBtn.classList.add('hidden');
+        body.innerHTML = `
+          <div class="p-3.5 rounded-2xl bg-sky-500/10 border border-sky-500/30 space-y-2">
+            <div class="font-bold text-sky-300">Как установить приложение AI News:</div>
+            <ul class="list-disc list-inside space-y-1.5 text-[11px] text-slate-200">
+              <li><b>На ПК (Chrome / Edge):</b> нажмите на иконку установки <span class="px-1.5 py-0.5 rounded bg-slate-800 text-sky-300 font-mono">⊕ / ⬇</span> справа в адресной строке браузера или в меню <b>«Приложения» → «Установить AI News»</b>.</li>
+              <li><b>На Android (Chrome):</b> откройте меню браузера <b>⋮</b> (три точки в углу) и выберите <b>«Установить приложение»</b> или <b>«Добавить на гл. экран»</b>.</li>
+            </ul>
+          </div>
+        `;
+      }
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      requestAnimationFrame(() => {
+        modal.classList.remove('opacity-0');
+        modal.classList.add('opacity-100');
+      });
+    };
+
+    window.closePwaInstallModal = function (event) {
+      if (event && event.target && event.target.id !== 'pwa-install-modal') return;
+      const modal = document.getElementById('pwa-install-modal');
+      if (!modal) return;
+      modal.classList.remove('opacity-100');
+      modal.classList.add('opacity-0');
+      setTimeout(() => {
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+      }, 220);
+    };
+
+    window.triggerPwaInstall = async function () {
+      if (deferredPwaPrompt) {
+        try {
+          deferredPwaPrompt.prompt();
+          const { outcome } = await deferredPwaPrompt.userChoice;
+          if (outcome === 'accepted') {
+            deferredPwaPrompt = null;
+            if (typeof showToast === 'function') {
+              showToast('Установка начата', 'Приложение AI News добавляется на устройство', 'success');
+            }
+          }
+          return;
+        } catch (err) {
+          console.warn('[PWA] Install prompt error:', err);
+        }
+      }
+      window.openPwaInstallModal();
+    };
+
+    function initPwaSupport() {
+      updatePwaInstallButtonUI();
+      updateOnlineStatusBadge();
+
+      window.addEventListener('online', () => {
+        updateOnlineStatusBadge();
+        if (typeof showToast === 'function') {
+          showToast('Сеть восстановлена', 'Обновляем свежие новости...', 'success');
+        }
+        try { loadLiveNews(); } catch (e) {}
+      });
+
+      window.addEventListener('offline', () => {
+        updateOnlineStatusBadge();
+        if (typeof showToast === 'function') {
+          showToast('Оффлайн-режим', 'Доступны ранее загруженные новости из кэша PWA', 'info');
+        }
+      });
+
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPwaPrompt = e;
+        updatePwaInstallButtonUI();
+        const btnText = document.getElementById('pwa-install-btn-text');
+        if (btnText) btnText.textContent = 'Скачать приложение';
+      });
+
+      window.addEventListener('appinstalled', () => {
+        deferredPwaPrompt = null;
+        const btn = document.getElementById('pwa-install-btn');
+        if (btn) {
+          btn.classList.add('hidden');
+          btn.style.display = 'none';
+        }
+        window.closePwaInstallModal();
+        if (typeof showToast === 'function') {
+          showToast('AI News установлен!', 'Приложение успешно установлено на ваше устройство', 'success');
+        }
+      });
+
+      if ('serviceWorker' in navigator && window.isSecureContext) {
+        navigator.serviceWorker
+          .register('/sw.js', { scope: '/' })
+          .then((reg) => {
+            console.log('[PWA] Service Worker registered with scope:', reg.scope);
+          })
+          .catch((err) => {
+            console.warn('[PWA] Service Worker registration failed:', err);
+          });
+      }
+
+      // Check URL query parameters for PWA shortcuts (?tab=...) or install redirect (?install=1)
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const requestedTab = params.get('tab');
+        if (requestedTab && ['news', 'devices', 'vpn'].includes(requestedTab)) {
+          setTimeout(() => switchTab(requestedTab), 50);
+        }
+        if (params.get('install') === '1' && !isStandalonePwa()) {
+          setTimeout(() => {
+            if (deferredPwaPrompt) {
+              if (typeof showToast === 'function') {
+                showToast('Готово к установке', 'Нажмите «Скачать приложение» в верхнем правом углу', 'info');
+              }
+            }
+          }, 1200);
+        }
+      } catch (e) {}
+    }
+
     // Initialize Default View
     try { setLanguage('ru'); } catch (e) { console.error('Error during setLanguage:', e); }
     try { switchTab('news'); } catch (e) { console.error('Error during switchTab:', e); }
@@ -6210,6 +6404,7 @@
     try { updateDeleteCategoryBtn(); } catch (e) { console.error('Error during updateDeleteCategoryBtn:', e); }
     try { initCategoryPillsScroll(); } catch (e) { console.error('Error during initCategoryPillsScroll:', e); }
     try { initCategoryNewsSearch(); } catch (e) { console.error('Error during initCategoryNewsSearch:', e); }
+    try { initPwaSupport(); } catch (e) { console.error('Error during initPwaSupport:', e); }
     try { loadLiveNews(); } catch (e) { console.error('Error during loadLiveNews:', e); }
     try { loadManagedDevices(); } catch (e) { console.error('Error during loadManagedDevices:', e); }
     try { loadRouterStats(); } catch (e) { console.error('Error during loadRouterStats:', e); }

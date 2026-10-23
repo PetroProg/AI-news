@@ -17,7 +17,7 @@ from fastapi import FastAPI, Depends, HTTPException, Request
 from app.services.cleanup import delete_single_article, cleanup_old_articles
 from app.processing.deduplicator import ContentDeduplicator
 from app.processing.cleaner import ContentCleaner
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import case, func, select, or_, text
@@ -44,10 +44,13 @@ MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/media", StaticFiles(directory=str(MEDIA_DIR)), name="media")
 CSS_DIR = WEB_DIR / "css"
 JS_DIR = WEB_DIR / "js"
+ICONS_DIR = WEB_DIR / "icons"
 CSS_DIR.mkdir(parents=True, exist_ok=True)
 JS_DIR.mkdir(parents=True, exist_ok=True)
+ICONS_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/css", StaticFiles(directory=str(CSS_DIR)), name="css")
 app.mount("/js", StaticFiles(directory=str(JS_DIR)), name="js")
+app.mount("/icons", StaticFiles(directory=str(ICONS_DIR)), name="icons")
 
 DIAGRAM_KEYWORDS = [
     "benchmark", "chart", "diagram", "graph", "perf", "comparison", "speedup",
@@ -252,6 +255,58 @@ async def serve_index():
     if html_file.exists():
         return html_file.read_text(encoding="utf-8")
     return "<h1>Error: web/index.html not found on server</h1>"
+
+
+@app.get("/manifest.webmanifest")
+@app.get("/manifest.json")
+async def serve_manifest():
+    """Раздача веб-манифеста PWA с корректным MIME-типом."""
+    manifest_file = WEB_DIR / "manifest.webmanifest"
+    if not manifest_file.exists():
+        raise HTTPException(status_code=404, detail="Manifest not found")
+    return FileResponse(
+        path=str(manifest_file),
+        media_type="application/manifest+json",
+        headers={"Cache-Control": "no-cache"}
+    )
+
+
+@app.get("/sw.js")
+async def serve_service_worker():
+    """Раздача Service Worker с корня сайта и разрешением глобальной области видимости."""
+    sw_file = WEB_DIR / "sw.js"
+    if not sw_file.exists():
+        raise HTTPException(status_code=404, detail="Service Worker not found")
+    return FileResponse(
+        path=str(sw_file),
+        media_type="application/javascript",
+        headers={
+            "Service-Worker-Allowed": "/",
+            "Cache-Control": "no-cache, no-store, must-revalidate"
+        }
+    )
+
+
+@app.get("/favicon.ico")
+async def serve_favicon():
+    """Раздача иконки сайта favicon.ico."""
+    ico_file = WEB_DIR / "favicon.ico"
+    if not ico_file.exists():
+        ico_file = ICONS_DIR / "favicon.ico"
+    if not ico_file.exists():
+        raise HTTPException(status_code=404, detail="Favicon not found")
+    return FileResponse(path=str(ico_file), media_type="image/x-icon")
+
+
+@app.get("/apple-touch-icon.png")
+async def serve_apple_touch_icon():
+    """Раздача иконки для iOS Safari."""
+    icon_file = WEB_DIR / "apple-touch-icon.png"
+    if not icon_file.exists():
+        icon_file = ICONS_DIR / "apple-touch-icon.png"
+    if not icon_file.exists():
+        raise HTTPException(status_code=404, detail="Apple Touch Icon not found")
+    return FileResponse(path=str(icon_file), media_type="image/png")
 
 
 @app.get("/battery-agent", response_class=HTMLResponse)

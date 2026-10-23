@@ -2,8 +2,23 @@
 <html lang="ru" class="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>AI News - Агрегатор и аналитика новостей ИИ & IT</title>
+  <meta name="description" content="Персональный агрегатор и AI-аналитика новостей ИИ, IT, Формулы-1, Футбола, Киберспорта и мониторинг домашней сети">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="background-color" content="#030712">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AI News">
+  <meta name="application-name" content="AI News">
+
+  <!-- PWA Manifest & Icons -->
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
   
   <!-- Tailwind CSS via CDN with Fallback Styles -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -70,7 +85,7 @@
           </div>
           <div class="flex items-center gap-2">
             <span class="text-xl sm:text-2xl font-black text-white tracking-tight font-heading">AI<span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-indigo-400">News</span></span>
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-sky-500/15 text-sky-300 border border-sky-500/30">Live</span>
+            <span id="app-connection-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-sky-500/15 text-sky-300 border border-sky-500/30">Live</span>
           </div>
         </div>
 
@@ -91,8 +106,20 @@
           </button>
         </nav>
 
-        <!-- Right Side: News Category Action & Controls (Visible on News Tab) -->
+        <!-- Right Side: PWA Install & News Category Controls -->
         <div class="flex items-center gap-2">
+          <button id="pwa-install-btn"
+                  type="button"
+                  onclick="triggerPwaInstall()"
+                  class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-gradient-to-r from-sky-500/20 to-indigo-500/20 hover:from-sky-500/35 hover:to-indigo-500/35 text-sky-300 border border-sky-500/40 hover:border-sky-400 flex items-center gap-1.5 shadow-sm shadow-sky-500/10 cursor-pointer group"
+                  title="Установить AI News как приложение (PWA)">
+            <svg class="w-3.5 h-3.5 text-sky-400 group-hover:translate-y-0.5 transition-transform" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
+            </svg>
+            <span id="pwa-install-btn-text" class="hidden sm:inline">Скачать приложение</span>
+            <span class="sm:hidden">Установить</span>
+          </button>
+
           <button id="delete-category-news-btn" 
                   type="button" 
                   onclick="deleteCurrentCategoryNews()" 
@@ -1594,6 +1621,50 @@
     </div>
   </div>
 
+  <!-- PWA Install Guide / HTTPS Modal -->
+  <div id="pwa-install-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/85 backdrop-blur-md p-4 transition-all duration-300 opacity-0" onclick="closePwaInstallModal(event)">
+    <div class="relative max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-5" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <img src="/icons/icon-192.png" alt="AI News" class="w-11 h-11 rounded-2xl border border-sky-500/40 shadow-lg shadow-sky-500/10" />
+          <div>
+            <h3 class="text-base font-bold text-white font-heading">Установка AI News (PWA)</h3>
+            <p class="text-[11px] text-slate-400">Автономное приложение для телефона и ПК</p>
+          </div>
+        </div>
+        <button type="button" onclick="closePwaInstallModal()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer">
+          ✕
+        </button>
+      </div>
+
+      <div id="pwa-modal-body" class="space-y-3 text-xs text-slate-300 leading-relaxed">
+        <!-- Dynamically populated by app.js based on protocol / device -->
+      </div>
+
+      <div class="p-3.5 rounded-2xl bg-slate-950/90 border border-slate-800 space-y-2">
+        <div class="flex items-center justify-between text-[11px]">
+          <span class="text-slate-400">Защищенный HTTPS адрес (Tailscale):</span>
+          <span class="px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30">SSL Trusted</span>
+        </div>
+        <div class="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800">
+          <a id="pwa-https-link" href="https://petroprog.tail703e6c.ts.net:8444" class="font-mono text-[11px] font-bold text-sky-400 hover:underline truncate">https://petroprog.tail703e6c.ts.net:8444</a>
+          <button type="button" onclick="navigator.clipboard.writeText('https://petroprog.tail703e6c.ts.net:8444'); if(typeof showToast==='function') showToast('Скопировано', 'HTTPS-ссылка скопирована в буфер', 'success');" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold shrink-0 cursor-pointer">
+            Копировать
+          </button>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2.5">
+        <a id="pwa-open-https-btn" href="https://petroprog.tail703e6c.ts.net:8444/?install=1" class="hidden flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold text-xs text-center shadow-lg shadow-emerald-900/30 transition-all cursor-pointer">
+          🔒 Открыть по HTTPS и скачать
+        </a>
+        <button type="button" onclick="closePwaInstallModal()" class="flex-1 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-all cursor-pointer">
+          Закрыть
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div id="toast-container"></div>
 
@@ -1601,6 +1672,6 @@
   <!-- STANDALONE JAVASCRIPT (ZERO DEPENDENCIES) -->
   <!-- ========================================== -->
 
-  <script src="js/app.js?v=2026_10_22_football_v30"></script>
+  <script src="js/app.js?v=2026_10_23_pwa_v1"></script>
 </body>
 </html>

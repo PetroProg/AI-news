@@ -1,0 +1,88 @@
+{
+  "id": "/",
+  "name": "AI News — Умный дайджест новостей",
+  "short_name": "AI News",
+  "description": "Персональный агрегатор и AI-аналитика новостей ИИ, IT, Формулы-1, Футбола, Киберспорта и мониторинг домашней сети",
+  "lang": "ru",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#030712",
+  "theme_color": "#0f172a",
+  "categories": ["news", "productivity", "utilities"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/icons/screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "AI News — Панель новостей и аналитики"
+    },
+    {
+      "src": "/icons/screenshot-mobile.png",
+      "sizes": "540x960",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "AI News — Мобильная лента дайджеста"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Лента новостей",
+      "short_name": "Новости",
+      "description": "Открыть свежий AI-дайджест новостей",
+      "url": "/?tab=news",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Мои устройства",
+      "short_name": "Устройства",
+      "description": "Мониторинг батареи и статуса устройств",
+      "url": "/?tab=devices",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "VPN & Сеть",
+      "short_name": "VPN",
+      "description": "Статус Tailscale и DNS AdGuard",
+      "url": "/?tab=vpn",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}
