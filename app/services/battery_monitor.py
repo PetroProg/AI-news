@@ -54,10 +54,10 @@ async def check_server_battery_job(bot: Bot):
                 await bot.send_message(
                     chat_id=admin_id,
                     text=(
-                        f"⚠️ <b>Внимание: Сервер отключен от розетки 220V!</b>\n\n"
-                        f"• Ноутбук перешел на работу от аккумулятора: <b>{cap}%</b>.\n"
-                        f"• Статус: <b>{status}</b>.\n\n"
-                        f"<i>Проверьте подключение блока питания!</i>"
+                        f"⚠️ <b>Warning: Server unplugged from AC power!</b>\n\n"
+                        f"• Laptop switched to battery power: <b>{cap}%</b>.\n"
+                        f"• Status: <b>{status}</b>.\n\n"
+                        f"<i>Please check the power supply connection!</i>"
                     ),
                     parse_mode="HTML"
                 )
@@ -70,9 +70,9 @@ async def check_server_battery_job(bot: Bot):
                 await bot.send_message(
                     chat_id=admin_id,
                     text=(
-                        f"🔌 <b>Питание сервера восстановлено!</b>\n\n"
-                        f"• Батарея: <b>{cap}%</b> (идёт зарядка).\n"
-                        f"• Статус: <b>{status}</b>."
+                        f"🔌 <b>Server AC power restored!</b>\n\n"
+                        f"• Battery: <b>{cap}%</b> (charging).\n"
+                        f"• Status: <b>{status}</b>."
                     ),
                     parse_mode="HTML"
                 )
@@ -84,17 +84,17 @@ async def check_server_battery_job(bot: Bot):
     # 2. Battery percentage trigger (< 50%)
     if cap < 50:
         if not _alert_under_50_sent:
-            power_desc = "Идёт зарядка от сети" if adp_online else "⚠️ Работает от батареи (сеть отключена!)"
+            power_desc = "Charging from AC power" if adp_online else "⚠️ Running on battery (AC disconnected!)"
             advice = (
-                "ℹ️ <i>Ноутбук заряжается, уведомление автоматически сбросится при достижении 50%.</i>"
+                "ℹ️ <i>Laptop is charging; this notification will automatically reset once 50% is reached.</i>"
                 if adp_online else
-                "🚨 <i>Пожалуйста, подключите зарядное устройство, чтобы сервер не выключился!</i>"
+                "🚨 <i>Please reconnect the charger to prevent server shutdown!</i>"
             )
             msg = (
-                f"🔋 <b>Внимание: Заряд батареи сервера ниже 50%!</b>\n\n"
-                f"• <b>Текущий заряд:</b> {cap}%\n"
-                f"• <b>Питание:</b> {power_desc}\n"
-                f"• <b>Состояние:</b> {status}\n\n"
+                f"🔋 <b>Warning: Server battery is below 50%!</b>\n\n"
+                f"• <b>Current level:</b> {cap}%\n"
+                f"• <b>Power source:</b> {power_desc}\n"
+                f"• <b>Status:</b> {status}\n\n"
                 f"{advice}"
             )
             logger.warning("Sending low battery (<50%%) alert: %d%% (adp=%s)", cap, adp_online)
@@ -107,10 +107,10 @@ async def check_server_battery_job(bot: Bot):
         # Critical battery alert (<= 20% and discharging)
         if cap <= 20 and not adp_online and not _alert_critical_sent:
             msg_crit = (
-                f"🚨 <b>КРИТИЧЕСКИЙ РАЗРЯД БАТАРЕИ СЕРВЕРА!</b>\n\n"
-                f"• Осталось всего <b>{cap}%</b>!\n"
-                f"• Сервер выключится через несколько минут!\n\n"
-                f"<b>СРОЧНО ПОДКЛЮЧИТЕ ПИТАНИЕ К НОУТБУКУ!</b>"
+                f"🚨 <b>CRITICAL SERVER BATTERY LEVEL!</b>\n\n"
+                f"• Only <b>{cap}%</b> remaining!\n"
+                f"• Server will shut down in a few minutes!\n\n"
+                f"<b>URGENT: CONNECT POWER CHARGER TO THE LAPTOP!</b>"
             )
             try:
                 await bot.send_message(chat_id=admin_id, text=msg_crit, parse_mode="HTML")
@@ -127,7 +127,7 @@ async def check_server_battery_job(bot: Bot):
             try:
                 await bot.send_message(
                     chat_id=admin_id,
-                    text=f"✅ <b>Заряд батареи сервера превысил 50%</b> (сейчас <b>{cap}%</b>).\nТриггер мониторинга сброшен и снова активен.",
+                    text=f"✅ <b>Server battery is back above 50%</b> (currently <b>{cap}%</b>).\nMonitoring alert trigger has been reset and is active.",
                     parse_mode="HTML"
                 )
             except Exception as e:

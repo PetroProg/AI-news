@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from aiogram import Bot, Dispatcher
+from aiogram.types import BotCommand
 
 from app.config import settings
 from app.bot.handlers import router
@@ -17,6 +18,22 @@ async def start_bot():
     bot = Bot(token=settings.TELEGRAM_BOT_TOKEN)
     dp = Dispatcher()
     dp.include_router(router)
+
+    # Register bot commands in English for the Telegram menu
+    commands = [
+        BotCommand(command="start", description="Show main menu & keyboard"),
+        BotCommand(command="run_pipeline", description="Run full autonomous pipeline"),
+        BotCommand(command="generate", description="Compile digest from recent articles (48h)"),
+        BotCommand(command="digest", description="Show the latest compiled digest"),
+        BotCommand(command="wake_pc", description="Wake up RTX 3060 PC (Wake-on-LAN)"),
+        BotCommand(command="sleep_pc", description="Put RTX 3060 PC to sleep"),
+        BotCommand(command="status", description="Show server, DB & AI worker status"),
+    ]
+    try:
+        await bot.set_my_commands(commands)
+        logger.info("Bot commands menu registered in English.")
+    except Exception as e:
+        logger.warning("Failed to set bot commands: %s", e)
 
     # Запуск планировщика расписания (07:45 и 19:45)
     scheduler = setup_scheduler(bot=bot)

@@ -4,19 +4,19 @@ def get_main_keyboard() -> ReplyKeyboardMarkup:
     """Mobile-friendly dashboard keyboard with balanced button widths."""
     keyboard = [
         [
-            KeyboardButton(text="🚀 Полный запуск"),
-            KeyboardButton(text="⚡ Сгенерировать")
+            KeyboardButton(text="🚀 Run Full Pipeline"),
+            KeyboardButton(text="⚡ Generate Digest")
         ],
         [
-            KeyboardButton(text="🔌 Разбудить ПК"),
-            KeyboardButton(text="💤 Усыпить ПК")
+            KeyboardButton(text="🔌 Wake PC"),
+            KeyboardButton(text="💤 Sleep PC")
         ],
         [
-            KeyboardButton(text="🖥 Статус сервера")
+            KeyboardButton(text="🖥 Server Status")
         ]
     ]
     return ReplyKeyboardMarkup(
         keyboard=keyboard,
         resize_keyboard=True,
-        input_field_placeholder="Выберите действие..."
+        input_field_placeholder="Choose an action..."
     )

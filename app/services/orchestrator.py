@@ -254,9 +254,9 @@ class PipelineOrchestrator:
                                 await self.bot.send_message(
                                     chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
                                     text=(
-                                        f"⚠️ *Видеокарта нагружена на {gpu_load}%* (порог: {threshold}%).\n"
-                                        f"Вероятно, запущена игра или 3D-приложение.\n"
-                                        f"Откладываю суммаризацию на 1 час (попытка {attempt+1}/3)..."
+                                        f"⚠️ *GPU load is at {gpu_load}%* (threshold: {threshold}%).\n"
+                                        f"A game or 3D application appears to be running.\n"
+                                        f"Postponing summarization for 1 hour (attempt {attempt+1}/3)..."
                                     ),
                                     parse_mode="Markdown"
                                 )
@@ -274,8 +274,8 @@ class PipelineOrchestrator:
                             await self.bot.send_message(
                                 chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
                                 text=(
-                                    f"🟢 *GPU-нода подключена и свободна!* (нагрузка {gpu_load}% < {threshold}%).\n"
-                                    f"Начинаю суммаризацию на RTX 3060..."
+                                    f"🟢 *GPU node is connected and idle!* (load: {gpu_load}% < {threshold}%).\n"
+                                    f"Starting AI summarization on RTX 3060..."
                                 ),
                                 parse_mode="Markdown"
                             )
@@ -307,7 +307,7 @@ class PipelineOrchestrator:
                             try:
                                 await self.bot.send_message(
                                     chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
-                                    text=f"⚠️ *Предупреждение*: Видеокарта была занята или недоступна. Дайджест составлен на локальной резервной модели.",
+                                    text=f"⚠️ *Warning*: GPU node was busy or unreachable. Digest compiled using the local fallback model.",
                                     parse_mode="Markdown"
                                 )
                             except Exception:
@@ -334,7 +334,7 @@ class PipelineOrchestrator:
                         try:
                             await self.bot.send_message(
                                 chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
-                                text=f"⚠️ *Предупреждение*: GPU-нода не ответила за {gpu_timeout} сек. Дайджест составлен на локальной резервной модели.",
+                                text=f"⚠️ *Warning*: GPU node did not respond within {gpu_timeout}s. Digest compiled using the local fallback model.",
                                 parse_mode="Markdown"
                             )
                         except Exception:
@@ -345,7 +345,7 @@ class PipelineOrchestrator:
                         try:
                             await self.bot.send_message(
                                 chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
-                                text=f"⚠️ *Предупреждение*: GPU-нода Ollama не ответила за {gpu_timeout} сек. Саммаризация пропущена.",
+                                text=f"⚠️ *Warning*: Ollama GPU node did not respond within {gpu_timeout}s. Summarization skipped.",
                                 parse_mode="Markdown"
                             )
                         except Exception:
@@ -400,7 +400,7 @@ class PipelineOrchestrator:
                             try:
                                 await self.bot.send_message(
                                     chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
-                                    text="ℹ️ *Компьютер оставлен включённым*: обнаружена активность пользователя (мышь/клавиатура).",
+                                    text="ℹ️ *PC kept awake*: user activity detected (mouse/keyboard interaction).",
                                     parse_mode="Markdown"
                                 )
                             except Exception:
