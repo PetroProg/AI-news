@@ -257,16 +257,26 @@ Access the web dashboard by opening `http://<server-ip>:8000` in your browser (o
 
 ## 📱 Mobile & Telegram Bot Commands
 
-The bot operates interactively via touch buttons and slash commands:
+The bot interface, commands, interactive reply buttons, and system notifications are fully localized in English:
 
-| Command | Action |
-|---|---|
-| `/start` | Displays the welcome guide and mounts interactive reply buttons |
-| 📰 Свежий дайджест | Retrieves and delivers the most recent compiled briefing |
-| ⚡ Сгенерировать сейчас | Compiles an on-demand digest from accumulated news |
-| 🚀 Запустить полный пайплайн | Executes complete cycle: WoL → Ingest → Dedupe → AI → Push |
-| 🖥 Статус сервера | Reports database telemetry and checks GPU Ollama reachability |
-| 🔌 Разбудить ПК (WoL) | Sends IEEE 802.3 Magic Packet to power on the RTX 3060 PC |
+| Command | Button | Action |
+|---|---|---|
+| `/start` | — | Displays welcome guide and mounts interactive English dashboard keyboard |
+| `/run_pipeline` | `🚀 Run Full Pipeline` | Executes complete cycle: WoL → Ingest → Dedupe → AI → Push |
+| `/generate` | `⚡ Generate Digest` | Compiles an on-demand digest from recent accumulated articles (48h) |
+| `/digest` | `📰 Latest Digest` | Retrieves and delivers the most recent compiled briefing |
+| `/wake_pc` | `🔌 Wake PC` | Sends IEEE 802.3 Magic Packet to power on the RTX 3060 PC |
+| `/sleep_pc` | `💤 Sleep PC` | Puts the GPU workstation into S3 sleep via SSH (with Smart Activity Guard) |
+| `/status` | `🖥 Server Status` | Reports database telemetry, Zurich server time, and GPU Ollama status |
+
+---
+
+## 🌐 Progressive Web App (PWA)
+
+The web dashboard is a fully installable Progressive Web App with offline caching:
+- **HTTPS Endpoint:** Served with trusted TLS via Tailscale Serve (`https://petroprog.tail703e6c.ts.net:8444`).
+- **One-Click Installation:** Direct "Install App" button in the web header for Android, iOS Safari, and Chromium desktop.
+- **Offline Reading:** App shell and recent news cached locally via Service Worker (`sw.js`) with automatic online/offline status detection.
 
 ---
 
