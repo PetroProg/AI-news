@@ -93,15 +93,8 @@ class PipelineOrchestrator:
         """Executes the complete autonomous pipeline from WoL to Telegram dispatch."""
         logger.info("==================================================")
         logger.info("  STARTING AUTONOMOUS PIPELINE: %s", report_type.value.upper())
+        logger.info("  (Local GPU machine usage is DISABLED)")
         logger.info("==================================================")
-
-        # 1. Check if the PC was already online before the pipeline
-        # We record this state to determine if we should put it to sleep at the end.
-        was_already_online = await self.is_pc_already_online()
-        if was_already_online:
-            logger.info("AI GPU Worker PC was ALREADY ONLINE before pipeline started. Will NOT put to sleep at the end.")
-        else:
-            logger.info("PC is offline. We will wake it up later just before AI Summarization.")
 
         async with async_session_maker() as session:
             # 3. Collection Phase (RSS + Telegram)
@@ -177,179 +170,26 @@ class PipelineOrchestrator:
             processing = ProcessingService(session=session)
             await processing.process_collected_articles()
 
-            # 5. AI Summarization Phase (batch of top unsummarized articles)
-            if not was_already_online:
-                from datetime import datetime
-                import asyncio
-                now = datetime.now()
-                
-                if report_type == ReportType.MORNING and now.hour < 8:
-                    wait_secs = (datetime(now.year, now.month, now.day, 8, 0, 0) - now).total_seconds()
-                    if wait_secs > 0:
-                        logger.info("Strict rule: It is before 08:00 AM. Waiting %d seconds before waking PC...", wait_secs)
-                        await asyncio.sleep(wait_secs)
-                        now = datetime.now()
-
-                if report_type == ReportType.EVENING and now.hour >= 22:
-                    logger.warning("Strict rule: It is 22:00 or later. Skipping PC wake to avoid night disturbance.")
-                else:
-                    try:
-                        send_wake_on_lan()
-                        logger.info("Sent WoL magic packet to wake GPU worker just in time for summarization!")
-                        logger.info("Waiting 45 seconds for PC to boot up before verifying...")
-                        await asyncio.sleep(45)
-                    except Exception as exc:
-                        logger.error("Failed to send WoL packet: %s", exc)
-
-            gpu_timeout = 60 if was_already_online else 150
-            logger.info("Verifying AI GPU worker reachability (timeout: %ds)...", gpu_timeout)
-            gpu_online = await self.wait_for_gpu_node(timeout_seconds=gpu_timeout)
-
-            initial_idle_info = None
-            if gpu_online and not was_already_online:
-                try:
-                    from app.bot.utils import get_windows_idle_info
-                    initial_idle_info = await get_windows_idle_info()
-                    if initial_idle_info:
-                        logger.info(
-                            "Captured initial PC input timestamp on wake-up: dw_time=%s",
-                            initial_idle_info.get("dw_time")
-                        )
-                except Exception as exc:
-                    logger.warning("Could not capture initial idle info: %s", exc)
-
-            if gpu_online:
-                from app.bot.utils import check_gpu_load
-                import asyncio
-
-                threshold = getattr(settings, "GPU_LOAD_THRESHOLD", 15)
-                gpu_ready = False
-                gpu_load = 0
-
-                for attempt in range(3):
-                    if attempt > 0:
-                        if not await self.is_pc_already_online():
-                            logger.info("PC went to sleep during 1-hour gaming delay. Waking it up via WoL...")
-                            send_wake_on_lan()
-                            await asyncio.sleep(45)
-                            gpu_online = await self.wait_for_gpu_node(timeout_seconds=120)
-                            if not gpu_online:
-                                logger.warning("GPU worker did not come back online after 1h delay.")
-                                break
-
-                    gpu_load = await check_gpu_load()
-                    if gpu_load is None:
-                        if not await self.is_pc_already_online():
-                            logger.warning("GPU load check returned None and PC is unreachable.")
-                            gpu_ready = False
-                            break
-                        gpu_load = 0
-
-                    if gpu_load >= threshold:
-                        logger.warning(
-                            f"Sustained real GPU load is {gpu_load}% (>={threshold}%). User is gaming. Delaying for 1 hour (Attempt {attempt+1}/3)."
-                        )
-                        if self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
-                            try:
-                                await self.bot.send_message(
-                                    chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
-                                    text=(
-                                        f"⚠️ *GPU load is at {gpu_load}%* (threshold: {threshold}%).\n"
-                                        f"A game or 3D application appears to be running.\n"
-                                        f"Postponing summarization for 1 hour (attempt {attempt+1}/3)..."
-                                    ),
-                                    parse_mode="Markdown"
-                                )
-                            except Exception:
-                                pass
-                        if attempt < 2:
-                            await asyncio.sleep(3600)
-                    else:
-                        gpu_ready = True
-                        break
-
-                if gpu_ready and gpu_load < threshold:
-                    if self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
-                        try:
-                            await self.bot.send_message(
-                                chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
-                                text=(
-                                    f"🟢 *GPU node is connected and idle!* (load: {gpu_load}% < {threshold}%).\n"
-                                    f"Starting AI summarization on RTX 3060..."
-                                ),
-                                parse_mode="Markdown"
-                            )
-                        except Exception:
-                            pass
-                    summarizer = SummarizerService(session=session)
-                    try:
-                        await summarizer.summarize_pending_articles(limit=30)
-                    except Exception as sum_err:
-                        logger.error("Error during GPU summarization: %s", sum_err, exc_info=True)
-                else:
-                    logger.warning(f"GPU remained busy or unreachable after checks. Falling back to local Ollama on server...")
-                    local_available = False
-                    try:
-                        async with httpx.AsyncClient(timeout=3.0) as client:
-                            resp = await client.get("http://localhost:11434/api/tags")
-                            local_available = (resp.status_code == 200)
-                    except Exception:
-                        local_available = False
-
-                    if local_available:
-                        local_ai = OllamaClient(base_url="http://localhost:11434", model="qwen2.5:0.5b", timeout=120.0)
-                        summarizer = SummarizerService(session=session, ai_client=local_ai)
-                        try:
-                            await summarizer.summarize_pending_articles(limit=15)
-                        except Exception as sum_err:
-                            logger.error("Error during local summarizer fallback: %s", sum_err, exc_info=True)
-                        if self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
-                            try:
-                                await self.bot.send_message(
-                                    chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
-                                    text=f"⚠️ *Warning*: GPU node was busy or unreachable. Digest compiled using the local fallback model.",
-                                    parse_mode="Markdown"
-                                )
-                            except Exception:
-                                pass
-            else:
-                logger.warning("AI GPU worker did not respond within %ds. Attempting fallback to local Ollama (qwen2.5:0.5b)...", gpu_timeout)
+            # 5. AI Summarization Phase (Local GPU PC disabled)
+            logger.info("Local GPU workstation usage is DISABLED. Skipping remote GPU wake and execution.")
+            local_available = False
+            try:
+                async with httpx.AsyncClient(timeout=3.0) as client:
+                    resp = await client.get("http://localhost:11434/api/tags")
+                    local_available = (resp.status_code == 200)
+            except Exception:
                 local_available = False
-                try:
-                    async with httpx.AsyncClient(timeout=3.0) as client:
-                        resp = await client.get("http://localhost:11434/api/tags")
-                        local_available = (resp.status_code == 200)
-                except Exception:
-                    local_available = False
 
-                if local_available:
-                    logger.info("Local Ollama fallback is ONLINE. Summarizing with local model...")
-                    local_ai = OllamaClient(base_url="http://localhost:11434", model="qwen2.5:0.5b", timeout=120.0)
-                    summarizer = SummarizerService(session=session, ai_client=local_ai)
-                    try:
-                        await summarizer.summarize_pending_articles(limit=15)
-                    except Exception as sum_err:
-                        logger.error("Error during local summarizer fallback: %s", sum_err, exc_info=True)
-                    if self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
-                        try:
-                            await self.bot.send_message(
-                                chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
-                                text=f"⚠️ *Warning*: GPU node did not respond within {gpu_timeout}s. Digest compiled using the local fallback model.",
-                                parse_mode="Markdown"
-                            )
-                        except Exception:
-                            pass
-                else:
-                    logger.warning("Local Ollama also unavailable. Skipping summarization for this run.")
-                    if self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
-                        try:
-                            await self.bot.send_message(
-                                chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
-                                text=f"⚠️ *Warning*: Ollama GPU node did not respond within {gpu_timeout}s. Summarization skipped.",
-                                parse_mode="Markdown"
-                            )
-                        except Exception:
-                            pass
+            if local_available:
+                logger.info("Local server Ollama container is ONLINE. Running lightweight summarization...")
+                local_ai = OllamaClient(base_url="http://localhost:11434", model="qwen2.5:0.5b", timeout=120.0)
+                summarizer = SummarizerService(session=session, ai_client=local_ai)
+                try:
+                    await summarizer.summarize_pending_articles(limit=15)
+                except Exception as sum_err:
+                    logger.error("Error during server summarization: %s", sum_err)
+            else:
+                logger.info("Summarization skipped: local GPU workstation is disabled and server Ollama is offline.")
 
             # 6. Report Compilation Phase
             builder = ReportBuilderService(session=session)
@@ -381,35 +221,5 @@ class PipelineOrchestrator:
                 logger.info("Digest successfully delivered to Telegram.")
             elif not report:
                 logger.info("No articles met threshold for scheduled digest. Nothing sent.")
-
-        # 8. Put GPU worker PC back to sleep (with Smart Sleep Guard)
-        if was_already_online:
-            logger.info("Skipping sleep: PC was already online before pipeline started (user was already at computer).")
-        else:
-            try:
-                if not await self.is_pc_already_online():
-                    logger.info("GPU worker PC is already asleep or offline. No sleep command needed.")
-                else:
-                    from app.bot.utils import is_windows_user_active
-                    logger.info("Putting AI GPU worker back to sleep (checking user activity first)...")
-                    init_dw = initial_idle_info.get("dw_time") if (not was_already_online and 'initial_idle_info' in locals() and initial_idle_info) else None
-                    user_active = await is_windows_user_active(max_idle_minutes=5, initial_dw_time=init_dw)
-                    if user_active:
-                        logger.info("PC sleep was cancelled due to detected user activity.")
-                        if self.bot and settings.TELEGRAM_ADMIN_CHAT_ID:
-                            try:
-                                await self.bot.send_message(
-                                    chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
-                                    text="ℹ️ *PC kept awake*: user activity detected (mouse/keyboard interaction).",
-                                    parse_mode="Markdown"
-                                )
-                            except Exception:
-                                pass
-                    else:
-                        slept = await send_remote_sleep(force=True)
-                        if slept:
-                            logger.info("GPU worker PC successfully put to sleep.")
-            except Exception as exc:
-                logger.error("Failed to put GPU PC to sleep: %s", exc)
 
         logger.info("Autonomous pipeline finished.")

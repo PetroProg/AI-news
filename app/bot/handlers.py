@@ -166,11 +166,10 @@ async def cmd_run_pipeline(message: Message, bot: Bot):
     """Executes the complete autonomous pipeline on demand and reports progress."""
     status_msg = await message.answer(
         "🚀 **Starting Full Autonomous Pipeline!**\n\n"
-        "1. Sending WoL to RTX 3060 PC...\n"
-        "2. Collecting RSS and Telegram feeds...\n"
-        "3. Cleaning and deduplicating articles...\n"
-        "4. AI summarization...\n"
-        "5. Building and delivering digest.\n\n"
+        "1. Collecting RSS and Telegram feeds...\n"
+        "2. Cleaning and deduplicating articles...\n"
+        "3. AI summarization...\n"
+        "4. Building and delivering digest.\n\n"
         "⏳ Please wait about 30–60 seconds...",
         parse_mode="Markdown",
         reply_markup=get_main_keyboard()
