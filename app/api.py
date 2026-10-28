@@ -143,26 +143,26 @@ _football_cache_time: Dict[str, float] = {}
 
 
 FALLBACK_HLTV_RANKINGS = [
-    {"rank": 1, "name": "Spirit", "points": 2041, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/syrtYYKR7sBRw3ZHy1YFX7.png?ixlib=java-2.1.0&w=50&s=40e66714687bec05ea422255b1c0099e"},
-    {"rank": 2, "name": "Legacy", "points": 1900, "region": "AM", "logo": "https://img-cdn.hltv.org/teamlogo/RWbHH6RA8uGwJurGeLFvSr.png?ixlib=java-2.1.0&w=50&s=3d251032e156cab2f6df8c630ca29745"},
-    {"rank": 3, "name": "MOUZ", "points": 1852, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/IejtXpquZnE8KqYPB1LNKw.svg?ixlib=java-2.1.0&s=7fd33b8def053fbfd8fdbb58e3bdcd3c"},
-    {"rank": 4, "name": "Falcons", "points": 1850, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/4eJSkDQINNM6Tbs4WvLzkN.png?ixlib=java-2.1.0&w=50&s=d8c857ea47046f61eca695beab0d12ef"},
-    {"rank": 5, "name": "Vitality", "points": 1832, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/ogcHrcCdzRvxbYvAz04KAN.png?ixlib=java-2.1.0&w=50&s=e1f6019aa9f274ffe45a5e99c88dbc02"},
-    {"rank": 6, "name": "FUT", "points": 1829, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/Os71GAOy8KDuQFc0M8HE6O.png?ixlib=java-2.1.0&w=50&s=86f2bded6bcb7c690a42a62250ed69e7"},
-    {"rank": 7, "name": "FURIA", "points": 1825, "region": "AM", "logo": "https://img-cdn.hltv.org/teamlogo/mvNQc4csFGtxXk5guAh8m1.svg?ixlib=java-2.1.0&s=11e5056829ad5d6c06c5961bbe76d20c"},
-    {"rank": 8, "name": "G2", "points": 1814, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/zFLwAELOD15BjJSDMMNBWQ.png?ixlib=java-2.1.0&w=50&s=affb583e6716d8ee904826992255cc4b"},
-    {"rank": 9, "name": "Aurora", "points": 1662, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/yJzPNOeXlyiniNxanYJCrv.png?ixlib=java-2.1.0&w=50&s=2c08f70c2f2f8c2024a438ddcf19bbf1"},
-    {"rank": 10, "name": "BETBOOM", "points": 1578, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/G4ZrdB0-q41USPd_z27IQA.png?ixlib=java-2.1.0&w=50&s=9c15ddf70f9c66399d4a47e0d8e93511"},
-    {"rank": 11, "name": "B8", "points": 1568, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/O6nRWTCjUzBAR4pcOcrpSG.png?ixlib=java-2.1.0&w=50&s=305dde82e764725dab7e626800328137"},
-    {"rank": 12, "name": "9z", "points": 1555, "region": "AM", "logo": "https://img-cdn.hltv.org/teamlogo/COZDFWOIm41AT0srqOHFhM.png?invert=true&ixlib=java-2.1.0&sat=-100&w=50&s=b00d55fe74b90f91c5b7e2b58bda5afb"},
-    {"rank": 13, "name": "MIBR", "points": 1551, "region": "AM", "logo": "https://img-cdn.hltv.org/teamlogo/sVnH-oAf1J5TnMwoY4cxUC.png?ixlib=java-2.1.0&w=50&s=b0ef463fa0f1638bce72a89590fbaddf"},
-    {"rank": 14, "name": "FaZe", "points": 1526, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/OKLwq88GXjl5GQ48Y5SrvW.png?ixlib=java-2.1.0&w=50&s=0a0d65eeb1b0e82ada20c42c038552fa"},
-    {"rank": 15, "name": "Alliance", "points": 1490, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/xsWK0BtR26rN776qdnWFC1.png?ixlib=java-2.1.0&w=50&s=4aaf659c3855ebf08c78c157a0653352"},
-    {"rank": 16, "name": "Natus Vincere", "points": 1483, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/9iMirAi7ArBLNU8p3kqUTZ.svg?ixlib=java-2.1.0&s=4dd8635be16122656093ae9884675d0c"},
-    {"rank": 17, "name": "Inner Circle", "points": 1474, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/nzJhoae6HI3i1UORM-DBFD.png?ixlib=java-2.1.0&w=50&s=35faf966127b13f4cc4b7250a5aed454"},
-    {"rank": 18, "name": "BIG", "points": 1440, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/OgMRQA35hopXA8kDwMFHIY.svg?ixlib=java-2.1.0&s=ec7bc44165c7acf4224a22a1338ab7d7"},
-    {"rank": 19, "name": "PARIVISION", "points": 1437, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/MFcDe-M8wfGOUU6x4sRELR.png?ixlib=java-2.1.0&w=50&s=1d91076a58b354d8c3eaeda3162c292e"},
-    {"rank": 20, "name": "Astralis", "points": 1432, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/9bgXHp-oh1oaXr7F0mTGmd.svg?ixlib=java-2.1.0&s=f567161ab183001be33948b98c4b2067"},
+    {"rank": 1, "name": "Vitality", "points": 1986, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/ogcHrcCdzRvxbYvAz04KAN.png?ixlib=java-2.1.0&w=50&s=e1f6019aa9f274ffe45a5e99c88dbc02"},
+    {"rank": 2, "name": "MOUZ", "points": 1961, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/IejtXpquZnE8KqYPB1LNKw.svg?ixlib=java-2.1.0&s=7fd33b8def053fbfd8fdbb58e3bdcd3c"},
+    {"rank": 3, "name": "Aurora", "points": 1892, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/yJzPNOeXlyiniNxanYJCrv.png?ixlib=java-2.1.0&w=50&s=2c08f70c2f2f8c2024a438ddcf19bbf1"},
+    {"rank": 4, "name": "FURIA", "points": 1883, "region": "AM", "logo": "https://img-cdn.hltv.org/teamlogo/mvNQc4csFGtxXk5guAh8m1.svg?ixlib=java-2.1.0&s=11e5056829ad5d6c06c5961bbe76d20c"},
+    {"rank": 5, "name": "Spirit", "points": 1877, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/syrtYYKR7sBRw3ZHy1YFX7.png?ixlib=java-2.1.0&w=50&s=40e66714687bec05ea422255b1c0099e"},
+    {"rank": 6, "name": "BETBOOM", "points": 1824, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/G4ZrdB0-q41USPd_z27IQA.png?ixlib=java-2.1.0&w=50&s=9c15ddf70f9c66399d4a47e0d8e93511"},
+    {"rank": 7, "name": "Falcons", "points": 1809, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/4eJSkDQINNM6Tbs4WvLzkN.png?ixlib=java-2.1.0&w=50&s=d8c857ea47046f61eca695beab0d12ef"},
+    {"rank": 8, "name": "FUT", "points": 1783, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/Os71GAOy8KDuQFc0M8HE6O.png?ixlib=java-2.1.0&w=50&s=86f2bded6bcb7c690a42a62250ed69e7"},
+    {"rank": 9, "name": "Legacy", "points": 1694, "region": "AM", "logo": "https://img-cdn.hltv.org/teamlogo/RWbHH6RA8uGwJurGeLFvSr.png?ixlib=java-2.1.0&w=50&s=3d251032e156cab2f6df8c630ca29745"},
+    {"rank": 10, "name": "G2", "points": 1649, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/zFLwAELOD15BjJSDMMNBWQ.png?ixlib=java-2.1.0&w=50&s=affb583e6716d8ee904826992255cc4b"},
+    {"rank": 11, "name": "Natus Vincere", "points": 1645, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/9iMirAi7ArBLNU8p3kqUTZ.svg?ixlib=java-2.1.0&s=4dd8635be16122656093ae9884675d0c"},
+    {"rank": 12, "name": "MIBR", "points": 1603, "region": "AM", "logo": "https://img-cdn.hltv.org/teamlogo/sVnH-oAf1J5TnMwoY4cxUC.png?ixlib=java-2.1.0&w=50&s=b0ef463fa0f1638bce72a89590fbaddf"},
+    {"rank": 13, "name": "Astralis", "points": 1595, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/9bgXHp-oh1oaXr7F0mTGmd.svg?ixlib=java-2.1.0&s=f567161ab183001be33948b98c4b2067"},
+    {"rank": 14, "name": "PARIVISION", "points": 1585, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/MFcDe-M8wfGOUU6x4sRELR.png?ixlib=java-2.1.0&w=50&s=1d91076a58b354d8c3eaeda3162c292e"},
+    {"rank": 15, "name": "The MongolZ", "points": 1576, "region": "AS", "logo": "https://img-cdn.hltv.org/teamlogo/bRk2sh_tSTO6fq1GLhgcal.png?ixlib=java-2.1.0&w=50&s=8b08e53858eb817852ae74b30a30151d"},
+    {"rank": 16, "name": "Ninjas in Pyjamas", "points": 1574, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/-ttGATBV_P_HcZazxNNtIb.png?ixlib=java-2.1.0&w=50&s=ba94f7812d1f47183a83f3f34ab959eb"},
+    {"rank": 17, "name": "Nemiga", "points": 1563, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/6ZPCm5r3XyGByXkFGiRnLh.png?ixlib=java-2.1.0&w=50&s=daa0328ebd0143763544b564610721e9"},
+    {"rank": 18, "name": "FaZe", "points": 1560, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/OKLwq88GXjl5GQ48Y5SrvW.png?ixlib=java-2.1.0&w=50&s=0a0d65eeb1b0e82ada20c42c038552fa"},
+    {"rank": 19, "name": "HEROIC", "points": 1551, "region": "EU", "logo": "https://img-cdn.hltv.org/teamlogo/4S22uk_gnZTiQiI-hhH4yp.png?ixlib=java-2.1.0&w=50&s=3619ddf1d490573ab3dc261b8c2f3f6f"},
+    {"rank": 20, "name": "Liquid", "points": 1537, "region": "AM", "logo": "https://img-cdn.hltv.org/teamlogo/JMeLLbWKCIEJrmfPaqOz4O.svg?ixlib=java-2.1.0&s=c02caf90234d3a3ebac074c84ba1ea62"},
 ]
 
 
@@ -512,81 +512,98 @@ async def get_hltv_ranking(force: bool = False) -> Dict[str, Any]:
     if not force and _hltv_cache and (now - _hltv_cache_time) < 1800:
         return _hltv_cache
 
+    html_text = ""
+    final_url = "https://www.hltv.org/valve-ranking/teams"
+
+    # 1. Try direct fetch with CurlAsyncSession (native browser TLS fingerprint without mismatched UA)
     if CurlAsyncSession:
         try:
-            url = "https://www.hltv.org/valve-ranking/teams"
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                "Accept-Language": "en-US,en;q=0.9",
-                "Referer": "https://www.hltv.org/",
-            }
             async with CurlAsyncSession() as s:
-                resp = await s.get(url, headers=headers, impersonate="chrome124", timeout=15)
-                if resp.status_code == 200:
-                    soup = BeautifulSoup(resp.text, "html.parser")
-                    ranked_teams = soup.find_all("div", class_=lambda c: c and "ranked-team" in c)
-                    teams = []
-                    for box in ranked_teams:
-                        pos_el = box.find("span", class_=lambda c: c and "position" in c)
-                        name_el = box.find("span", class_="name")
-                        pts_el = box.find("span", class_="points")
-                        reg_el = box.find("span", class_=lambda c: c and "region" in c)
-                        logo_el = box.find("img", class_="day-only") or box.find("img")
-
-                        if pos_el and name_el and pts_el:
-                            pos_txt = pos_el.get_text(strip=True).replace("#", "")
-                            try:
-                                rank = int(pos_txt)
-                            except ValueError:
-                                continue
-                            name = name_el.get_text(strip=True)
-                            pts_match = re.search(r"(\d+)", pts_el.get_text().replace(" ", "").replace(",", ""))
-                            pts = int(pts_match.group(1)) if pts_match else 0
-                            reg = reg_el.get_text(strip=True) if reg_el else ""
-                            logo = logo_el.get("src") if logo_el else ""
-                            teams.append({
-                                "rank": rank,
-                                "name": name,
-                                "points": pts,
-                                "region": reg,
-                                "logo": logo,
-                            })
-
-                    unique_teams = {}
-                    for t in teams:
-                        if t["rank"] not in unique_teams:
-                            unique_teams[t["rank"]] = t
-
-                    top20 = [unique_teams[r] for r in sorted(unique_teams.keys())][:20]
-
-                    date_display = "20 September 2026"
-                    m_date = re.search(r"/(\d{4})/([^/]+)/(\d+)", str(resp.url))
-                    if m_date:
-                        date_display = f"{m_date.group(3)} {m_date.group(2).capitalize()} {m_date.group(1)}"
-
-                    if top20:
-                        _hltv_cache = {
-                            "date": date_display,
-                            "updated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
-                            "teams": top20,
-                            "source": "HLTV Valve Global Ranking",
-                            "url": str(resp.url) or "https://www.hltv.org/valve-ranking/teams",
-                        }
-                        _hltv_cache_time = now
-                        return _hltv_cache
+                resp = await s.get(final_url, impersonate="chrome124", timeout=12)
+                if resp.status_code == 200 and "ranked-team" in resp.text:
+                    html_text = resp.text
+                    final_url = str(resp.url) or final_url
         except Exception as e:
-            print(f"Error scraping HLTV Valve ranking: {e}")
+            logger.warning("Direct HLTV fetch failed: %s", e)
+
+    # 2. Fallback via Jina Reader HTML proxy (bypasses Cloudflare 403 on VPS IPs)
+    if not html_text:
+        try:
+            jina_url = "https://r.jina.ai/https://www.hltv.org/valve-ranking/teams"
+            jina_headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "X-Return-Format": "html",
+            }
+            async with httpx.AsyncClient(timeout=20.0, follow_redirects=True) as client:
+                resp_j = await client.get(jina_url, headers=jina_headers)
+                if resp_j.status_code == 200 and "ranked-team" in resp_j.text:
+                    html_text = resp_j.text
+        except Exception as e:
+            logger.warning("Jina Reader HLTV fetch failed: %s", e)
+
+    if html_text:
+        try:
+            teams = []
+            # Fast chunk-based extraction (<5ms vs 35s full-DOM BeautifulSoup on 1.5MB HTML)
+            for chunk in html_text.split("ranked-team")[1:30]:
+                header_slice = chunk[:2200]
+                m_pos = re.search(r'class="position[^"]*">#?(\d+)<', header_slice)
+                m_name = re.search(r'class="name">([^<]+)<', header_slice)
+                m_pts = re.search(r'class="points">\(?([\d,\s]+)', header_slice)
+                m_reg = re.search(r'class="region[^"]*">([^<]+)<', header_slice)
+                m_logo = re.search(r'<img[^>]+src="([^"]+)"[^>]*class="day-only"', header_slice) or \
+                         re.search(r'class="team-logo"[^>]*>\s*<img[^>]+src="([^"]+)"', header_slice)
+
+                if m_pos and m_name and m_pts:
+                    rank = int(m_pos.group(1))
+                    name = m_name.group(1).strip()
+                    pts_digits = re.sub(r"[^\d]", "", m_pts.group(1))
+                    pts = int(pts_digits) if pts_digits else 0
+                    reg = m_reg.group(1).strip() if m_reg else ""
+                    logo = m_logo.group(1).strip() if m_logo else ""
+                    teams.append({
+                        "rank": rank,
+                        "name": name,
+                        "points": pts,
+                        "region": reg,
+                        "logo": logo,
+                    })
+
+            unique_teams = {}
+            for t in teams:
+                if t["rank"] not in unique_teams:
+                    unique_teams[t["rank"]] = t
+
+            top20 = [unique_teams[r] for r in sorted(unique_teams.keys())][:20]
+
+            date_display = "28 October 2026"
+            m_date = re.search(r"/valve-ranking/teams/(\d{4})/([a-zA-Z]+)/(\d+)", final_url + " " + html_text[:40000])
+            if m_date:
+                date_display = f"{m_date.group(3)} {m_date.group(2).capitalize()} {m_date.group(1)}"
+                final_url = f"https://www.hltv.org/valve-ranking/teams/{m_date.group(1)}/{m_date.group(2).lower()}/{m_date.group(3)}"
+
+            if top20:
+                _hltv_cache = {
+                    "date": date_display,
+                    "updated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+                    "teams": top20,
+                    "source": "HLTV Valve Global Ranking",
+                    "url": final_url,
+                }
+                _hltv_cache_time = now
+                return _hltv_cache
+        except Exception as e:
+            logger.error("Error parsing HLTV Valve ranking HTML: %s", e)
 
     if _hltv_cache:
         return _hltv_cache
 
     return {
-        "date": "20 September 2026",
+        "date": "28 October 2026",
         "updated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
         "teams": FALLBACK_HLTV_RANKINGS,
         "source": "HLTV Valve Global Ranking",
-        "url": "https://www.hltv.org/valve-ranking/teams/2026/september/20",
+        "url": "https://www.hltv.org/valve-ranking/teams/2026/october/28",
     }
 
 

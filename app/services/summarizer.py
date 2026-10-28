@@ -173,10 +173,56 @@ class SummarizerService:
         logger.info("Starting AI summarization batch for %d articles...", len(articles))
         summarized_count = 0
 
+        # Fetch recent summarized articles for cross-article context to prevent contradictions
+        recent_stmt = (
+            select(Article)
+            .options(selectinload(Article.source), selectinload(Article.summary))
+            .where(Article.status.in_([ArticleStatus.SUMMARIZED, ArticleStatus.REPORTED]))
+            .order_by(Article.published_at.desc())
+            .limit(15)
+        )
+        recent_res = await self.session.execute(recent_stmt)
+        recent_summarized = list(recent_res.scalars().all())
+
+        running_context_items: list[tuple[int, str, str]] = []
+        for ra in recent_summarized:
+            r_src = (ra.source.name if ra.source else "").lower()
+            r_sum = ra.summary.short_summary if ra.summary else ""
+            r_line = f"- [{ra.source.name if ra.source else 'News'}] {ra.title}" + (f" ({r_sum})" if r_sum else "")
+            running_context_items.append((ra.id, r_src, r_line[:220]))
+
+        batch_raw_items: list[tuple[int, str, str]] = []
+        for ba in articles:
+            b_src = (ba.source.name if ba.source else "").lower()
+            b_snippet = ((ba.cleaned_content or ba.raw_content or "").replace("\n", " ").strip())[:140]
+            b_line = f"- [{ba.source.name if ba.source else 'News'}] {ba.title}: {b_snippet}"
+            batch_raw_items.append((ba.id, b_src, b_line[:220]))
+
         for article in articles:
             source_name = article.source.name if article.source else ""
             source_url = article.source.url if article.source else ""
             combined_source = (source_name + " " + source_url).lower()
+
+            # Build relevant context for this article (prioritize same-source sibling/recent items)
+            src_lower = source_name.lower()
+            same_src_lines = [
+                line for aid, s_name, line in (running_context_items + batch_raw_items)
+                if aid != article.id and s_name == src_lower
+            ]
+            other_lines = [
+                line for aid, s_name, line in running_context_items
+                if aid != article.id and s_name != src_lower
+            ]
+            # Deduplicate preserving order and cap at 10 context items
+            seen_lines: set[str] = set()
+            context_lines: list[str] = []
+            for line in (same_src_lines + other_lines):
+                if line not in seen_lines:
+                    seen_lines.add(line)
+                    context_lines.append(line)
+                if len(context_lines) >= 10:
+                    break
+            recent_context_str = "\n".join(context_lines) if context_lines else None
 
             logger.info("Analyzing article ID %d: '%s' (Source: %s)...", article.id, article.title[:35], source_name)
 
@@ -184,6 +230,7 @@ class SummarizerService:
                 title=article.title,
                 text=article.cleaned_content or article.raw_content,
                 source_name=source_name,
+                recent_context=recent_context_str,
             )
 
             if not analysis:
@@ -381,19 +428,26 @@ class SummarizerService:
             if chosen_category == "Swiss":
                 article.title = ContentCleaner.clean_title(article.title)
             else:
+                orig_title = (article.title or "").strip()
                 is_ukr_source = (category.name == "Украина") or ("novynaukr" in combined_source)
-                if analysis.russian_title and len(analysis.russian_title.strip()) > 3:
-                    has_latin = any(c.isascii() and c.isalpha() for c in (article.title or ""))
-                    has_ukrainian = any(c in "ієїґІЄЇҐ" for c in (article.title or ""))
-                    if has_latin or has_ukrainian or is_ukr_source:
-                        article.title = ContentCleaner.clean_title(analysis.russian_title)
+                has_ukrainian = any(c in "ієїґІЄЇҐ" for c in orig_title)
+                cyrillic_count = sum(1 for c in orig_title.lower() if ('а' <= c <= 'я') or c == 'ё')
+                is_placeholder = orig_title.lower() in ["", "новость", "news", "без заголовка"]
+                needs_translation = is_ukr_source or has_ukrainian or (cyrillic_count < 3) or is_placeholder
+
+                if needs_translation and analysis.russian_title and len(analysis.russian_title.strip()) > 3:
+                    article.title = ContentCleaner.clean_title(analysis.russian_title)
                 else:
-                    article.title = ContentCleaner.clean_title(article.title)
+                    article.title = ContentCleaner.clean_title(orig_title)
 
                 if is_ukr_source and any(c in "ієїґІЄЇҐ" for c in (article.title or "")) and analysis.short_summary:
                     first_sent = analysis.short_summary.split('.')[0].strip()
                     if len(first_sent) > 10 and not any(c in "ієїґІЄЇҐ" for c in first_sent):
                         article.title = ContentCleaner.clean_title(first_sent)
+
+            # Prepend newly summarized article to running context so subsequent batch items see it
+            new_ctx_line = f"- [{source_name or 'News'}] {article.title} ({analysis.short_summary})"[:220]
+            running_context_items.insert(0, (article.id, src_lower, new_ctx_line))
 
             article.importance_score = score
 
