@@ -1,10 +1,11 @@
+import asyncio
 import logging
-from typing import Optional
+from typing import Any, Optional
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.ai.client import OllamaClient
+from app.ai.client import BaseAIClient, get_ai_client
 from app.processing.cleaner import ContentCleaner
 from app.database.models import Article, ArticleStatus, Category, Summary
 
@@ -50,9 +51,9 @@ SWISS_PRIORITY_KEYWORDS = [
 class SummarizerService:
     """Orchestrates LLM summarization, scoring, and categorical classification."""
 
-    def __init__(self, session: AsyncSession, ai_client: Optional[OllamaClient] = None) -> None:
+    def __init__(self, session: AsyncSession, ai_client: Optional[BaseAIClient] = None) -> None:
         self.session = session
-        self.ai_client = ai_client or OllamaClient()
+        self.ai_client = ai_client or get_ai_client()
 
     CATEGORY_ALIASES = {
         "мировая политика": "world-politics",
@@ -128,11 +129,11 @@ class SummarizerService:
 
         return category
 
-    async def summarize_pending_articles(self, limit: int = 5) -> int:
-        """Fetch pending PROCESSED articles and run them through the local LLM.
+    async def summarize_pending_articles(self, limit: int = 25) -> int:
+        """Fetch pending PROCESSED articles and run them through AI analysis.
         
         Args:
-            limit: Maximum number of articles to process in one batch (protects Celeron CPU).
+            limit: Maximum number of articles to process in one batch.
         """
         cand_stmt = (
             select(Article)
@@ -187,7 +188,10 @@ class SummarizerService:
 
             if not analysis:
                 logger.warning("AI analysis returned None for article ID %d, skipping.", article.id)
+                await asyncio.sleep(0.2)
                 continue
+
+            await asyncio.sleep(0.3)
 
             # Deterministic Category Assignment
             title_lower = (article.title or "").lower()

@@ -112,21 +112,27 @@ async def cmd_status(message: Message):
         ) or 0
         total_reports = await session.scalar(select(func.count(Report.id))) or 0
 
-    # 2. Check Ollama reachability (GPU worker / local)
-    ollama_status = "🔴 Unavailable"
-    try:
-        async with httpx.AsyncClient(timeout=3.0) as client:
-            resp = await client.get(f"{settings.OLLAMA_BASE_URL}/api/tags")
-            if resp.status_code == 200:
-                ollama_status = f"🟢 Online ({settings.OLLAMA_MODEL})"
-    except Exception:
-        ollama_status = "🔴 Offline (PC is powered off or sleeping)"
+    # 2. Check AI Engine reachability
+    if settings.AI_PROVIDER == "gemini" and settings.GEMINI_API_KEY:
+        ai_status = f"🟢 Online (Google Gemini: {settings.GEMINI_MODEL})"
+        ai_endpoint = "Google Cloud Generative AI"
+    else:
+        try:
+            async with httpx.AsyncClient(timeout=3.0) as client:
+                resp = await client.get(f"{settings.OLLAMA_BASE_URL}/api/tags")
+                if resp.status_code == 200:
+                    ai_status = f"🟢 Online (Ollama: {settings.OLLAMA_MODEL})"
+                else:
+                    ai_status = "🔴 Unavailable"
+        except Exception:
+            ai_status = "🔴 Offline"
+        ai_endpoint = settings.OLLAMA_BASE_URL
 
     text = (
         f"🖥 **News AI System Status**\n\n"
         f"🕒 **Server Time:** `{now_local}` (Zurich)\n"
-        f"🤖 **AI Worker (Ollama):** {ollama_status}\n"
-        f"🌐 **Neural Network Endpoint:** `{settings.OLLAMA_BASE_URL}`\n\n"
+        f"🤖 **AI Engine:** {ai_status}\n"
+        f"🌐 **AI Provider / Endpoint:** `{ai_endpoint}`\n\n"
         f"📊 **Database Statistics:**\n"
         f" • Total articles: **{total_articles}**\n"
         f" • Processed by AI: **{summarized}**\n"

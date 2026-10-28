@@ -14,7 +14,7 @@ from app.services.ingestion import IngestionService
 from app.services.processing import ProcessingService
 from app.services.summarizer import SummarizerService
 from app.services.report import ReportBuilderService
-from app.ai.client import OllamaClient
+from app.ai.client import get_ai_client
 from app.bot.utils import send_wake_on_lan, send_remote_sleep, split_message
 
 logger = logging.getLogger("news_ai.orchestrator")
@@ -170,26 +170,13 @@ class PipelineOrchestrator:
             processing = ProcessingService(session=session)
             await processing.process_collected_articles()
 
-            # 5. AI Summarization Phase (Local GPU PC disabled)
-            logger.info("Local GPU workstation usage is DISABLED. Skipping remote GPU wake and execution.")
-            local_available = False
+            # 5. AI Summarization Phase (Google Gemini / AI Engine)
+            logger.info("Starting AI Summarization Phase (Provider: %s)...", settings.AI_PROVIDER)
             try:
-                async with httpx.AsyncClient(timeout=3.0) as client:
-                    resp = await client.get("http://localhost:11434/api/tags")
-                    local_available = (resp.status_code == 200)
-            except Exception:
-                local_available = False
-
-            if local_available:
-                logger.info("Local server Ollama container is ONLINE. Running lightweight summarization...")
-                local_ai = OllamaClient(base_url="http://localhost:11434", model="qwen2.5:0.5b", timeout=120.0)
-                summarizer = SummarizerService(session=session, ai_client=local_ai)
-                try:
-                    await summarizer.summarize_pending_articles(limit=15)
-                except Exception as sum_err:
-                    logger.error("Error during server summarization: %s", sum_err)
-            else:
-                logger.info("Summarization skipped: local GPU workstation is disabled and server Ollama is offline.")
+                summarizer = SummarizerService(session=session)
+                await summarizer.summarize_pending_articles(limit=25)
+            except Exception as sum_err:
+                logger.error("Error during AI summarization: %s", sum_err)
 
             # 6. Report Compilation Phase
             builder = ReportBuilderService(session=session)

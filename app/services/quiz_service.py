@@ -446,6 +446,39 @@ class QuizService:
             )
             user_prompt = f"Придумай задачу по современному AI на тему: {topic}."
 
+        if settings.AI_PROVIDER == "gemini" and settings.GEMINI_API_KEY:
+            try:
+                gemini_url = f"{settings.GEMINI_BASE_URL.rstrip('/')}/models/{settings.GEMINI_MODEL}:generateContent?key={settings.GEMINI_API_KEY}"
+                gemini_payload = {
+                    "contents": [
+                        {
+                            "parts": [
+                                {"text": f"{system_prompt}\n\nЗадача: {user_prompt}"}
+                            ]
+                        }
+                    ],
+                    "generationConfig": {
+                        "responseMimeType": "application/json",
+                        "temperature": 0.85,
+                    }
+                }
+                async with httpx.AsyncClient(timeout=25.0) as client:
+                    resp = await client.post(gemini_url, json=gemini_payload)
+                    resp.raise_for_status()
+                    data = resp.json()
+
+                candidates = data.get("candidates", [])
+                if candidates:
+                    content = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "").strip()
+                    parsed = json.loads(content)
+                    if isinstance(parsed, dict) and parsed.get("question") and isinstance(parsed.get("options"), list) and len(parsed.get("options", [])) == 4:
+                        if not parsed.get("explanation"):
+                            parsed["explanation"] = "Правильный ответ: " + str(parsed["options"][0])
+                        parsed["correct"] = 0
+                        return parsed
+            except Exception as gem_err:
+                logger.warning("Gemini quiz generation failed: %s, falling back to Ollama...", gem_err)
+
         payload = {
             "model": model,
             "messages": [

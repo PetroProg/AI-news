@@ -42,6 +42,14 @@ class Settings(BaseSettings):
             f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
 
+    # AI Engine Settings (gemini or ollama)
+    AI_PROVIDER: str = "gemini"
+
+    # Google Gemini Settings
+    GEMINI_API_KEY: Optional[str] = None
+    GEMINI_MODEL: str = "gemini-3.5-flash"
+    GEMINI_BASE_URL: str = "https://generativelanguage.googleapis.com/v1beta"
+
     # Ollama LLM Settings
     OLLAMA_BASE_URL: str = "http://ollama:11434"
     OLLAMA_MODEL: str = "qwen2.5:1.5b"

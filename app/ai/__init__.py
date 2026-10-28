@@ -1,3 +1,15 @@
-from app.ai.client import ArticleAnalysisResult, OllamaClient
+from app.ai.client import (
+    ArticleAnalysisResult,
+    BaseAIClient,
+    GeminiClient,
+    OllamaClient,
+    get_ai_client,
+)
 
-__all__ = ["OllamaClient", "ArticleAnalysisResult"]
+__all__ = [
+    "ArticleAnalysisResult",
+    "BaseAIClient",
+    "GeminiClient",
+    "OllamaClient",
+    "get_ai_client",
+]

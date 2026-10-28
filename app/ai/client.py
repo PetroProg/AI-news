@@ -1,7 +1,7 @@
 import json
 import logging
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
 import httpx
 from pydantic import BaseModel, Field, model_validator
 
@@ -10,9 +10,41 @@ from app.config import get_settings
 logger = logging.getLogger("news_ai.ai.client")
 settings = get_settings()
 
+SYSTEM_NEWS_ANALYSIS_PROMPT = (
+    "Ты — AI-аналитик новостей. Проанализируй заголовок и текст статьи и верни СТРОГО валидный JSON без markdown:\n\n"
+    "Категории (выбери одну): 'IT', 'Технологии', 'AI & Нейросети', 'DevOps & Linux', 'CS2', 'Украина', 'Swiss', 'Мир', 'Футбол', 'F1'.\n"
+    "- 'Технологии': общие технологии, робототехника, роботы (Figure, Boston Dynamics), гаджеты, девайсы, электроника, процессоры, железо, космос, научные инновации. Если новость о роботах или гаджетах — СТРОГО категория 'Технологии', а не 'AI & Нейросети' и не 'IT'!\n"
+    "- 'AI & Нейросети': сугубо искусственный интеллект, нейросети, LLM, большие языковые модели (OpenAI, ChatGPT, Claude, Gemini, DeepSeek, веса моделей, генеративный ИИ, бенчмарки, обучение нейросетей).\n"
+    "- 'IT': программирование, языки (Python, Rust, Go, C++, JS/TS, Java, C#), разработка ПО, фреймворки, код, архитектура софта.\n"
+    "- 'Украина': новости непосредственно о событиях внутри Украины (политика, экономика, города, общество, энергетика, официальные сводки Генштаба/ПВО). Если новость рассказывает о событиях в других странах, США, ЕС, космосе, науке или мире без прямой связи с Украиной (например, Трамп, выборы в США, Китай, Иран, астрономия, космос, глобальные события) — СТРОГО категория 'Мир'!\n"
+    "- 'CS2': киберспорт, турниры, команды (NaVi, Vitality, Spirit, FaZe), игроки (s1mple, m0NESY, ZywOo, donk), CS2, CS:GO, Clash Royale.\n"
+    "- 'Swiss': новости Швейцарии (источники Instagram: RTS, Blick, 20 minutes и др.). ВАЖНО: для категории 'Swiss' НЕ переводи текст на русский, верни заголовок и short_summary на оригинальном французском языке (en français)!\n"
+    "- 'Мир': международная политика, события в мире, мировые дипломатические события, зарубежные лидеры (Трамп, Байден, Макрон, Шольц), выборы за рубежом, Белый дом, Конгресс США, ЕС, Ближний Восток, глобальные научные открытия, астрономия и космос.\n\n"
+    "- 'Футбол': ТОЛЬКО мужской мировой и европейский футбол (Лига Чемпионов, Ла Лига, АПЛ, Эль-Класико, Барселона, Реал, ключевые официальные трансферы). СТРОГО ИСКЛЮЧАЙ ЖЕНСКИЙ ФУТБОЛ! Любым новостям про женский футбол (женские лиги, женский ЧМ или Кубок мира, женский Арсенал/Барселону, WSL) СТРОГО ставь важность 1.0 (будут отсеяны)! ВАЖНО: Если новость получена из футбольного источника (SkySports Football, BBC Sport Football, The Guardian Football, newsbarca, champ_football, transferyi), категория ОБЯЗАТЕЛЬНО 'Футбол'! Ключевым событиям (победы в топ-матчах, Эль-Класико, Лига Чемпионов, крупные официальные трансферы уровня 'Here we go', ключевые новости 'Барселоны' и Месси) ставь высокую важность (8.0 - 9.5)! Рядовым тренировкам, слухам и мелким инфоповодам ставь 4.0 - 6.5. ИГНОРИРУЙ новости про российский футбол, РПЛ, фигурное катание, хоккей и локальный спорт (таким новостям ставь строго 1.0)!\n"
+    "- 'F1': Формула-1, автоспорт, гонки, пилоты (Верстаппен, Хэмилтон, Леклер, Норрис), команды (Red Bull, Ferrari, Mercedes, McLaren), Гран-при, квалификации, спринты. ВАЖНО: оценивай высоко (7.5-9.5) ТОЛЬКО реальные ключевые события: результаты квалификаций и гонок (победители, поул, подиум), официальные штрафы FIA, дисквалификации, официальные трансферы пилотов, технические сходы/аварии лидеров. СУБЪЕКТИВНЫМ авторским колонкам, рассуждениям обозревателей, рейтингам и спискам ('5 победителей и проигравших', 'Power Rankings', 'советы беттерам') СТРОГО ставь важность 1.5 - 3.0!\n"
+    "Оценка важности (importance_score от 1.0 до 10.0):\n"
+    "- 1.0 - 4.0 (МЕЛКОЕ / САРКАЗМ / МЕМЫ / СУБЪЕКТИВНЫЕ КОЛОНКИ / БЕЗ КОНТЕКСТА): сарказм, ирония, шуточные посты, рофлы, мемы, курьезные игровые моменты; субъективные авторские колонки мнений и списки без четких фактов и контекста (например: 'X победителей и проигравших', 'Power Rankings / Рейтинги силы', 'Кто впечатлил / разочаровал', 'Уроки для беттеров / советы по ставкам', рассуждения отдельных журналистов 'по мнению кого-то'); новости без конкретной фактуры или контекста. ВАЖНО: статьям без конкретных фактов и контекста СТРОГО ставь score от 1.5 до 3.5!\n"
+    "- 4.1 - 5.5: оперативные микро-сигналы о пролете единичных дронов/шахедов ('курсом на...', 'угроза по баллистике', 'летит дрон', обрывки мониторинга), рядовые матчи групп CS2/футбола, слухи без подтверждения.\n"
+    "- 7.5 - 9.5: важные события мирового уровня, сводки Воздушных сил, заявления ООН/НАТО, события в г. Дніпро/Днепр, новости о ТЦК и мобилизации, энергетика/удары. В CS2/спорте: официальные реальные трансферы и решафлы команд, победы в финалах/турнирах (мейджоры, гранд-финалы), официальные обновления/патчи игры от Valve.\n\n"
+    "Язык и перевод:\n"
+    "- СТРОГО русский язык (кроме 'Swiss'). Категорически запрещены китайские иероглифы, украинские или английские слова в ответе!\n"
+    "- Если заголовок или текст на украинском или английском языке — ОБЯЗАТЕЛЬНО переведи заголовок на русский язык и верни в поле russian_title.\n"
+    "- short_summary: 1-2 кратких емких предложения сути с КОНКРЕТНЫМИ ФАКТАМИ на русском языке. Запрещено писать размытые мета-фразы без контекста вроде 'Пилоты и команды, которые по мнению кого-то...'. Если новость шуточная или саркастичная — явно укажи, что это курьёз/шутка.\n"
+    "- why_it_matters: 1 предложение почему это важно на русском языке.\n\n"
+    "Формат JSON:\n"
+    "{\n"
+    '  "russian_title": "Заголовок на русском языке",\n'
+    '  "short_summary": "1-2 предложения сути на русском",\n'
+    '  "why_it_matters": "Почему это важно",\n'
+    '  "key_points": ["Факт 1", "Факт 2"],\n'
+    '  "importance_score": 8.5,\n'
+    '  "category": "Мир"\n'
+    "}\n"
+)
+
 
 class ArticleAnalysisResult(BaseModel):
-    """Structured analytical output generated by the local LLM."""
+    """Structured analytical output generated by the AI model."""
 
     russian_title: Optional[str] = Field(None, description="Заголовок новости на русском языке")
     short_summary: str = Field(default="Краткое резюме события.", description="1-2 sentences summary in Russian")
@@ -55,6 +87,108 @@ class ArticleAnalysisResult(BaseModel):
         return data
 
 
+@runtime_checkable
+class BaseAIClient(Protocol):
+    """Protocol for AI analysis clients."""
+
+    async def analyze_article(
+        self,
+        title: str,
+        text: str,
+        source_name: Optional[str] = None,
+    ) -> Optional[ArticleAnalysisResult]:
+        ...
+
+
+class GeminiClient:
+    """Asynchronous client for Google Gemini API."""
+
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        model: Optional[str] = None,
+        base_url: Optional[str] = None,
+        timeout: Optional[float] = None,
+    ) -> None:
+        self.api_key = api_key or settings.GEMINI_API_KEY
+        self.model = model or settings.GEMINI_MODEL
+        self.base_url = (base_url or settings.GEMINI_BASE_URL).rstrip("/")
+        self.timeout = timeout or 35.0
+
+    async def analyze_article(
+        self,
+        title: str,
+        text: str,
+        source_name: Optional[str] = None,
+    ) -> Optional[ArticleAnalysisResult]:
+        """Analyze article and return structured JSON via Gemini API."""
+        if not self.api_key:
+            logger.error("GEMINI_API_KEY is not configured! Cannot call Gemini API.")
+            return None
+
+        truncated_text = (text or "")[:1500]
+        source_prefix = f"Источник: {source_name}\n" if source_name else ""
+        user_prompt = f"{source_prefix}Заголовок: {title}\nТекст: {truncated_text}"
+
+        url = f"{self.base_url}/models/{self.model}:generateContent?key={self.api_key}"
+        payload = {
+            "contents": [
+                {
+                    "parts": [
+                        {"text": f"{SYSTEM_NEWS_ANALYSIS_PROMPT}\n\nСтатья для анализа:\n{user_prompt}"}
+                    ]
+                }
+            ],
+            "generationConfig": {
+                "responseMimeType": "application/json",
+                "temperature": 0.2,
+            },
+        }
+
+        try:
+            logger.info("Sending article '%s' to Gemini (%s)...", title[:35], self.model)
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.post(url, json=payload)
+                response.raise_for_status()
+
+            data = response.json()
+            candidates = data.get("candidates", [])
+            if not candidates:
+                logger.warning("Gemini returned no candidates for '%s'", title[:35])
+                return None
+
+            raw_text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "").strip()
+
+            try:
+                parsed = json.loads(raw_text)
+            except json.JSONDecodeError:
+                start = raw_text.find("{")
+                end = raw_text.rfind("}")
+                if start != -1 and end != -1 and end > start:
+                    parsed = json.loads(raw_text[start : end + 1])
+                else:
+                    logger.error("Failed to parse Gemini JSON: %s", raw_text[:200])
+                    return None
+
+            result = ArticleAnalysisResult(**parsed)
+            logger.info(
+                "Gemini successfully analyzed '%s' (Score: %.1f, Cat: %s)",
+                title[:30],
+                result.importance_score,
+                result.category,
+            )
+            return result
+
+        except httpx.TimeoutException:
+            logger.error("Timeout waiting for Gemini for: %s", title[:35])
+        except httpx.HTTPStatusError as e:
+            logger.error("HTTP error from Gemini API: %s - %s", e.response.status_code, e.response.text[:200])
+        except Exception as e:
+            logger.error("Error during Gemini analysis: %s", e)
+
+        return None
+
+
 class OllamaClient:
     """Asynchronous client optimized for AI analysis with local LLM."""
 
@@ -75,45 +209,13 @@ class OllamaClient:
         source_name: Optional[str] = None,
     ) -> Optional[ArticleAnalysisResult]:
         """Analyze article and return structured JSON."""
-        system_prompt = (
-            "Ты — AI-аналитик новостей. Проанализируй заголовок и текст статьи и верни СТРОГО валидный JSON без markdown:\n\n"
-            "Категории (выбери одну): 'IT', 'Технологии', 'AI & Нейросети', 'DevOps & Linux', 'CS2', 'Украина', 'Swiss', 'Мир', 'Футбол', 'F1'.\n"
-            "- 'Технологии': общие технологии, робототехника, роботы (Figure, Boston Dynamics), гаджеты, девайсы, электроника, процессоры, железо, космос, научные инновации. Если новость о роботах или гаджетах — СТРОГО категория 'Технологии', а не 'AI & Нейросети' и не 'IT'!\n"
-            "- 'AI & Нейросети': сугубо искусственный интеллект, нейросети, LLM, большие языковые модели (OpenAI, ChatGPT, Claude, Gemini, DeepSeek, веса моделей, генеративный ИИ, бенчмарки, обучение нейросетей).\n"
-            "- 'IT': программирование, языки (Python, Rust, Go, C++, JS/TS, Java, C#), разработка ПО, фреймворки, код, архитектура софта.\n"
-            "- 'Украина': новости непосредственно о событиях внутри Украины (политика, экономика, города, общество, энергетика, официальные сводки Генштаба/ПВО). Если новость рассказывает о событиях в других странах, США, ЕС, космосе, науке или мире без прямой связи с Украиной (например, Трамп, выборы в США, Китай, Иран, астрономия, космос, глобальные события) — СТРОГО категория 'Мир'!\n"
-            "- 'CS2': киберспорт, турниры, команды (NaVi, Vitality, Spirit, FaZe), игроки (s1mple, m0NESY, ZywOo, donk), CS2, CS:GO, Clash Royale.\n"
-            "- 'Swiss': новости Швейцарии (источники Instagram: RTS, Blick, 20 minutes и др.). ВАЖНО: для категории 'Swiss' НЕ переводи текст на русский, верни заголовок и short_summary на оригинальном французском языке (en français)!\n"
-            "- 'Мир': международная политика, события в мире, мировые дипломатические события, зарубежные лидеры (Трамп, Байден, Макрон, Шольц), выборы за рубежом, Белый дом, Конгресс США, ЕС, Ближний Восток, глобальные научные открытия, астрономия и космос.\n\n"
-            "- 'Футбол': ТОЛЬКО мужской мировой и европейский футбол (Лига Чемпионов, Ла Лига, АПЛ, Эль-Класико, Барселона, Реал, ключевые официальные трансферы). СТРОГО ИСКЛЮЧАЙ ЖЕНСКИЙ ФУТБОЛ! Любым новостям про женский футбол (женские лиги, женский ЧМ или Кубок мира, женский Арсенал/Барселону, WSL) СТРОГО ставь важность 1.0 (будут отсеяны)! ВАЖНО: Если новость получена из футбольного источника (SkySports Football, BBC Sport Football, The Guardian Football, newsbarca, champ_football, transferyi), категория ОБЯЗАТЕЛЬНО 'Футбол'! Ключевым событиям (победы в топ-матчах, Эль-Класико, Лига Чемпионов, крупные официальные трансферы уровня 'Here we go', ключевые новости 'Барселоны' и Месси) ставь высокую важность (8.0 - 9.5)! Рядовым тренировкам, слухам и мелким инфоповодам ставь 4.0 - 6.5. ИГНОРИРУЙ новости про российский футбол, РПЛ, фигурное катание, хоккей и локальный спорт (таким новостям ставь строго 1.0)!\n"
-            "- 'F1': Формула-1, автоспорт, гонки, пилоты (Верстаппен, Хэмилтон, Леклер, Норрис), команды (Red Bull, Ferrari, Mercedes, McLaren), Гран-при, квалификации, спринты. ВАЖНО: оценивай высоко (7.5-9.5) ТОЛЬКО реальные ключевые события: результаты квалификаций и гонок (победители, поул, подиум), официальные штрафы FIA, дисквалификации, официальные трансферы пилотов, технические сходы/аварии лидеров. СУБЪЕКТИВНЫМ авторским колонкам, рассуждениям обозревателей, рейтингам и спискам ('5 победителей и проигравших', 'Power Rankings', 'советы беттерам') СТРОГО ставь важность 1.5 - 3.0!\n"
-            "Оценка важности (importance_score от 1.0 до 10.0):\n"
-            "- 1.0 - 4.0 (МЕЛКОЕ / САРКАЗМ / МЕМЫ / СУБЪЕКТИВНЫЕ КОЛОНКИ / БЕЗ КОНТЕКСТА): сарказм, ирония, шуточные посты, рофлы, мемы, курьезные игровые моменты; субъективные авторские колонки мнений и списки без четких фактов и контекста (например: 'X победителей и проигравших', 'Power Rankings / Рейтинги силы', 'Кто впечатлил / разочаровал', 'Уроки для беттеров / советы по ставкам', рассуждения отдельных журналистов 'по мнению кого-то'); новости без конкретной фактуры или контекста. ВАЖНО: статьям без конкретных фактов и контекста СТРОГО ставь score от 1.5 до 3.5!\n"
-            "- 4.1 - 5.5: оперативные микро-сигналы о пролете единичных дронов/шахедов ('курсом на...', 'угроза по баллистике', 'летит дрон', обрывки мониторинга), рядовые матчи групп CS2/футбола, слухи без подтверждения.\n"
-            "- 7.5 - 9.5: важные события мирового уровня, сводки Воздушных сил, заявления ООН/НАТО, события в г. Дніпро/Днепр, новости о ТЦК и мобилизации, энергетика/удары. В CS2/спорте: официальные реальные трансферы и решафлы команд, победы в финалах/турнирах (мейджоры, гранд-финалы), официальные обновления/патчи игры от Valve.\n\n"
-            "Язык и перевод:\n"
-            "- СТРОГО русский язык (кроме 'Swiss'). Категорически запрещены китайские иероглифы, украинские или английские слова в ответе!\n"
-            "- Если заголовок или текст на украинском или английском языке — ОБЯЗАТЕЛЬНО переведи заголовок на русский язык и верни в поле russian_title.\n"
-            "- short_summary: 1-2 кратких емких предложения сути с КОНКРЕТНЫМИ ФАКТАМИ на русском языке. Запрещено писать размытые мета-фразы без контекста вроде 'Пилоты и команды, которые по мнению кого-то...'. Если новость шуточная или саркастичная — явно укажи, что это курьёз/шутка.\n"
-            "- why_it_matters: 1 предложение почему это важно на русском языке.\n\n"
-            "Формат JSON:\n"
-            "{\n"
-            '  "russian_title": "Заголовок на русском языке",\n'
-            '  "short_summary": "1-2 предложения сути на русском",\n'
-            '  "why_it_matters": "Почему это важно",\n'
-            '  "key_points": ["Факт 1", "Факт 2"],\n'
-            '  "importance_score": 8.5,\n'
-            '  "category": "Мир"\n'
-            "}\n"
-        )
-
-        truncated_text = text[:700]
+        truncated_text = (text or "")[:700]
         source_prefix = f"Источник: {source_name}\n" if source_name else ""
         user_prompt = f"{source_prefix}Заголовок: {title}\nТекст: {truncated_text}"
 
         payload: Dict[str, Any] = {
             "model": self.model,
-            "system": system_prompt,
+            "system": SYSTEM_NEWS_ANALYSIS_PROMPT,
             "prompt": user_prompt,
             "stream": False,
             "format": "json",
@@ -141,12 +243,17 @@ class OllamaClient:
                 start = raw_text.find("{")
                 end = raw_text.rfind("}")
                 if start != -1 and end != -1 and end > start:
-                    parsed = json.loads(raw_text[start:end+1])
+                    parsed = json.loads(raw_text[start : end + 1])
                 else:
                     raise
 
             result = ArticleAnalysisResult(**parsed)
-            logger.info("Successfully analyzed '%s' (Score: %.1f, Cat: %s)", title[:30], result.importance_score, result.category)
+            logger.info(
+                "Successfully analyzed '%s' (Score: %.1f, Cat: %s)",
+                title[:30],
+                result.importance_score,
+                result.category,
+            )
             return result
 
         except httpx.TimeoutException:
@@ -155,3 +262,10 @@ class OllamaClient:
             logger.error("Error during analysis: %s", e)
 
         return None
+
+
+def get_ai_client() -> BaseAIClient:
+    """Factory returning the active AI client based on configuration."""
+    if settings.AI_PROVIDER == "gemini" and settings.GEMINI_API_KEY:
+        return GeminiClient()
+    return OllamaClient()
