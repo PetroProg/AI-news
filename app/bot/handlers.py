@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import logging
@@ -13,7 +14,13 @@ from app.database.models import Article, ArticleStatus, Report, ReportType
 from app.services.report import ReportBuilderService
 from app.services.orchestrator import PipelineOrchestrator
 from app.bot.keyboards import get_main_keyboard
-from app.bot.utils import send_wake_on_lan, send_remote_sleep, split_message
+from app.bot.utils import (
+    send_wake_on_lan,
+    send_remote_sleep,
+    split_message,
+    get_windows_idle_info,
+    check_gpu_load,
+)
 
 logger = logging.getLogger("news_ai.bot.handlers")
 router = Router(name="main_handlers")
@@ -153,7 +160,7 @@ async def cmd_wake_pc(message: Message):
             f"• **MAC:** `{settings.WOL_MAC_ADDRESS}`\n"
             f"• **Broadcast:** `{settings.WOL_BROADCAST_IP}`\n\n"
             f"The RTX 3060 PC should wake up within 10–15 seconds. "
-            f"You can verify its availability with the **🖥 Server Status** button.",
+            f"You can verify its availability with the **💻 PC Status** button.",
             parse_mode="Markdown",
             reply_markup=get_main_keyboard()
         )
@@ -203,3 +210,84 @@ async def cmd_sleep_pc(message: Message):
             "⚠️ Failed to send sleep command. Check Tailscale connection.",
             parse_mode="Markdown"
         )
+
+
+@router.message(Command("pc_status"))
+@router.message(F.text.in_(["💻 PC Status", "💻 Статус ПК", "💻 Check PC", "💻 PC", "Статус ПК"]))
+async def cmd_pc_status(message: Message):
+    """Checks whether the user's Windows workstation is online or offline."""
+    status_msg = await message.answer(
+        "🔍 *Checking workstation status...*",
+        parse_mode="Markdown",
+        reply_markup=get_main_keyboard()
+    )
+
+    host = settings.WINDOWS_SSH_HOST
+    port = 22
+    is_online = False
+
+    # 1. Quick TCP connection probe (port 22) with 2.5s timeout
+    try:
+        conn = asyncio.open_connection(host, port)
+        reader, writer = await asyncio.wait_for(conn, timeout=2.5)
+        writer.close()
+        await writer.wait_closed()
+        is_online = True
+    except Exception:
+        is_online = False
+
+    if not is_online:
+        text = (
+            "💻 **Windows PC Status**\n\n"
+            "🔴 **Status:** **OFFLINE** (Sleeping / Suspended / Powered off)\n"
+            f"🌐 **Host IP:** `{host}` (Tailscale)\n"
+            "🔌 **SSH Port 22:** Unreachable\n\n"
+            "💡 *Tip: Tap **🔌 Wake PC** to power it on via Wake-on-LAN.*"
+        )
+        await status_msg.edit_text(text, parse_mode="Markdown", reply_markup=get_main_keyboard())
+        return
+
+    # 2. PC is online, query quick diagnostics
+    extra_details = []
+    try:
+        idle_info = await asyncio.wait_for(get_windows_idle_info(), timeout=4.0)
+        if idle_info:
+            idle_min = float(idle_info.get("idle_min", 0.0))
+            uptime_min = float(idle_info.get("uptime_min", 0.0))
+            if uptime_min >= 60:
+                uptime_str = f"{int(uptime_min // 60)}h {int(uptime_min % 60)}m"
+            else:
+                uptime_str = f"{int(uptime_min)}m"
+            extra_details.append(f"⏱ **Uptime:** `{uptime_str}`")
+
+            if idle_min < 2.0:
+                activity_str = "Active now (user working)"
+            else:
+                activity_str = f"Idle for {int(idle_min)} min"
+            extra_details.append(f"👤 **Console:** {activity_str}")
+    except Exception:
+        pass
+
+    try:
+        gpu_load = await asyncio.wait_for(check_gpu_load(samples=1), timeout=4.0)
+        if gpu_load is not None:
+            extra_details.append(f"🎮 **GPU (RTX 3060):** `{gpu_load}%` load")
+    except Exception:
+        pass
+
+    details_block = "\n".join(extra_details)
+    if details_block:
+        details_block = "\n" + details_block + "\n"
+    else:
+        details_block = "\n"
+
+    text = (
+        "💻 **Windows PC Status**\n\n"
+        "🟢 **Status:** **ONLINE**\n"
+        f"🌐 **Host IP:** `{host}` (Tailscale)\n"
+        "🔌 **SSH Port 22:** Connected"
+        f"{details_block}\n"
+        "✨ *The computer is running and ready for remote access (RDP / Moonlight / SSH).* "
+        "Tap **💤 Sleep PC** when you want to put it into sleep mode."
+    )
+    await status_msg.edit_text(text, parse_mode="Markdown", reply_markup=get_main_keyboard())

@@ -265,9 +265,10 @@ The bot interface, commands, interactive reply buttons, and system notifications
 | `/run_pipeline` | `🚀 Run Full Pipeline` | Executes complete cycle: WoL → Ingest → Dedupe → AI → Push |
 | `/generate` | `⚡ Generate Digest` | Compiles an on-demand digest from recent accumulated articles (48h) |
 | `/digest` | `📰 Latest Digest` | Retrieves and delivers the most recent compiled briefing |
-| `/wake_pc` | `🔌 Wake PC` | Sends IEEE 802.3 Magic Packet to power on the RTX 3060 PC |
+| `/pc_status` | `💻 PC Status` | Checks if Windows workstation is Online/Offline via SSH & Tailscale, showing uptime, console activity and RTX 3060 load |
+| `/wake_pc` | `🔌 Wake PC` | Sends IEEE 802.3 Magic Packet to power on the Windows PC |
 | `/sleep_pc` | `💤 Sleep PC` | Puts the GPU workstation into S3 sleep via SSH (with Smart Activity Guard) |
-| `/status` | `🖥 Server Status` | Reports database telemetry, Zurich server time, and GPU Ollama status |
+| `/status` | `🖥 Server Status` | Reports database telemetry, Zurich server time, and Google Gemini AI status |
 
 ---
 

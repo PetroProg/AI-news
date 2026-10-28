@@ -12,6 +12,7 @@ def get_main_keyboard() -> ReplyKeyboardMarkup:
             KeyboardButton(text="💤 Sleep PC")
         ],
         [
+            KeyboardButton(text="💻 PC Status"),
             KeyboardButton(text="🖥 Server Status")
         ]
     ]

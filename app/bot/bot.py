@@ -25,8 +25,9 @@ async def start_bot():
         BotCommand(command="run_pipeline", description="Run full autonomous pipeline"),
         BotCommand(command="generate", description="Compile digest from recent articles (48h)"),
         BotCommand(command="digest", description="Show the latest compiled digest"),
-        BotCommand(command="wake_pc", description="Wake up RTX 3060 PC (Wake-on-LAN)"),
-        BotCommand(command="sleep_pc", description="Put RTX 3060 PC to sleep"),
+        BotCommand(command="pc_status", description="Check Windows PC Online/Offline status"),
+        BotCommand(command="wake_pc", description="Wake up Windows PC (Wake-on-LAN)"),
+        BotCommand(command="sleep_pc", description="Put Windows PC to sleep"),
         BotCommand(command="status", description="Show server, DB & AI worker status"),
     ]
     try:
