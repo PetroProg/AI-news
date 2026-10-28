@@ -244,7 +244,10 @@ async def cmd_pc_status(message: Message):
             "🔌 **SSH Port 22:** Unreachable\n\n"
             "💡 *Tip: Tap **🔌 Wake PC** to power it on via Wake-on-LAN.*"
         )
-        await status_msg.edit_text(text, parse_mode="Markdown", reply_markup=get_main_keyboard())
+        try:
+            await status_msg.edit_text(text, parse_mode="Markdown")
+        except Exception:
+            await status_msg.edit_text(text)
         return
 
     # 2. PC is online, query quick diagnostics
@@ -290,4 +293,7 @@ async def cmd_pc_status(message: Message):
         "✨ *The computer is running and ready for remote access (RDP / Moonlight / SSH).* "
         "Tap **💤 Sleep PC** when you want to put it into sleep mode."
     )
-    await status_msg.edit_text(text, parse_mode="Markdown", reply_markup=get_main_keyboard())
+    try:
+        await status_msg.edit_text(text, parse_mode="Markdown")
+    except Exception:
+        await status_msg.edit_text(text)
