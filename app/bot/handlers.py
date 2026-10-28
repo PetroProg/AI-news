@@ -85,10 +85,17 @@ async def cmd_generate_digest(message: Message):
             report = await builder.build_digest(report_type=ReportType.CUSTOM, hours_back=48)
 
         if not report:
-            await status_msg.edit_text("📭 No new high-importance analyzed articles found for the report.")
+            try:
+                await status_msg.delete()
+            except Exception:
+                pass
+            await message.answer("📭 No new high-importance analyzed articles found for the report.", reply_markup=get_main_keyboard())
             return
 
-        await status_msg.delete()
+        try:
+            await status_msg.delete()
+        except Exception:
+            pass
 
         chunks = split_message(report.content_markdown)
         for chunk in chunks:
@@ -99,7 +106,11 @@ async def cmd_generate_digest(message: Message):
 
     except Exception as exc:
         logger.error(f"Error generating digest on demand: {exc}", exc_info=True)
-        await status_msg.edit_text(f"❌ Error generating digest: `{exc}`", parse_mode="Markdown")
+        try:
+            await status_msg.delete()
+        except Exception:
+            pass
+        await message.answer(f"❌ Error generating digest: `{exc}`", parse_mode="Markdown", reply_markup=get_main_keyboard())
 
 
 @router.message(Command("status"))
@@ -191,24 +202,36 @@ async def cmd_run_pipeline(message: Message, bot: Bot):
     try:
         orchestrator = PipelineOrchestrator(bot=bot)
         await orchestrator.run_full_pipeline(report_type=ReportType.CUSTOM)
-        await status_msg.edit_text("✅ **Autonomous pipeline completed successfully!**", parse_mode="Markdown")
+        try:
+            await status_msg.delete()
+        except Exception:
+            pass
+        await message.answer("✅ **Autonomous pipeline completed successfully!**", parse_mode="Markdown", reply_markup=get_main_keyboard())
     except Exception as exc:
         logger.error("Manual pipeline run failed: %s", exc, exc_info=True)
-        await status_msg.edit_text(f"❌ Pipeline execution error: `{exc}`", parse_mode="Markdown")
+        try:
+            await status_msg.delete()
+        except Exception:
+            pass
+        await message.answer(f"❌ Pipeline execution error: `{exc}`", parse_mode="Markdown", reply_markup=get_main_keyboard())
 
 
 @router.message(Command("sleep_pc"))
 @router.message(F.text.in_(["💤 Sleep PC", "💤 Усыпить ПК", "💤 Спать ПК"]))
-async def cmd_sleep_pc(message: Message):
+async def cmd_sleep_pc(message: Message, bot: Bot):
     """Sends a remote sleep command via SSH to suspend the workstation."""
-    status_msg = await message.answer("⏳ Sending sleep signal to PC...", reply_markup=get_main_keyboard())
+    try:
+        await bot.send_chat_action(chat_id=message.chat.id, action="typing")
+    except Exception:
+        pass
     success = await send_remote_sleep(force=True)
     if success:
-        await status_msg.edit_text("💤 *Computer has been put into sleep mode.*", parse_mode="Markdown")
+        await message.answer("💤 *Computer has been put into sleep mode.*", parse_mode="Markdown", reply_markup=get_main_keyboard())
     else:
-        await status_msg.edit_text(
+        await message.answer(
             "⚠️ Failed to send sleep command. Check Tailscale connection.",
-            parse_mode="Markdown"
+            parse_mode="Markdown",
+            reply_markup=get_main_keyboard()
         )
 
 

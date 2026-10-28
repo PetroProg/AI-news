@@ -47,7 +47,7 @@ class Settings(BaseSettings):
 
     # Google Gemini Settings
     GEMINI_API_KEY: Optional[str] = None
-    GEMINI_MODEL: str = "gemini-3.5-flash"
+    GEMINI_MODEL: str = "gemini-3.5-flash-lite"
     GEMINI_BASE_URL: str = "https://generativelanguage.googleapis.com/v1beta"
 
     # Ollama LLM Settings
