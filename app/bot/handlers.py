@@ -214,13 +214,12 @@ async def cmd_sleep_pc(message: Message):
 
 @router.message(Command("pc_status"))
 @router.message(F.text.in_(["💻 PC Status", "💻 Статус ПК", "💻 Check PC", "💻 PC", "Статус ПК"]))
-async def cmd_pc_status(message: Message):
+async def cmd_pc_status(message: Message, bot: Bot):
     """Checks whether the user's Windows workstation is online or offline."""
-    status_msg = await message.answer(
-        "🔍 *Checking workstation status...*",
-        parse_mode="Markdown",
-        reply_markup=get_main_keyboard()
-    )
+    try:
+        await bot.send_chat_action(chat_id=message.chat.id, action="typing")
+    except Exception:
+        pass
 
     host = settings.WINDOWS_SSH_HOST
     port = 22
@@ -245,9 +244,9 @@ async def cmd_pc_status(message: Message):
             "💡 *Tip: Tap **🔌 Wake PC** to power it on via Wake-on-LAN.*"
         )
         try:
-            await status_msg.edit_text(text, parse_mode="Markdown")
+            await message.answer(text, parse_mode="Markdown", reply_markup=get_main_keyboard())
         except Exception:
-            await status_msg.edit_text(text)
+            await message.answer(text, reply_markup=get_main_keyboard())
         return
 
     # 2. PC is online, query quick diagnostics
@@ -294,6 +293,6 @@ async def cmd_pc_status(message: Message):
         "Tap **💤 Sleep PC** when you want to put it into sleep mode."
     )
     try:
-        await status_msg.edit_text(text, parse_mode="Markdown")
+        await message.answer(text, parse_mode="Markdown", reply_markup=get_main_keyboard())
     except Exception:
-        await status_msg.edit_text(text)
+        await message.answer(text, reply_markup=get_main_keyboard())
