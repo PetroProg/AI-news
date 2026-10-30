@@ -163,18 +163,26 @@ async def cmd_status(message: Message):
 @router.message(Command("wake_pc"))
 @router.message(F.text.in_(["🔌 Wake PC", "🔌 Wake PC (WoL)", "🔌 Разбудить ПК", "🔌 Разбудить ПК (WoL)"]))
 async def cmd_wake_pc(message: Message):
-    """Sends a Wake-on-LAN magic packet to wake up the RTX 3060 PC."""
+    """Sends a Wake-on-LAN magic packet burst to wake up the RTX 3060 PC."""
     try:
-        send_wake_on_lan()
-        await message.answer(
-            f"⚡ **Magic Packet Sent!**\n\n"
-            f"• **MAC:** `{settings.WOL_MAC_ADDRESS}`\n"
-            f"• **Broadcast:** `{settings.WOL_BROADCAST_IP}`\n\n"
-            f"The RTX 3060 PC should wake up within 10–15 seconds. "
-            f"You can verify its availability with the **💻 PC Status** button.",
-            parse_mode="Markdown",
-            reply_markup=get_main_keyboard()
-        )
+        sent = await asyncio.to_thread(send_wake_on_lan)
+        if sent:
+            await message.answer(
+                f"⚡ **Wake-on-LAN Signal Sent!**\n\n"
+                f"• **MAC:** `{settings.WOL_MAC_ADDRESS}`\n"
+                f"• **Broadcast:** `{settings.WOL_BROADCAST_IP}`\n"
+                f"• **Burst:** 6 wave bursts sent across network\n\n"
+                f"The PC should wake up within **10–15 seconds**.\n"
+                f"Tap **💻 PC Status** to check when Windows comes online.",
+                parse_mode="Markdown",
+                reply_markup=get_main_keyboard()
+            )
+        else:
+            await message.answer(
+                f"❌ Failed to send WoL: check MAC address configuration.",
+                parse_mode="Markdown",
+                reply_markup=get_main_keyboard()
+            )
     except Exception as exc:
         logger.error(f"Failed to send WoL packet: {exc}", exc_info=True)
         await message.answer(

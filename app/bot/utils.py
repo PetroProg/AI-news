@@ -7,9 +7,18 @@ def send_wake_on_lan(
     mac_address: str | None = None,
     broadcast_ip: str | None = None,
     port: int = 9,
+    repeat: int = 6,
+    interval: float = 0.15,
 ) -> bool:
-    """Sends Wake-on-LAN magic packets over physical network interfaces."""
+    """Sends a robust burst-train of Wake-on-LAN magic packets over network interfaces.
+    
+    A single packet is often dropped or ignored when transmitting over Wi-Fi or when the
+    sleeping target NIC has its PHY clock in low-power idle. Sending 5-6 spaced bursts
+    (every 150ms) guarantees that the first packet wakes the NIC's PHY and router buffers,
+    while subsequent packets cleanly match the hardware pattern filter and power on the ATX PSU.
+    """
     import logging
+    import time
     logger = logging.getLogger("news_ai.bot.utils")
     mac = mac_address or settings.WOL_MAC_ADDRESS
     bcast = broadcast_ip or settings.WOL_BROADCAST_IP
@@ -20,27 +29,55 @@ def send_wake_on_lan(
         return False
 
     magic_packet = bytes.fromhex("FF" * 6 + clean_mac * 16)
-    
-    # Broadcast to subnet IP and global 255.255.255.255 across ports 9 and 7
+
+    # Discover known local IP from ARP table if present
+    target_unicast_ip = None
+    try:
+        with open("/proc/net/arp", "r", encoding="utf-8") as f:
+            for line in f.readlines()[1:]:
+                parts = line.split()
+                if len(parts) >= 4:
+                    ip_candidate, hw_addr = parts[0], parts[3]
+                    clean_hw = re.sub(r"[^0-9A-Fa-f]", "", hw_addr).lower()
+                    if clean_hw and clean_hw == clean_mac.lower():
+                        target_unicast_ip = ip_candidate
+                        break
+    except Exception:
+        pass
+
+    # Build targets across ports 9 (standard WoL) and 7 (Echo/Discard WoL)
     targets = [
         (bcast, 9),
         (bcast, 7),
         ("255.255.255.255", 9),
         ("255.255.255.255", 7),
     ]
+    if target_unicast_ip:
+        targets.extend([
+            (target_unicast_ip, 9),
+            (target_unicast_ip, 7),
+        ])
 
     sent_any = False
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        for target_ip, target_port in targets:
-            try:
-                sock.sendto(magic_packet, (target_ip, target_port))
-                sent_any = True
-            except Exception as exc:
-                logger.debug("Failed sending WoL to %s:%s: %s", target_ip, target_port, exc)
+        for burst_idx in range(repeat):
+            for target_ip, target_port in targets:
+                try:
+                    sock.sendto(magic_packet, (target_ip, target_port))
+                    sent_any = True
+                except Exception as exc:
+                    logger.debug("Failed sending WoL to %s:%s: %s", target_ip, target_port, exc)
+
+            if burst_idx < repeat - 1 and interval > 0:
+                time.sleep(interval)
 
     if sent_any:
-        logger.info("Wake-on-LAN magic packet successfully sent for %s to %s", mac, bcast)
+        target_str = f"{bcast}, 255.255.255.255" + (f", {target_unicast_ip}" if target_unicast_ip else "")
+        logger.info(
+            "Wake-on-LAN: Sent burst of %d wave packets for MAC %s to [%s]",
+            repeat, mac, target_str
+        )
         return True
     return False
 
