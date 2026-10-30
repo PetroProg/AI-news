@@ -143,6 +143,8 @@ class RSSCollector(BaseCollector):
 
         original_url = entry.get("link", None)
         external_id = entry.get("id") or original_url or title
+        if external_id and len(external_id) > 1000:
+            external_id = external_id[:1000]
 
         author = entry.get("author", None)
 

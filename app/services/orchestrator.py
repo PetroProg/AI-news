@@ -132,6 +132,7 @@ class PipelineOrchestrator:
                     await ingestion.run_collector(collector, source_type=SourceType.RSS)
                 except Exception as exc:
                     logger.error("Error collecting RSS '%s': %s", name, exc)
+                    await session.rollback()
 
             # Telegram Developer & Tech Channels
             tg_channels = [
@@ -156,6 +157,7 @@ class PipelineOrchestrator:
                     await ingestion.run_collector(collector, source_type=SourceType.TELEGRAM)
                 except Exception as exc:
                     logger.error("Error collecting Telegram channel @%s: %s", ch, exc)
+                    await session.rollback()
 
             # Instagram Swiss Channels via RSS-Bridge
             ig_accounts = ["rtsinfo", "rtsarchives", "blick_media", "20minutesonline"]
@@ -165,10 +167,15 @@ class PipelineOrchestrator:
                     await ingestion.run_collector(collector, source_type=SourceType.CUSTOM)
                 except Exception as exc:
                     logger.error("Error collecting Instagram account @%s: %s", acc, exc)
+                    await session.rollback()
 
             # 4. Cleaning & Deduplication Phase
-            processing = ProcessingService(session=session)
-            await processing.process_collected_articles()
+            try:
+                processing = ProcessingService(session=session)
+                await processing.process_collected_articles()
+            except Exception as proc_err:
+                logger.error("Error during processing/deduplication: %s", proc_err)
+                await session.rollback()
 
             # 5. AI Summarization Phase (Google Gemini / AI Engine)
             logger.info("Starting AI Summarization Phase (Provider: %s)...", settings.AI_PROVIDER)

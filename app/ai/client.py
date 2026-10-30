@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import re
@@ -157,46 +158,77 @@ class GeminiClient:
             },
         }
 
-        try:
-            logger.info("Sending article '%s' to Gemini (%s)...", title[:35], self.model)
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.post(url, json=payload)
-                response.raise_for_status()
+        max_retries = 3
+        backoff_delays = [5.0, 10.0, 20.0]
 
-            data = response.json()
-            candidates = data.get("candidates", [])
-            if not candidates:
-                logger.warning("Gemini returned no candidates for '%s'", title[:35])
-                return None
-
-            raw_text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "").strip()
-
+        for attempt in range(max_retries + 1):
             try:
-                parsed = json.loads(raw_text)
-            except json.JSONDecodeError:
-                start = raw_text.find("{")
-                end = raw_text.rfind("}")
-                if start != -1 and end != -1 and end > start:
-                    parsed = json.loads(raw_text[start : end + 1])
-                else:
-                    logger.error("Failed to parse Gemini JSON: %s", raw_text[:200])
+                attempt_str = f" [attempt {attempt + 1}/{max_retries + 1}]" if attempt > 0 else ""
+                logger.info("Sending article '%s' to Gemini (%s)%s...", title[:35], self.model, attempt_str)
+                async with httpx.AsyncClient(timeout=self.timeout) as client:
+                    response = await client.post(url, json=payload)
+                    if response.status_code == 429:
+                        if attempt < max_retries:
+                            retry_after = backoff_delays[attempt]
+                            header_val = response.headers.get("retry-after")
+                            if header_val:
+                                try:
+                                    retry_after = max(float(header_val), retry_after)
+                                except ValueError:
+                                    pass
+                            logger.warning(
+                                "Gemini 429 TooManyRequests for '%s'. Backing off for %.1fs (attempt %d/%d)...",
+                                title[:30], retry_after, attempt + 1, max_retries
+                            )
+                            await asyncio.sleep(retry_after)
+                            continue
+                        else:
+                            logger.error("Gemini 429 TooManyRequests: exhausted %d retries for '%s'", max_retries, title[:30])
+                            return None
+
+                    response.raise_for_status()
+
+                data = response.json()
+                candidates = data.get("candidates", [])
+                if not candidates:
+                    logger.warning("Gemini returned no candidates for '%s'", title[:35])
                     return None
 
-            result = ArticleAnalysisResult(**parsed)
-            logger.info(
-                "Gemini successfully analyzed '%s' (Score: %.1f, Cat: %s)",
-                title[:30],
-                result.importance_score,
-                result.category,
-            )
-            return result
+                raw_text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "").strip()
 
-        except httpx.TimeoutException:
-            logger.error("Timeout waiting for Gemini for: %s", title[:35])
-        except httpx.HTTPStatusError as e:
-            logger.error("HTTP error from Gemini API: %s - %s", e.response.status_code, e.response.text[:200])
-        except Exception as e:
-            logger.error("Error during Gemini analysis: %s", e)
+                try:
+                    parsed = json.loads(raw_text)
+                except json.JSONDecodeError:
+                    start = raw_text.find("{")
+                    end = raw_text.rfind("}")
+                    if start != -1 and end != -1 and end > start:
+                        parsed = json.loads(raw_text[start : end + 1])
+                    else:
+                        logger.error("Failed to parse Gemini JSON: %s", raw_text[:200])
+                        return None
+
+                result = ArticleAnalysisResult(**parsed)
+                logger.info(
+                    "Gemini successfully analyzed '%s' (Score: %.1f, Cat: %s)",
+                    title[:30],
+                    result.importance_score,
+                    result.category,
+                )
+                return result
+
+            except httpx.TimeoutException:
+                if attempt < max_retries:
+                    logger.warning("Gemini timeout for '%s', retrying in 4s (attempt %d/%d)...", title[:30], attempt + 1, max_retries)
+                    await asyncio.sleep(4.0)
+                    continue
+                logger.error("Timeout waiting for Gemini for: %s", title[:35])
+                return None
+            except httpx.HTTPStatusError as e:
+                logger.error("HTTP error from Gemini API: %s - %s", e.response.status_code, e.response.text[:200])
+                return None
+            except Exception as e:
+                logger.error("Error during Gemini analysis: %s", e)
+                return None
 
         return None
 

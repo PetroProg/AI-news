@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import time
 from typing import Any, Optional
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -173,6 +174,12 @@ class SummarizerService:
         logger.info("Starting AI summarization batch for %d articles...", len(articles))
         summarized_count = 0
 
+        # Rate limiting guard: Gemini free-tier allows max 15 RPM.
+        # Enforcing a minimum 4.5s interval between requests guarantees <= 13.3 RPM under all conditions.
+        is_gemini = "gemini" in getattr(self.ai_client, "model", "").lower()
+        min_request_interval = 4.5 if is_gemini else 0.5
+        last_request_time = 0.0
+
         # Fetch recent summarized articles for cross-article context to prevent contradictions
         recent_stmt = (
             select(Article)
@@ -224,6 +231,12 @@ class SummarizerService:
                     break
             recent_context_str = "\n".join(context_lines) if context_lines else None
 
+            # Ensure minimum interval between AI calls (prevents exceeding 15 RPM)
+            elapsed = time.monotonic() - last_request_time
+            if elapsed < min_request_interval:
+                await asyncio.sleep(min_request_interval - elapsed)
+            last_request_time = time.monotonic()
+
             logger.info("Analyzing article ID %d: '%s' (Source: %s)...", article.id, article.title[:35], source_name)
 
             analysis = await self.ai_client.analyze_article(
@@ -235,10 +248,7 @@ class SummarizerService:
 
             if not analysis:
                 logger.warning("AI analysis returned None for article ID %d, skipping.", article.id)
-                await asyncio.sleep(0.2)
                 continue
-
-            await asyncio.sleep(0.3)
 
             # Deterministic Category Assignment
             title_lower = (article.title or "").lower()

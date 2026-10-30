@@ -59,16 +59,22 @@ class IngestionService:
         new_articles_count = 0
 
         for item in raw_items:
+            # Sanitize lengths to prevent DB StringDataRightTruncationError
+            sanitized_ext_id = item.external_id[:1020] if item.external_id else None
+            sanitized_author = item.author[:490] if item.author else None
+            sanitized_title = (item.title or "Без названия")[:490]
+            item.external_id = sanitized_ext_id
+
             is_new = await self._is_article_new(source.id, item)
             if not is_new:
                 continue
 
             article = Article(
                 source_id=source.id,
-                external_id=item.external_id,
-                title=item.title,
+                external_id=sanitized_ext_id,
+                title=sanitized_title,
                 original_url=item.original_url,
-                author=item.author,
+                author=sanitized_author,
                 published_at=item.published_at,
                 raw_content=item.raw_content,
                 language=item.language,
@@ -77,8 +83,13 @@ class IngestionService:
             self.session.add(article)
             new_articles_count += 1
 
-        source.last_fetched_at = datetime.now(timezone.utc)
-        await self.session.commit()
+        try:
+            source.last_fetched_at = datetime.now(timezone.utc)
+            await self.session.commit()
+        except Exception as e:
+            await self.session.rollback()
+            logger.error("Failed to commit articles for source '%s': %s", source.name, e)
+            raise e
 
         logger.info(
             "Source '%s': saved %d new articles (out of %d fetched)",
