@@ -6,10 +6,12 @@ from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 from aiogram import Bot
 
+from app.config import settings
 from app.database.models import ReportType
 from app.services.orchestrator import PipelineOrchestrator
 from app.services.cleanup import cleanup_old_articles
 from app.services.battery_monitor import check_server_battery_job
+from app.services.disk_monitor import check_server_disk_job
 
 logger = logging.getLogger("news_ai.scheduler")
 
@@ -59,5 +61,20 @@ def setup_scheduler(bot: Bot) -> AsyncIOScheduler:
         replace_existing=True,
     )
 
-    logger.info("Scheduler configured: Morning at 07:45, Evening at 19:45, Cleanup at 03:00, Battery Watchdog (60s).")
+    # Server host disk space watchdog (checks every 10 minutes)
+    disk_interval = getattr(settings, "DISK_CHECK_INTERVAL_MINUTES", 10)
+    scheduler.add_job(
+        check_server_disk_job,
+        trigger=IntervalTrigger(minutes=disk_interval, timezone=tz),
+        next_run_time=datetime.now(tz),
+        kwargs={"bot": bot},
+        id="server_disk_monitor",
+        name="Server Disk Monitor",
+        replace_existing=True,
+    )
+
+    logger.info(
+        "Scheduler configured: Morning at 07:45, Evening at 19:45, Cleanup at 03:00, Battery Watchdog (60s), Disk Watchdog (%dm).",
+        disk_interval,
+    )
     return scheduler

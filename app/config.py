@@ -81,6 +81,12 @@ class Settings(BaseSettings):
     ADGUARD_USER: str = "admin"
     ADGUARD_PASSWORD: str = ""
 
+    # Disk Space Watchdog
+    DISK_WARN_THRESHOLD_GB: float = 10.0
+    DISK_CRITICAL_THRESHOLD_GB: float = 5.0
+    DISK_CHECK_INTERVAL_MINUTES: int = 10
+    DISK_MONITOR_PATH: str = "/app"
+
 
 @lru_cache
 def get_settings() -> Settings:

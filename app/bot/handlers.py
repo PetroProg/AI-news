@@ -13,6 +13,7 @@ from app.database.session import async_session_maker
 from app.database.models import Article, ArticleStatus, Report, ReportType
 from app.services.report import ReportBuilderService
 from app.services.orchestrator import PipelineOrchestrator
+from app.services.disk_monitor import get_disk_info
 from app.bot.keyboards import get_main_keyboard
 from app.bot.utils import (
     send_wake_on_lan,
@@ -130,7 +131,17 @@ async def cmd_status(message: Message):
         ) or 0
         total_reports = await session.scalar(select(func.count(Report.id))) or 0
 
-    # 2. Check AI Engine reachability
+    # 2. Check Disk Space
+    disk_info = get_disk_info()
+    disk_line = ""
+    if disk_info:
+        free_gb, total_gb, used_gb, used_pct = disk_info
+        warn_th = getattr(settings, "DISK_WARN_THRESHOLD_GB", 10.0)
+        crit_th = getattr(settings, "DISK_CRITICAL_THRESHOLD_GB", 5.0)
+        icon = "🟢" if free_gb >= warn_th else ("🟡" if free_gb >= crit_th else "🔴")
+        disk_line = f"💾 **Disk Space:** {icon} `{free_gb:.1f} GB free` (of {total_gb:.1f} GB, {used_pct:.0f}% used)\n"
+
+    # 3. Check AI Engine reachability
     if settings.AI_PROVIDER == "gemini" and settings.GEMINI_API_KEY:
         ai_status = f"🟢 Online (Google Gemini: {settings.GEMINI_MODEL})"
         ai_endpoint = "Google Cloud Generative AI"
@@ -149,6 +160,7 @@ async def cmd_status(message: Message):
     text = (
         f"🖥 **News AI System Status**\n\n"
         f"🕒 **Server Time:** `{now_local}` (Zurich)\n"
+        f"{disk_line}"
         f"🤖 **AI Engine:** {ai_status}\n"
         f"🌐 **AI Provider / Endpoint:** `{ai_endpoint}`\n\n"
         f"📊 **Database Statistics:**\n"
