@@ -5674,30 +5674,33 @@
 
       const headerPeers = document.getElementById('header-vpn-peers');
       if (headerPeers) {
-        headerPeers.textContent = `${v.peers_online || 4}/${v.peers_count || 4}`;
+        headerPeers.textContent = `${v.peers_online || 0}/${v.peers_count || 0}`;
       }
 
       const tableBody = document.getElementById('vpn-peers-table-body');
       if (tableBody && Array.isArray(v.peers) && v.peers.length > 0) {
         tableBody.innerHTML = v.peers.map(p => {
-          const isOnline = p.online;
-          const os = (p.os || '').toLowerCase();
+          const isOnline = Boolean(p.online);
+          const ip = p.ip || '';
           const host = (p.hostname || '').toLowerCase();
-          const isMobile = os.includes('android') || host.includes('samsung') || host.includes('nokia');
-          const isServer = os.includes('linux') || host.includes('server') || host.includes('fedora');
+          const os = (p.os || '').toLowerCase();
+          const isMobile = os.includes('android') || host.includes('samsung') || host.includes('nokia') || ip === '100.76.188.111' || ip === '100.109.24.95';
+          const isServer = os.includes('linux') || host.includes('server') || host.includes('fedora') || ip === '100.73.208.121';
           const osIcon = isMobile ? '📱' : (isServer ? '🐧' : '💻');
 
           let displayName = p.display_name || p.hostname;
-          if (displayName.includes('') || host.includes('na86l48')) {
-            displayName = 'Desktop-PC';
-          } else if (host.includes('be94guv')) {
-            displayName = 'Desktop-PC';
-          } else if (host.includes('a54')) {
+          if (ip === '100.76.188.111' || host.includes('a54')) {
             displayName = 'Samsung-A54';
-          } else if (host.includes('fedora')) {
-            displayName = 'Fedora-Server';
-          } else if (host.includes('nokia')) {
+          } else if (ip === '100.109.24.95' || host.includes('nokia')) {
             displayName = 'Nokia-G22';
+          } else if (ip === '100.73.208.121' || host.includes('fedora')) {
+            displayName = 'Fedora-Server';
+          } else if (ip === '100.101.184.122' || host.includes('asus')) {
+            displayName = 'Asus-VBook';
+          } else if (ip === '100.114.251.81' || host.includes('na86l48')) {
+            displayName = 'Основной ПК';
+          } else if (ip === '100.109.120.0' || host.includes('be94guv')) {
+            displayName = 'Desktop-PC';
           }
 
           const latency = isOnline ? (isMobile ? '34ms' : '12ms') : '—';
@@ -5710,15 +5713,15 @@
                 <span class="truncate max-w-[130px] sm:max-w-none">${displayName}</span>
               </td>
               <td class="py-2.5 px-2 text-slate-300 font-mono text-[11px] truncate">
-                ${p.ip || '—'}
+                ${ip || '—'}
               </td>
               <td class="py-2.5 px-2">
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isOnline ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-500 border border-slate-700'}">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isOnline ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800/80 text-slate-400 border border-slate-700/60'}">
                   ${isOnline ? 'ONLINE / IDLE' : 'OFFLINE'}
                 </span>
               </td>
               <td class="py-2.5 pl-2 text-right">
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold border ${isOnline ? latencyColor : 'text-slate-500 bg-slate-900 border-slate-800'}">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold border ${isOnline ? latencyColor : 'text-slate-500 bg-slate-900 border border-slate-800'}">
                   ${latency}
                 </span>
               </td>
@@ -6131,50 +6134,6 @@
 
     window.blockDomainPrompt = blockDomainPrompt;
 
-    // QR Code Modal Handlers
-    async function openVpnQrModal() {
-      const modal = document.getElementById('vpn-qr-modal');
-      const img = document.getElementById('vpn-qr-image');
-      if (!modal) return;
-
-      try {
-        const resp = await fetch('/api/vpn/qr');
-        if (resp.ok) {
-          const data = await resp.json();
-          if (img && data.qr_base64) {
-            img.src = data.qr_base64;
-          }
-        }
-      } catch (e) {
-        console.warn('QR code load failed:', e);
-      }
-
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-      requestAnimationFrame(() => {
-        modal.classList.remove('opacity-0');
-        modal.classList.add('opacity-100');
-      });
-    }
-
-    function closeVpnQrModal(e) {
-      if (e && e.target && e.target !== e.currentTarget && e.target.tagName !== 'BUTTON') {
-        return;
-      }
-      const modal = document.getElementById('vpn-qr-modal');
-      if (!modal) return;
-
-      modal.classList.remove('opacity-100');
-      modal.classList.add('opacity-0');
-      setTimeout(() => {
-        modal.classList.remove('flex');
-        modal.classList.add('hidden');
-      }, 300);
-    }
-
-    window.openVpnQrModal = openVpnQrModal;
-    window.closeVpnQrModal = closeVpnQrModal;
-
     // Attach Provider Cards Listeners
     document.querySelectorAll('.dns-provider-card').forEach(card => {
       card.onclick = () => {
@@ -6242,8 +6201,7 @@
     const logFilterEl = document.getElementById('dns-log-filter');
     if (logFilterEl) logFilterEl.onchange = () => loadDnsQueryLog();
 
-    const qrBtn = document.getElementById('show-qr-btn');
-    if (qrBtn) qrBtn.onclick = openVpnQrModal;
+    
 
     // Background auto-refresh for VPN & DNS
     setInterval(() => {
@@ -6547,3 +6505,186 @@
     try { loadManagedDevices(); } catch (e) { console.error('Error during loadManagedDevices:', e); }
     try { loadRouterStats(); } catch (e) { console.error('Error during loadRouterStats:', e); }
   })();
+
+
+    // ==========================================
+    // TOP BAR & CARD THREE-DOTS (•••) MENUS & CLOCK
+    // ==========================================
+
+    // 1. Live Ticking UTC/CET Clock
+    let showLocalTime = false;
+    function updateHeaderClock() {
+      const clockEl = document.getElementById('header-live-clock');
+      if (!clockEl) return;
+      const now = new Date();
+      if (showLocalTime) {
+        clockEl.textContent = now.toLocaleTimeString('ru-RU') + ' CET';
+      } else {
+        clockEl.textContent = now.toUTCString().slice(17, 25) + ' UTC';
+      }
+    }
+    setInterval(updateHeaderClock, 1000);
+    updateHeaderClock();
+
+    const clockBtn = document.getElementById('utc-clock-btn');
+    if (clockBtn) {
+      clockBtn.onclick = () => {
+        showLocalTime = !showLocalTime;
+        updateHeaderClock();
+        if (typeof showToast === 'function') {
+          showToast('Часовой пояс', showLocalTime ? 'Отображается CET (локальное время)' : 'Отображается UTC', 'info');
+        }
+      };
+    }
+
+    // 2. Top Bar ••• Action Menu
+    const netsecMenuBtn = document.getElementById('netsec-menu-btn');
+    const netsecDropdown = document.getElementById('netsec-dropdown-menu');
+    const adminProfileBtn = document.getElementById('admin-profile-btn');
+    const adminDropdown = document.getElementById('admin-dropdown-menu');
+    const peersMenuBtn = document.getElementById('peers-card-menu-btn');
+    const peersDropdown = document.getElementById('peers-card-dropdown');
+    const dnsLogMenuBtn = document.getElementById('dns-log-menu-btn');
+    const dnsLogDropdown = document.getElementById('dns-log-dropdown');
+
+    function closeAllNetsecDropdowns() {
+      if (netsecDropdown) netsecDropdown.classList.add('hidden');
+      if (adminDropdown) adminDropdown.classList.add('hidden');
+      if (peersDropdown) peersDropdown.classList.add('hidden');
+      if (dnsLogDropdown) dnsLogDropdown.classList.add('hidden');
+    }
+
+    if (netsecMenuBtn && netsecDropdown) {
+      netsecMenuBtn.onclick = (e) => {
+        e.stopPropagation();
+        const willOpen = netsecDropdown.classList.contains('hidden');
+        closeAllNetsecDropdowns();
+        if (willOpen) netsecDropdown.classList.remove('hidden');
+      };
+    }
+
+    if (adminProfileBtn && adminDropdown) {
+      adminProfileBtn.onclick = (e) => {
+        e.stopPropagation();
+        const willOpen = adminDropdown.classList.contains('hidden');
+        closeAllNetsecDropdowns();
+        if (willOpen) adminDropdown.classList.remove('hidden');
+      };
+    }
+
+    if (peersMenuBtn && peersDropdown) {
+      peersMenuBtn.onclick = (e) => {
+        e.stopPropagation();
+        const willOpen = peersDropdown.classList.contains('hidden');
+        closeAllNetsecDropdowns();
+        if (willOpen) peersDropdown.classList.remove('hidden');
+      };
+    }
+
+    if (dnsLogMenuBtn && dnsLogDropdown) {
+      dnsLogMenuBtn.onclick = (e) => {
+        e.stopPropagation();
+        const willOpen = dnsLogDropdown.classList.contains('hidden');
+        closeAllNetsecDropdowns();
+        if (willOpen) dnsLogDropdown.classList.remove('hidden');
+      };
+    }
+
+    document.addEventListener('click', closeAllNetsecDropdowns);
+
+    // Top menu actions
+    const btnRefreshTelem = document.getElementById('btn-refresh-telemetry');
+    if (btnRefreshTelem) {
+      btnRefreshTelem.onclick = async () => {
+        closeAllNetsecDropdowns();
+        if (typeof showToast === 'function') {
+          showToast('Обновление...', 'Сбор свежей телеметрии сети...', 'info');
+        }
+        await Promise.all([
+          loadVpnStatus(),
+          loadVpnTraffic(),
+          loadDnsStats(),
+          loadDnsStatus(),
+          loadDnsQueryLog()
+        ]);
+        if (typeof showToast === 'function') {
+          showToast('Телеметрия обновлена', 'Статусы сети и DNS синхронизированы', 'success');
+        }
+      };
+    }
+
+    const btnCopyIp = document.getElementById('btn-copy-server-ip');
+    if (btnCopyIp) {
+      btnCopyIp.onclick = () => {
+        closeAllNetsecDropdowns();
+        navigator.clipboard.writeText('100.107.4.120').then(() => {
+          if (typeof showToast === 'function') {
+            showToast('IP скопирован', '100.107.4.120 в буфере обмена', 'success');
+          }
+        }).catch(() => {
+          if (typeof showToast === 'function') {
+            showToast('IP сервера', '100.107.4.120', 'info');
+          }
+        });
+      };
+    }
+
+    const btnOpenAdg = document.getElementById('btn-open-adguard');
+    if (btnOpenAdg) {
+      btnOpenAdg.onclick = () => {
+        closeAllNetsecDropdowns();
+        const host = window.location.hostname || '100.107.4.120';
+        window.open(`http://${host}:3053`, '_blank');
+      };
+    }
+
+    // Peers card actions
+    const btnPeersRefresh = document.getElementById('btn-peers-refresh');
+    if (btnPeersRefresh) {
+      btnPeersRefresh.onclick = async () => {
+        closeAllNetsecDropdowns();
+        await loadVpnStatus();
+        if (typeof showToast === 'function') {
+          showToast('Пиры обновлены', 'Список узлов Tailscale актуален', 'success');
+        }
+      };
+    }
+
+    const btnPeersCopyAll = document.getElementById('btn-peers-copy-all');
+    if (btnPeersCopyAll) {
+      btnPeersCopyAll.onclick = () => {
+        closeAllNetsecDropdowns();
+        const peers = (state.vpnStatus && state.vpnStatus.peers) || [];
+        const lines = peers.map(p => `${p.hostname}: ${p.ip || '—'} (${p.online ? 'ONLINE' : 'OFFLINE'})`).join('\n');
+        navigator.clipboard.writeText(lines || '100.107.4.120').then(() => {
+          if (typeof showToast === 'function') {
+            showToast('Список скопирован', 'IP-адреса пиров в буфере обмена', 'success');
+          }
+        });
+      };
+    }
+
+    // DNS Log card actions
+    const btnDnsLogRefresh = document.getElementById('btn-dns-log-refresh');
+    if (btnDnsLogRefresh) {
+      btnDnsLogRefresh.onclick = async () => {
+        closeAllNetsecDropdowns();
+        await loadDnsQueryLog();
+        if (typeof showToast === 'function') {
+          showToast('Журнал обновлен', 'Свежие DNS-запросы получены', 'success');
+        }
+      };
+    }
+
+    const btnDnsLogClearFilter = document.getElementById('btn-dns-log-clear-filter');
+    if (btnDnsLogClearFilter) {
+      btnDnsLogClearFilter.onclick = async () => {
+        closeAllNetsecDropdowns();
+        const sel = document.getElementById('dns-log-filter');
+        if (sel) sel.value = 'all';
+        await loadDnsQueryLog();
+        if (typeof showToast === 'function') {
+          showToast('Фильтр сброшен', 'Отображаются все DNS-запросы', 'info');
+        }
+      };
+    }

@@ -2782,8 +2782,13 @@ async def get_vpn_status() -> Dict[str, Any]:
     peers_list = []
     known_friendly = {
         "desktop-na86l48": "Основной ПК",
-        "nokia-6": "Nokia 6.1 (AFK)",
-        "samsung-a54": "Samsung A54"
+        "desktop-be94guv": "Desktop-PC",
+        "nokia-6": "Nokia-G22",
+        "nokia 6": "Nokia-G22",
+        "samsung-a54": "Samsung-A54",
+        "samsung a54": "Samsung-A54",
+        "fedora": "Fedora-Server",
+        "asusvbook": "Asus-VBook"
     }
 
     online_count = 0
@@ -2864,41 +2869,3 @@ async def get_vpn_traffic() -> Dict[str, Any]:
         "total_rx_mb": round(cur_rx / (1024**2), 1),
         "total_tx_mb": round(cur_tx / (1024**2), 1)
     }
-
-
-@app.get("/api/vpn/qr")
-async def get_vpn_qr() -> Dict[str, Any]:
-    """Генерация QR-кода для мобильного подключения к домашней сети / Tailscale / AdGuard."""
-    import base64
-    import io
-
-    content = "https://login.tailscale.com/admin/machines"
-    qr_b64 = ""
-    try:
-        import qrcode
-        qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_M,
-            box_size=8,
-            border=2,
-        )
-        qr.add_data(content)
-        qr.make(fit=True)
-        img = qr.make_image(fill_color="#0284c7", back_color="#0f172a")
-
-        buf = io.BytesIO()
-        img.save(buf, format="PNG")
-        qr_b64 = "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
-    except Exception as e:
-        logger.warning(f"QR code generation error: {e}")
-
-    return {
-        "success": True,
-        "qr_base64": qr_b64,
-        "tailscale_ip": "100.107.4.120",
-        "lan_ip": "192.168.178.65",
-        "server_name": "petroprog",
-        "instruction": "Отсканируйте камерой телефона для входа в панель устройств Tailscale или укажите DNS 100.107.4.120 в настройках приватного DNS (DoT/DoH)."
-    }
-
-

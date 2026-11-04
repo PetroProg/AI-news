@@ -1006,18 +1006,57 @@
           <span class="px-2.5 py-1 rounded-lg bg-slate-900 text-slate-300 border border-slate-800">
             Active VPN Peers: <span id="header-vpn-peers" class="text-emerald-400 font-bold">4/4</span>
           </span>
-          <button type="button" class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 transition-colors cursor-pointer">•••</button>
-          <div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-200">
-            <span class="w-4 h-4 rounded-full bg-cyan-600/40 text-cyan-300 flex items-center justify-center text-[9px] font-bold">A</span>
-            <span class="font-medium text-slate-300">Admin</span>
+
+          <!-- Three Dots Menu Button & Dropdown -->
+          <div class="relative inline-block text-left">
+            <button type="button" id="netsec-menu-btn" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 transition-colors cursor-pointer font-bold" title="Меню действий">•••</button>
+            <div id="netsec-dropdown-menu" class="hidden absolute right-0 mt-2 w-56 rounded-xl bg-slate-950/95 border border-slate-800 shadow-2xl backdrop-blur-md z-50 py-1.5 font-mono text-xs divide-y divide-slate-800/60">
+              <div class="px-3 py-1.5 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                Управление сетью
+              </div>
+              <div class="py-1">
+                <button type="button" id="btn-refresh-telemetry" class="w-full text-left px-3 py-2 text-slate-300 hover:text-white hover:bg-slate-900/80 flex items-center gap-2.5 transition-colors cursor-pointer">
+                  <span class="text-cyan-400">🔄</span>
+                  <span>Обновить телеметрию</span>
+                </button>
+                <button type="button" id="btn-copy-server-ip" class="w-full text-left px-3 py-2 text-slate-300 hover:text-white hover:bg-slate-900/80 flex items-center gap-2.5 transition-colors cursor-pointer">
+                  <span class="text-emerald-400">📋</span>
+                  <span>Скопировать IP узла</span>
+                </button>
+                <button type="button" id="btn-open-adguard" class="w-full text-left px-3 py-2 text-slate-300 hover:text-white hover:bg-slate-900/80 flex items-center gap-2.5 transition-colors cursor-pointer">
+                  <span class="text-amber-400">🛡️</span>
+                  <span>Консоль AdGuard</span>
+                </button>
+              </div>
+            </div>
           </div>
-          <span class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-900 text-slate-400 border border-slate-800">
+
+          <!-- Admin Profile Button & Dropdown -->
+          <div class="relative inline-block text-left">
+            <button type="button" id="admin-profile-btn" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 transition-colors cursor-pointer" title="Профиль администратора">
+              <span class="w-4 h-4 rounded-full bg-cyan-600/40 text-cyan-300 flex items-center justify-center text-[9px] font-bold">A</span>
+              <span class="font-medium text-slate-300">Admin</span>
+            </button>
+            <div id="admin-dropdown-menu" class="hidden absolute right-0 mt-2 w-64 rounded-xl bg-slate-950/95 border border-slate-800 shadow-2xl backdrop-blur-md z-50 p-3 font-mono text-xs space-y-2">
+              <div class="flex items-center gap-2 border-b border-slate-800/80 pb-2">
+                <span class="w-7 h-7 rounded-lg bg-cyan-500/20 text-cyan-300 flex items-center justify-center font-bold">A</span>
+                <div>
+                  <div class="font-bold text-white">Administrator</div>
+                  <div class="text-[10px] text-slate-400">petroprog • Root Access</div>
+                </div>
+              </div>
+              <div class="text-[11px] space-y-1 text-slate-300">
+                <div class="flex justify-between"><span class="text-slate-500">Сеть:</span> <span class="text-emerald-400 font-bold">Tailscale Mesh</span></div>
+                <div class="flex justify-between"><span class="text-slate-500">IP узла:</span> <span class="font-mono text-cyan-300">100.107.4.120</span></div>
+                <div class="flex justify-between"><span class="text-slate-500">Статус:</span> <span class="text-emerald-400">ONLINE</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- UTC Live Clock Button -->
+          <button type="button" id="utc-clock-btn" class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition-colors cursor-pointer" title="Нажмите для переключения UTC / Локальное время">
             <span>🕒</span>
-            <span>UTC</span>
-          </span>
-          <button type="button" id="show-qr-btn" class="px-2.5 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 transition-colors flex items-center gap-1 cursor-pointer" title="QR-код для мобильного подключения">
-            <span>📱</span>
-            <span>QR</span>
+            <span id="header-live-clock">--:--:-- UTC</span>
           </button>
         </div>
       </div>
@@ -1048,7 +1087,19 @@
           <div class="glass-panel rounded-2xl p-4 sm:p-5 border border-slate-800/80 bg-slate-950/70 space-y-3 shadow-xl">
             <div class="flex items-center justify-between">
               <h4 class="text-sm font-bold text-white font-heading">VPN Mesh Peers List</h4>
-              <button type="button" class="text-slate-500 hover:text-slate-300 text-xs">•••</button>
+              <div class="relative inline-block text-left">
+                <button type="button" id="peers-card-menu-btn" class="text-slate-500 hover:text-slate-300 text-xs px-2 py-0.5 rounded hover:bg-slate-900 transition-colors cursor-pointer font-bold" title="Действия с пирами">•••</button>
+                <div id="peers-card-dropdown" class="hidden absolute right-0 mt-1 w-48 rounded-xl bg-slate-950/95 border border-slate-800 shadow-2xl backdrop-blur-md z-50 py-1 font-mono text-xs">
+                  <button type="button" id="btn-peers-refresh" class="w-full text-left px-3 py-1.5 text-slate-300 hover:text-white hover:bg-slate-900 flex items-center gap-2 transition-colors cursor-pointer">
+                    <span class="text-cyan-400">🔄</span>
+                    <span>Обновить пиры</span>
+                  </button>
+                  <button type="button" id="btn-peers-copy-all" class="w-full text-left px-3 py-1.5 text-slate-300 hover:text-white hover:bg-slate-900 flex items-center gap-2 transition-colors cursor-pointer">
+                    <span class="text-emerald-400">📋</span>
+                    <span>Скопировать IP пиров</span>
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="overflow-x-auto">
               <table class="w-full text-left border-collapse">
@@ -1128,7 +1179,19 @@
                   <option value="blocked">Заблокированные</option>
                   <option value="allowed">Разрешенные</option>
                 </select>
-                <button type="button" class="text-slate-500 hover:text-slate-300 text-xs">•••</button>
+                <div class="relative inline-block text-left">
+                  <button type="button" id="dns-log-menu-btn" class="text-slate-500 hover:text-slate-300 text-xs px-2 py-0.5 rounded hover:bg-slate-900 transition-colors cursor-pointer font-bold" title="Действия с журналом">•••</button>
+                  <div id="dns-log-dropdown" class="hidden absolute right-0 mt-1 w-44 rounded-xl bg-slate-950/95 border border-slate-800 shadow-2xl backdrop-blur-md z-50 py-1 font-mono text-xs">
+                    <button type="button" id="btn-dns-log-refresh" class="w-full text-left px-3 py-1.5 text-slate-300 hover:text-white hover:bg-slate-900 flex items-center gap-2 transition-colors cursor-pointer">
+                      <span class="text-cyan-400">🔄</span>
+                      <span>Обновить журнал</span>
+                    </button>
+                    <button type="button" id="btn-dns-log-clear-filter" class="w-full text-left px-3 py-1.5 text-slate-300 hover:text-white hover:bg-slate-900 flex items-center gap-2 transition-colors cursor-pointer">
+                      <span class="text-amber-400">🧹</span>
+                      <span>Сбросить фильтр</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="overflow-x-auto">
@@ -1543,31 +1606,7 @@
     </div>
   </div>
 
-  <!-- QR Code Modal -->
-  <div id="qr-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md items-center justify-center p-4" style="display: none;">
-    <div class="glass-panel rounded-3xl max-w-xs w-full p-6 text-center border border-slate-700 shadow-2xl relative">
-      <button type="button" id="close-qr-modal" class="absolute top-4 right-4 p-2 rounded-xl text-slate-400 hover:text-white transition-all">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-      </button>
-
-      <div class="w-10 h-10 rounded-2xl bg-sky-500/20 text-sky-400 flex items-center justify-center mx-auto mb-2">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z"/></svg>
-      </div>
-      <h4 class="text-base font-bold text-white font-heading">WireGuard Mobile</h4>
-      <p class="text-[11px] text-slate-400 mt-1 mb-4">Scannez avec l'appareil photo de votre smartphone pour vous connecter à la maison.</p>
-
-      <div class="bg-white p-3 rounded-2xl inline-block shadow-xl mb-3">
-        <svg class="w-40 h-40" viewBox="0 0 100 100" fill="none">
-          <rect width="100" height="100" fill="white"/>
-          <path fill="#0f172a" d="M10 10h26v26H10zm6 6v14h14V16zm4 4h6v6h-6zM64 10h26v26H64zm6 6v14h14V16zm4 4h6v6h-6zM10 64h26v26H10zm6 6v14h14V70zm4 4h6v6h-6zM42 10h6v6h-6zm10 0h6v6h-6zm0 10h6v10h-6zm-10 6h6v6h-6zm22 26h6v6h-6zm-12 0h6v6h-6zm6 6h6v6h-6zm12 0h6v6h-6zm-6 6h6v10h-6zm-18 0h6v6h-6zm6 6h6v6h-6zm18 0h6v12h-6zm-24 6h6v6h-6zm12 6h6v6h-6zm-6 6h6v6h-6zm18-6h6v6h-6zM42 42h8v8h-8zm16 0h8v8h-8zm-8 16h8v8h-8zm16 0h8v8h-8z"/>
-        </svg>
-      </div>
-
-      <div class="text-[10px] font-mono text-slate-400 bg-slate-900/80 p-2 rounded-xl border border-slate-800 break-all">
-        wg://peer?pubkey=8jZ19pTq4L...&endpoint=94.25.180.12:51820
-      </div>
-    </div>
-  </div>
+  
 
   <!-- Custom Delete Confirmation Modal -->
   <div id="delete-confirm-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md transition-opacity duration-200">
@@ -1634,95 +1673,7 @@
     </div>
   </div>
 
-  <!-- VPN QR Code Modal -->
-  <div id="vpn-qr-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/85 backdrop-blur-md p-4 transition-all duration-300 opacity-0" onclick="closeVpnQrModal(event)">
-    <div class="relative max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-5" onclick="event.stopPropagation()">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2.5">
-          <div class="w-10 h-10 rounded-2xl bg-sky-500/20 text-sky-400 flex items-center justify-center text-xl">
-            📱
-          </div>
-          <div>
-            <h3 class="text-base font-bold text-white font-heading">Подключение смартфона</h3>
-            <p class="text-[11px] text-slate-400">DNS-щит и туннель без рекламы</p>
-          </div>
-        </div>
-        <button type="button" onclick="closeVpnQrModal()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer">
-          ✕
-        </button>
-      </div>
-
-      <!-- QR Code Display Box -->
-      <div class="flex flex-col items-center justify-center p-5 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-3">
-        <div class="w-52 h-52 bg-slate-900 rounded-2xl p-2.5 flex items-center justify-center border border-slate-800 shadow-inner">
-          <img id="vpn-qr-image" src="" alt="QR-код подключения" class="w-full h-full object-contain rounded-xl" />
-        </div>
-        <p class="text-[11px] text-slate-300 max-w-xs leading-relaxed">
-          Отсканируйте камерой смартфона для перехода в панель сети Tailscale или настройки DNS.
-        </p>
-      </div>
-
-      <!-- IP Info Badges -->
-      <div class="space-y-2">
-        <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80 text-xs">
-          <span class="text-slate-400">DNS через Tailscale (везде/5G):</span>
-          <span class="font-mono font-bold text-sky-400 cursor-pointer hover:underline" onclick="navigator.clipboard.writeText('100.107.4.120'); if(typeof showToast==='function') showToast('Скопировано', '100.107.4.120 скопирован', 'success');">100.107.4.120 📋</span>
-        </div>
-        <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80 text-xs">
-          <span class="text-slate-400">DNS локально (домашний Wi-Fi):</span>
-          <span class="font-mono font-bold text-emerald-400 cursor-pointer hover:underline" onclick="navigator.clipboard.writeText('192.168.178.65'); if(typeof showToast==='function') showToast('Скопировано', '192.168.178.65 скопирован', 'success');">192.168.178.65 📋</span>
-        </div>
-      </div>
-
-      <button type="button" onclick="closeVpnQrModal()" class="w-full py-3 rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-sky-900/30 transition-all cursor-pointer">
-        Понятно, закрыть
-      </button>
-    </div>
-  </div>
-
-  <!-- PWA Install Guide / HTTPS Modal -->
-  <div id="pwa-install-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/85 backdrop-blur-md p-4 transition-all duration-300 opacity-0" onclick="closePwaInstallModal(event)">
-    <div class="relative max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-5" onclick="event.stopPropagation()">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <img src="/icons/icon-192.png" alt="AI News" class="w-11 h-11 rounded-2xl border border-sky-500/40 shadow-lg shadow-sky-500/10" />
-          <div>
-            <h3 class="text-base font-bold text-white font-heading">Установка AI News (PWA)</h3>
-            <p class="text-[11px] text-slate-400">Автономное приложение для телефона и ПК</p>
-          </div>
-        </div>
-        <button type="button" onclick="closePwaInstallModal()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer">
-          ✕
-        </button>
-      </div>
-
-      <div id="pwa-modal-body" class="space-y-3 text-xs text-slate-300 leading-relaxed">
-        <!-- Dynamically populated by app.js based on protocol / device -->
-      </div>
-
-      <div class="p-3.5 rounded-2xl bg-slate-950/90 border border-slate-800 space-y-2">
-        <div class="flex items-center justify-between text-[11px]">
-          <span class="text-slate-400">Защищенный HTTPS адрес (Tailscale):</span>
-          <span class="px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30">SSL Trusted</span>
-        </div>
-        <div class="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800">
-          <a id="pwa-https-link" href="https://petroprog.tail703e6c.ts.net:8444" class="font-mono text-[11px] font-bold text-sky-400 hover:underline truncate">https://petroprog.tail703e6c.ts.net:8444</a>
-          <button type="button" onclick="navigator.clipboard.writeText('https://petroprog.tail703e6c.ts.net:8444'); if(typeof showToast==='function') showToast('Скопировано', 'HTTPS-ссылка скопирована в буфер', 'success');" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold shrink-0 cursor-pointer">
-            Копировать
-          </button>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-2.5">
-        <a id="pwa-open-https-btn" href="https://petroprog.tail703e6c.ts.net:8444/?install=1" class="hidden flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold text-xs text-center shadow-lg shadow-emerald-900/30 transition-all cursor-pointer">
-          🔒 Открыть по HTTPS и скачать
-        </a>
-        <button type="button" onclick="closePwaInstallModal()" class="flex-1 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-all cursor-pointer">
-          Закрыть
-        </button>
-      </div>
-    </div>
-  </div>
+  
 
   <!-- Toast Notification Container -->
   <div id="toast-container"></div>
