@@ -5653,7 +5653,8 @@
     state.dnsStats = null;
     state.dnsStatus = null;
     state.vpnTraffic = { rx_kbps: 0, tx_kbps: 0, rx_mbps: 0, tx_mbps: 0 };
-    let chartPoints = [20, 35, 45, 60, 50, 42, 68, 85, 70, 55, 65, 80];
+    let chartRxPoints = [15, 28, 42, 55, 48, 38, 62, 75, 58, 45, 60, 72];
+    let chartTxPoints = [8, 14, 20, 25, 22, 18, 30, 35, 28, 20, 26, 32];
 
     async function loadVpnStatus() {
       try {
@@ -5732,9 +5733,12 @@
         if (rxEl) rxEl.textContent = `↓ ${data.rx_mbps >= 1 ? data.rx_mbps + ' Mb/s' : data.rx_kbps + ' Kb/s'}`;
         if (txEl) txEl.textContent = `↑ ${data.tx_mbps >= 1 ? data.tx_mbps + ' Mb/s' : data.tx_kbps + ' Kb/s'}`;
 
-        const point = Math.max(15, Math.min(150, Math.round(data.rx_kbps + data.tx_kbps * 0.5)));
-        chartPoints.shift();
-        chartPoints.push(point);
+        const rxVal = Math.max(5, Math.min(250, Math.round(data.rx_kbps || 0)));
+        const txVal = Math.max(3, Math.min(250, Math.round(data.tx_kbps || 0)));
+        chartRxPoints.shift();
+        chartRxPoints.push(rxVal);
+        chartTxPoints.shift();
+        chartTxPoints.push(txVal);
         renderCanvasChart();
       } catch (err) {
         console.warn('Could not load /api/vpn/traffic:', err);
@@ -5748,8 +5752,9 @@
       const rect = canvas.getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0) return;
 
-      canvas.width = rect.width * (window.devicePixelRatio || 1);
-      canvas.height = rect.height * (window.devicePixelRatio || 1);
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
 
       const ctx = canvas.getContext('2d');
       const w = canvas.width;
@@ -5757,47 +5762,81 @@
 
       ctx.clearRect(0, 0, w, h);
 
-      // Grid lines
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-      ctx.lineWidth = 1;
+      // Determine max scale for dynamic autoscaling
+      const maxData = Math.max(80, ...chartRxPoints, ...chartTxPoints);
+      const maxScale = Math.ceil(maxData / 50) * 50;
+
+      // Crisp Coordinate Grid lines (без размытия)
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.07)';
+      ctx.lineWidth = 1 * dpr;
+      ctx.setLineDash([4 * dpr, 4 * dpr]);
+
+      ctx.font = `${Math.round(9 * dpr)}px monospace`;
+      ctx.fillStyle = 'rgba(148, 163, 184, 0.45)';
+      ctx.textAlign = 'right';
+
       for (let i = 1; i <= 3; i++) {
-        const y = (h / 4) * i;
+        const y = Math.round((h / 4) * i);
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(w, y);
         ctx.stroke();
+
+        const labelVal = Math.round(maxScale * (1 - i / 4));
+        ctx.fillText(`${labelVal} Kb/s`, w - 8 * dpr, y - 4 * dpr);
+      }
+      ctx.setLineDash([]); // Reset dash for sharp solid lines
+
+      // Helper for straight, crisp line plotting ("без заковырок")
+      function drawTelemetryLine(pts, strokeColor, fillColor) {
+        if (!pts || pts.length < 2) return;
+        const step = w / (pts.length - 1);
+
+        // Fill under line
+        if (fillColor) {
+          ctx.beginPath();
+          ctx.moveTo(0, h - (pts[0] / maxScale) * h * 0.88);
+          for (let i = 1; i < pts.length; i++) {
+            ctx.lineTo(i * step, h - (pts[i] / maxScale) * h * 0.88);
+          }
+          ctx.lineTo(w, h);
+          ctx.lineTo(0, h);
+          ctx.closePath();
+          ctx.fillStyle = fillColor;
+          ctx.fill();
+        }
+
+        // Stroke line (crisp sharp polyline)
+        ctx.beginPath();
+        ctx.moveTo(0, h - (pts[0] / maxScale) * h * 0.88);
+        for (let i = 1; i < pts.length; i++) {
+          ctx.lineTo(i * step, h - (pts[i] / maxScale) * h * 0.88);
+        }
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 2 * dpr;
+        ctx.lineJoin = 'miter';
+        ctx.stroke();
+
+        // Latest point dot
+        const lastX = (pts.length - 1) * step;
+        const lastY = h - (pts[pts.length - 1] / maxScale) * h * 0.88;
+        ctx.beginPath();
+        ctx.arc(lastX, lastY, 3 * dpr, 0, Math.PI * 2);
+        ctx.fillStyle = strokeColor;
+        ctx.fill();
       }
 
-      // Draw Gradient Area & Line
-      const pts = chartPoints;
-      const step = w / (pts.length - 1);
+      // Download Fill & Line (Neon Emerald)
+      const gradRx = ctx.createLinearGradient(0, 0, 0, h);
+      gradRx.addColorStop(0, 'rgba(16, 185, 129, 0.22)');
+      gradRx.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+      drawTelemetryLine(chartRxPoints, '#10b981', gradRx);
 
-      ctx.beginPath();
-      ctx.moveTo(0, h - (pts[0] / 160) * h);
-
-      for (let i = 1; i < pts.length; i++) {
-        const x = i * step;
-        const y = h - (pts[i] / 160) * h;
-        const prevX = (i - 1) * step;
-        const prevY = h - (pts[i - 1] / 160) * h;
-        const cpX = (prevX + x) / 2;
-        ctx.bezierCurveTo(cpX, prevY, cpX, y, x, y);
-      }
-
-      ctx.strokeStyle = '#38bdf8';
-      ctx.lineWidth = 2.5 * (window.devicePixelRatio || 1);
-      ctx.stroke();
-
-      // Fill Gradient
-      ctx.lineTo(w, h);
-      ctx.lineTo(0, h);
-      ctx.closePath();
-
-      const grad = ctx.createLinearGradient(0, 0, 0, h);
-      grad.addColorStop(0, 'rgba(56, 189, 248, 0.35)');
-      grad.addColorStop(1, 'rgba(56, 189, 248, 0.0)');
-      ctx.fillStyle = grad;
-      ctx.fill();
+      // Upload Fill & Line (Electric Cyan)
+      const gradTx = ctx.createLinearGradient(0, 0, 0, h);
+      gradTx.addColorStop(0, 'rgba(0, 242, 254, 0.14)');
+      gradTx.addColorStop(1, 'rgba(0, 242, 254, 0.0)');
+      drawTelemetryLine(chartTxPoints, '#00f2fe', gradTx);
     }
 
     window.addEventListener('resize', renderCanvasChart);
@@ -5835,6 +5874,39 @@
         const data = await resp.json();
         state.dnsStatus = data;
 
+        // Hero Status & Pause button
+        const heroTitle = document.getElementById('dns-hero-status-title');
+        const shieldSvg = document.getElementById('dns-hero-shield-svg');
+        const pauseBtn = document.getElementById('dns-pause-btn');
+        const pauseIcon = document.getElementById('dns-pause-icon');
+        const pauseLabel = document.getElementById('dns-pause-label');
+
+        const isProtected = Boolean(data.protection);
+
+        if (heroTitle) {
+          heroTitle.innerHTML = isProtected
+            ? 'Shield Active: <span class="text-emerald-400 font-extrabold">100% Protected</span>'
+            : 'Shield Paused: <span class="text-amber-400 font-extrabold">Protection Paused</span>';
+        }
+
+        if (shieldSvg) {
+          shieldSvg.className = isProtected
+            ? 'w-14 h-14 sm:w-16 sm:h-16 text-emerald-400 drop-shadow-[0_0_18px_rgba(16,185,129,0.55)] transition-transform duration-300 hover:scale-105'
+            : 'w-14 h-14 sm:w-16 sm:h-16 text-amber-400 drop-shadow-[0_0_18px_rgba(245,158,11,0.55)] transition-transform duration-300 hover:scale-105';
+        }
+
+        if (pauseBtn && pauseIcon && pauseLabel) {
+          if (isProtected) {
+            pauseIcon.textContent = '⏸';
+            pauseLabel.textContent = 'Pause Protection (15 min)';
+            pauseBtn.className = 'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 hover:bg-slate-800 text-xs font-semibold text-slate-300 hover:text-white border border-slate-700/80 transition-all cursor-pointer shadow-sm';
+          } else {
+            pauseIcon.textContent = '▶';
+            pauseLabel.textContent = 'Resume Protection';
+            pauseBtn.className = 'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 text-xs font-semibold text-emerald-300 border border-emerald-500/40 transition-all cursor-pointer shadow-sm';
+          }
+        }
+
         // Update toggles
         const adblockTog = document.getElementById('dns-toggle-adblock');
         const malwareTog = document.getElementById('dns-toggle-malware');
@@ -5851,24 +5923,29 @@
         const provLabel = document.getElementById('dns-active-provider-label');
         if (provLabel) {
           const titles = {
-            quad9: 'Quad9 DoH 🇨🇭 (Швейцария)',
-            cloudflare: 'Cloudflare DoH ⚡ (1.1.1.1)',
+            quad9: 'Quad9 DoH 🇨🇭',
+            cloudflare: 'Cloudflare DoH ⚡',
             adguard: 'AdGuard Cloud DoH 🛡️',
-            google: 'Google DoH 🌐 (8.8.8.8)'
+            google: 'Google DoH 🌐'
           };
           provLabel.textContent = titles[curProvider] || curProvider;
-          if (curProvider === 'quad9') {
-            provLabel.className = 'text-[11px] text-emerald-400 font-mono font-bold px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30';
-          } else {
-            provLabel.className = 'text-[11px] text-sky-400 font-mono font-bold px-2 py-0.5 rounded-lg bg-sky-500/10 border border-sky-500/30';
-          }
         }
 
         document.querySelectorAll('.dns-provider-card').forEach(c => {
-          if (c.dataset.dns === curProvider) {
-            c.className = 'dns-provider-card cursor-pointer p-3 rounded-2xl border-2 border-emerald-500 bg-emerald-500/10 shadow-lg shadow-emerald-950/40 transition-all flex flex-col justify-between';
+          const isSelected = c.dataset.dns === curProvider;
+          const radioDot = c.querySelector('.dns-radio-dot');
+          if (isSelected) {
+            c.className = 'dns-provider-card cursor-pointer p-3 rounded-2xl border border-sky-500/60 bg-slate-900/90 shadow-sm transition-all flex flex-col justify-between relative group hover:border-sky-400';
+            if (radioDot) {
+              radioDot.className = 'dns-radio-dot w-3.5 h-3.5 rounded-full border-2 border-emerald-400 flex items-center justify-center p-0.5';
+              radioDot.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>';
+            }
           } else {
-            c.className = 'dns-provider-card cursor-pointer p-3 rounded-2xl border border-slate-800 bg-slate-900/60 hover:border-slate-700 transition-all flex flex-col justify-between';
+            c.className = 'dns-provider-card cursor-pointer p-3 rounded-2xl border border-slate-800/80 bg-slate-900/60 transition-all flex flex-col justify-between relative group hover:border-slate-700';
+            if (radioDot) {
+              radioDot.className = 'dns-radio-dot w-3.5 h-3.5 rounded-full border border-slate-600 flex items-center justify-center p-0.5';
+              radioDot.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-transparent"></span>';
+            }
           }
         });
       } catch (err) {
@@ -5958,21 +6035,24 @@
             ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
             : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
 
+          const clientTag = q.client_ip
+            ? `[${q.client_ip}${q.client_name && q.client_name !== q.client_ip ? ' • ' + q.client_name : ''}]`
+            : (q.client_name ? `[${q.client_name}]` : '');
+
           return `
-            <div class="p-3 rounded-2xl bg-slate-900/60 border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div class="p-3 rounded-2xl bg-slate-900/60 border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 hover:border-slate-700/80 transition-all">
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-2 mb-1 flex-wrap">
-                  <span class="font-mono text-white text-xs font-semibold truncate max-w-[280px] sm:max-w-xs" title="${q.domain}">${q.domain}</span>
+                  ${clientTag ? `<span class="px-2 py-0.5 rounded font-mono text-[10px] font-bold bg-sky-950/80 text-sky-400 border border-sky-800/60 shrink-0 shadow-sm">${clientTag}</span>` : ''}
+                  <span class="font-mono text-white text-xs font-semibold truncate max-w-[240px] sm:max-w-xs" title="${q.domain}">${q.domain}</span>
                   <span class="badge-status px-2 py-0.5 rounded-full text-[10px] font-bold border ${badgeClass}">
                     ${q.reason}
                   </span>
                   <span class="px-1.5 py-0.2 rounded text-[9px] font-mono bg-slate-800 text-slate-400">${q.type || 'A'}</span>
                 </div>
-                <div class="text-[11px] text-slate-400 flex items-center gap-1.5 flex-wrap">
-                  <span class="text-slate-300 font-medium">${q.client_name || q.client_ip}</span>
-                  <span>•</span>
-                  <span class="text-slate-500">${q.time}</span>
-                  ${q.elapsed_ms ? `<span>•</span><span class="text-slate-500">${q.elapsed_ms} ms</span>` : ''}
+                <div class="text-[11px] text-slate-500 flex items-center gap-1.5 flex-wrap">
+                  <span>${q.time}</span>
+                  ${q.elapsed_ms ? `<span>•</span><span class="text-slate-400 font-mono">${q.elapsed_ms} ms</span>` : ''}
                 </div>
               </div>
               
@@ -6087,6 +6167,49 @@
         if (prov) switchDnsProvider(prov);
       };
     });
+
+    // Attach Pause Protection Listener
+    const pauseBtn = document.getElementById('dns-pause-btn');
+    if (pauseBtn) {
+      pauseBtn.onclick = async () => {
+        const isCurrentlyProtected = state.dnsStatus ? state.dnsStatus.protection : true;
+        if (isCurrentlyProtected) {
+          try {
+            showToast('Приостановка защиты...', 'Отключаем фильтрацию на 15 минут', 'warning');
+            const resp = await fetch('/api/dns/pause', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ minutes: 15 })
+            });
+            if (resp.ok) {
+              showToast('Защита на паузе', 'Фильтрация возобновится через 15 минут', 'warning');
+              await loadDnsStatus();
+            } else {
+              showToast('Ошибка', 'Не удалось приостановить защиту', 'danger');
+            }
+          } catch (e) {
+            showToast('Ошибка сети', 'Не удалось связаться с сервером', 'danger');
+          }
+        } else {
+          try {
+            showToast('Возобновление защиты...', 'Включаем 100% фильтрацию', 'info');
+            const resp = await fetch('/api/dns/toggle', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ feature: 'protection', enabled: true })
+            });
+            if (resp.ok) {
+              showToast('Защита активна', '100% фильтрация восстановлена', 'success');
+              await loadDnsStatus();
+            } else {
+              showToast('Ошибка', 'Не удалось возобновить защиту', 'danger');
+            }
+          } catch (e) {
+            showToast('Ошибка сети', 'Не удалось связаться с сервером', 'danger');
+          }
+        }
+      };
+    }
 
     // Attach Toggle Listeners
     const adblockEl = document.getElementById('dns-toggle-adblock');

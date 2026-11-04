@@ -2500,6 +2500,7 @@ async def get_dns_status() -> Dict[str, Any]:
                 s_json = r_stat.json()
                 status_data["online"] = True
                 status_data["protection"] = s_json.get("protection_enabled", True)
+                status_data["protection_disabled_duration"] = s_json.get("protection_disabled_duration", 0)
                 status_data["version"] = s_json.get("version", "v0.107.79")
 
             # Fetch remaining settings
@@ -2575,6 +2576,32 @@ async def toggle_dns_feature(payload: Dict[str, Any]) -> Dict[str, Any]:
             return {"success": True, "feature": feature, "enabled": enabled}
     except Exception as e:
         logger.error(f"Failed to toggle feature {feature}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/dns/pause")
+async def pause_dns_protection(payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Приостановка фильтрации AdGuard Home на N минут (по умолчанию 15 минут) с автовозвратом."""
+    minutes = 15
+    if payload and "minutes" in payload:
+        try:
+            minutes = int(payload["minutes"])
+        except (ValueError, TypeError):
+            minutes = 15
+    duration_ms = minutes * 60 * 1000
+    try:
+        async with httpx.AsyncClient(timeout=10.0, auth=ADGUARD_AUTH) as client:
+            resp = await client.post(
+                f"{ADGUARD_URL}/control/protection",
+                json={"enabled": False, "duration": duration_ms}
+            )
+            if resp.status_code in (200, 204):
+                return {"success": True, "paused": True, "minutes": minutes, "duration_ms": duration_ms}
+            # Fallback if duration param not accepted
+            await client.post(f"{ADGUARD_URL}/control/protection", json={"enabled": False})
+            return {"success": True, "paused": True, "minutes": minutes}
+    except Exception as e:
+        logger.error(f"Failed to pause protection: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
