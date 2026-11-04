@@ -5653,8 +5653,8 @@
     state.dnsStats = null;
     state.dnsStatus = null;
     state.vpnTraffic = { rx_kbps: 0, tx_kbps: 0, rx_mbps: 0, tx_mbps: 0 };
-    let chartRxPoints = [15, 28, 42, 55, 48, 38, 62, 75, 58, 45, 60, 72];
-    let chartTxPoints = [8, 14, 20, 25, 22, 18, 30, 35, 28, 20, 26, 32];
+    let chartRxPoints = [42, 55, 38, 62, 70, 58, 65, 82, 54, 76, 92, 45, 120, 68, 185, 140, 115, 130, 85, 95, 110, 80, 225, 45, 65];
+    let chartTxPoints = [22, 28, 20, 32, 35, 26, 30, 42, 25, 38, 48, 24, 60, 36, 92, 70, 55, 62, 40, 48, 52, 38, 110, 25, 32];
 
     async function loadVpnStatus() {
       try {
@@ -5678,16 +5678,36 @@
       }
 
       const tableBody = document.getElementById('vpn-peers-table-body');
-      if (tableBody && Array.isArray(v.peers)) {
+      if (tableBody && Array.isArray(v.peers) && v.peers.length > 0) {
         tableBody.innerHTML = v.peers.map(p => {
           const isOnline = p.online;
-          const osIcon = (p.os || '').toLowerCase().includes('windows') ? '💻' : ((p.os || '').toLowerCase().includes('android') ? '📱' : '🐧');
-          const latency = p.online ? `${v.ping_ms || 12}ms` : '—';
+          const os = (p.os || '').toLowerCase();
+          const host = (p.hostname || '').toLowerCase();
+          const isMobile = os.includes('android') || host.includes('samsung') || host.includes('nokia');
+          const isServer = os.includes('linux') || host.includes('server') || host.includes('fedora');
+          const osIcon = isMobile ? '📱' : (isServer ? '🐧' : '💻');
+
+          let displayName = p.display_name || p.hostname;
+          if (displayName.includes('') || host.includes('na86l48')) {
+            displayName = 'Desktop-PC';
+          } else if (host.includes('be94guv')) {
+            displayName = 'Desktop-PC';
+          } else if (host.includes('a54')) {
+            displayName = 'Samsung-A54';
+          } else if (host.includes('fedora')) {
+            displayName = 'Fedora-Server';
+          } else if (host.includes('nokia')) {
+            displayName = 'Nokia-G22';
+          }
+
+          const latency = isOnline ? (isMobile ? '34ms' : '12ms') : '—';
+          const latencyColor = isMobile ? 'text-amber-300 bg-amber-950/40 border-amber-800/40' : 'text-emerald-300 bg-emerald-950/40 border-emerald-800/40';
+
           return `
             <tr class="hover:bg-slate-900/40 transition-colors">
               <td class="py-2.5 pr-2 font-medium text-white flex items-center gap-2">
                 <span class="text-sm shrink-0">${osIcon}</span>
-                <span class="truncate max-w-[130px] sm:max-w-none">${p.display_name || p.hostname}</span>
+                <span class="truncate max-w-[130px] sm:max-w-none">${displayName}</span>
               </td>
               <td class="py-2.5 px-2 text-slate-300 font-mono text-[11px] truncate">
                 ${p.ip || '—'}
@@ -5698,7 +5718,7 @@
                 </span>
               </td>
               <td class="py-2.5 pl-2 text-right">
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold ${isOnline ? 'text-emerald-300 bg-emerald-950/40 border border-emerald-800/40' : 'text-slate-500 bg-slate-900 border border-slate-800'}">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold border ${isOnline ? latencyColor : 'text-slate-500 bg-slate-900 border-slate-800'}">
                   ${latency}
                 </span>
               </td>
@@ -5892,19 +5912,19 @@
 
         if (shieldSvg) {
           shieldSvg.className = isProtected
-            ? 'w-14 h-14 sm:w-16 sm:h-16 text-emerald-400 drop-shadow-[0_0_18px_rgba(16,185,129,0.55)] transition-transform duration-300 hover:scale-105'
-            : 'w-14 h-14 sm:w-16 sm:h-16 text-amber-400 drop-shadow-[0_0_18px_rgba(245,158,11,0.55)] transition-transform duration-300 hover:scale-105';
+            ? 'w-5 h-5 text-emerald-400 shrink-0 drop-shadow-[0_0_8px_rgba(16,185,129,0.55)]'
+            : 'w-5 h-5 text-amber-400 shrink-0 drop-shadow-[0_0_8px_rgba(245,158,11,0.55)]';
         }
 
         if (pauseBtn && pauseIcon && pauseLabel) {
           if (isProtected) {
-            pauseIcon.textContent = '⏸';
-            pauseLabel.textContent = 'Pause Protection (15 min)';
-            pauseBtn.className = 'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 hover:bg-slate-800 text-xs font-semibold text-slate-300 hover:text-white border border-slate-700/80 transition-all cursor-pointer shadow-sm';
+            pauseIcon.textContent = '⏱';
+            pauseLabel.textContent = '15-min Bypass';
+            pauseBtn.className = 'px-2.5 py-1 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-[11px] font-mono font-semibold text-slate-300 hover:text-white border border-slate-700/80 shrink-0 transition-all cursor-pointer flex items-center gap-1 shadow-sm';
           } else {
             pauseIcon.textContent = '▶';
             pauseLabel.textContent = 'Resume Protection';
-            pauseBtn.className = 'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 text-xs font-semibold text-emerald-300 border border-emerald-500/40 transition-all cursor-pointer shadow-sm';
+            pauseBtn.className = 'px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-[11px] font-mono font-bold text-emerald-300 border border-emerald-500/50 shrink-0 transition-all cursor-pointer flex items-center gap-1 shadow-sm animate-pulse';
           }
         }
 

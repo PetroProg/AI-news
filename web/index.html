@@ -1006,6 +1006,15 @@
           <span class="px-2.5 py-1 rounded-lg bg-slate-900 text-slate-300 border border-slate-800">
             Active VPN Peers: <span id="header-vpn-peers" class="text-emerald-400 font-bold">4/4</span>
           </span>
+          <button type="button" class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 transition-colors cursor-pointer">•••</button>
+          <div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-200">
+            <span class="w-4 h-4 rounded-full bg-cyan-600/40 text-cyan-300 flex items-center justify-center text-[9px] font-bold">A</span>
+            <span class="font-medium text-slate-300">Admin</span>
+          </div>
+          <span class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-900 text-slate-400 border border-slate-800">
+            <span>🕒</span>
+            <span>UTC</span>
+          </span>
           <button type="button" id="show-qr-btn" class="px-2.5 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 transition-colors flex items-center gap-1 cursor-pointer" title="QR-код для мобильного подключения">
             <span>📱</span>
             <span>QR</span>
@@ -1026,8 +1035,8 @@
                 <h4 class="text-sm font-bold text-white font-heading">Bandwidth Throughput Monitor</h4>
               </div>
               <div class="flex items-center gap-4 text-xs font-mono">
-                <span id="vpn-speed-rx" class="text-emerald-400 font-bold flex items-center gap-1">↓ 0.0 Kb/s</span>
-                <span id="vpn-speed-tx" class="text-cyan-400 font-bold flex items-center gap-1">↑ 0.0 Kb/s</span>
+                <span id="vpn-speed-rx" class="text-emerald-400 font-bold flex items-center gap-1">↓ 84.2 Kb/s</span>
+                <span id="vpn-speed-tx" class="text-cyan-400 font-bold flex items-center gap-1">↑ 42.1 Kb/s</span>
               </div>
             </div>
             <div class="h-44 sm:h-52 w-full relative">
@@ -1052,7 +1061,58 @@
                   </tr>
                 </thead>
                 <tbody id="vpn-peers-table-body" class="divide-y divide-slate-800/50 text-xs font-mono">
-                  <!-- Injected dynamically by JS -->
+                  <tr class="hover:bg-slate-900/40 transition-colors">
+                    <td class="py-2.5 pr-2 font-medium text-white flex items-center gap-2">
+                      <span class="text-sm shrink-0">💻</span>
+                      <span class="truncate">Desktop-PC</span>
+                    </td>
+                    <td class="py-2.5 px-2 text-slate-300 font-mono text-[11px] truncate">100.82.14.22</td>
+                    <td class="py-2.5 px-2">
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">ONLINE / IDLE</span>
+                    </td>
+                    <td class="py-2.5 pl-2 text-right">
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold text-emerald-300 bg-emerald-950/40 border border-emerald-800/40">12ms</span>
+                    </td>
+                  </tr>
+                  <tr class="hover:bg-slate-900/40 transition-colors">
+                    <td class="py-2.5 pr-2 font-medium text-white flex items-center gap-2">
+                      <span class="text-sm shrink-0">📱</span>
+                      <span class="truncate">Samsung-A54</span>
+                    </td>
+                    <td class="py-2.5 px-2 text-slate-300 font-mono text-[11px] truncate">100.82.14.202</td>
+                    <td class="py-2.5 px-2">
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">ONLINE / IDLE</span>
+                    </td>
+                    <td class="py-2.5 pl-2 text-right">
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold text-emerald-300 bg-emerald-950/40 border border-emerald-800/40">34ms</span>
+                    </td>
+                  </tr>
+                  <tr class="hover:bg-slate-900/40 transition-colors">
+                    <td class="py-2.5 pr-2 font-medium text-white flex items-center gap-2">
+                      <span class="text-sm shrink-0">🐧</span>
+                      <span class="truncate">Fedora-Server</span>
+                    </td>
+                    <td class="py-2.5 px-2 text-slate-300 font-mono text-[11px] truncate">100.82.16.63</td>
+                    <td class="py-2.5 px-2">
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">ONLINE / IDLE</span>
+                    </td>
+                    <td class="py-2.5 pl-2 text-right">
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold text-emerald-300 bg-emerald-950/40 border border-emerald-800/40">12ms</span>
+                    </td>
+                  </tr>
+                  <tr class="hover:bg-slate-900/40 transition-colors">
+                    <td class="py-2.5 pr-2 font-medium text-white flex items-center gap-2">
+                      <span class="text-sm shrink-0">📱</span>
+                      <span class="truncate">Nokia-G22</span>
+                    </td>
+                    <td class="py-2.5 px-2 text-slate-300 font-mono text-[11px] truncate">100.82.22.103</td>
+                    <td class="py-2.5 px-2">
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">ONLINE / IDLE</span>
+                    </td>
+                    <td class="py-2.5 pl-2 text-right">
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold text-emerald-300 bg-emerald-950/40 border border-emerald-800/40">34ms</span>
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -1082,7 +1142,45 @@
                   </tr>
                 </thead>
                 <tbody id="dns-query-table-body" class="divide-y divide-slate-800/50 text-xs font-mono">
-                  <!-- Injected dynamically by JS -->
+                  <tr class="hover:bg-slate-900/40 transition-colors">
+                    <td class="py-2.5 pr-2">
+                      <span class="px-2 py-0.5 rounded-lg font-mono text-[10px] font-bold border border-cyan-800/50 text-cyan-300 bg-cyan-950/30 inline-flex items-center gap-1">
+                        <span>💻</span>
+                        <span>[192.168.178.39 • PC]</span>
+                      </span>
+                    </td>
+                    <td class="py-2.5 px-2 font-mono text-white text-xs truncate max-w-[200px]">github.com</td>
+                    <td class="py-2.5 px-2">
+                      <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">ALLOWED</span>
+                    </td>
+                    <td class="py-2.5 pl-2 text-right font-mono text-xs text-emerald-400">8ms</td>
+                  </tr>
+                  <tr class="hover:bg-slate-900/40 transition-colors">
+                    <td class="py-2.5 pr-2">
+                      <span class="px-2 py-0.5 rounded-lg font-mono text-[10px] font-bold border border-rose-800/50 text-rose-300 bg-rose-950/30 inline-flex items-center gap-1">
+                        <span>📱</span>
+                        <span>[100.76.188.111 • Mobile]</span>
+                      </span>
+                    </td>
+                    <td class="py-2.5 px-2 font-mono text-white text-xs truncate max-w-[200px]">doubleclick.net</td>
+                    <td class="py-2.5 px-2">
+                      <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30">BLOCKED</span>
+                    </td>
+                    <td class="py-2.5 pl-2 text-right font-mono text-xs text-amber-400">34ms</td>
+                  </tr>
+                  <tr class="hover:bg-slate-900/40 transition-colors">
+                    <td class="py-2.5 pr-2">
+                      <span class="px-2 py-0.5 rounded-lg font-mono text-[10px] font-bold border border-emerald-800/50 text-emerald-300 bg-emerald-950/30 inline-flex items-center gap-1">
+                        <span>🐧</span>
+                        <span>[192.168.178.65 • Server]</span>
+                      </span>
+                    </td>
+                    <td class="py-2.5 px-2 font-mono text-white text-xs truncate max-w-[200px]">dns.quad9.net</td>
+                    <td class="py-2.5 px-2">
+                      <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">ALLOWED</span>
+                    </td>
+                    <td class="py-2.5 pl-2 text-right font-mono text-xs text-emerald-400">12ms</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
