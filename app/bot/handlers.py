@@ -5,7 +5,7 @@ import logging
 import httpx
 from aiogram import Router, F, Bot
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
 from sqlalchemy import select, func
 
 from app.config import settings
@@ -14,7 +14,8 @@ from app.database.models import Article, ArticleStatus, Report, ReportType
 from app.services.report import ReportBuilderService
 from app.services.orchestrator import PipelineOrchestrator
 from app.services.disk_monitor import get_disk_info
-from app.bot.keyboards import get_main_keyboard
+from app.services.container_monitor import format_all_containers_status
+from app.bot.keyboards import get_main_keyboard, get_containers_inline_keyboard
 from app.bot.utils import (
     send_wake_on_lan,
     send_remote_sleep,
@@ -339,3 +340,43 @@ async def cmd_pc_status(message: Message, bot: Bot):
         await message.answer(text, parse_mode="Markdown", reply_markup=get_main_keyboard())
     except Exception:
         await message.answer(text, reply_markup=get_main_keyboard())
+
+
+@router.message(Command("containers"))
+@router.message(F.text.in_(["🐳 Containers", "📦 Containers", "🐳 Контейнеры", "📦 Контейнеры", "/containers"]))
+async def cmd_containers_status(message: Message):
+    """Reports status of all Docker containers across all homelab projects."""
+    status_msg = await message.answer("🔍 *Scanning homelab Docker containers...*", parse_mode="Markdown")
+    try:
+        summary_text = await format_all_containers_status()
+        await status_msg.edit_text(
+            summary_text,
+            parse_mode="HTML",
+            reply_markup=get_containers_inline_keyboard()
+        )
+    except Exception as e:
+        logger.error("Failed to fetch containers status: %s", e)
+        await status_msg.edit_text(
+            f"❌ Failed to fetch containers status: {e}",
+            reply_markup=get_main_keyboard()
+        )
+
+
+@router.callback_query(F.data == "refresh_containers")
+async def cb_refresh_containers(callback: CallbackQuery):
+    """Refreshes the container list in-place upon button click."""
+    try:
+        await callback.answer("Refreshing status...")
+        summary_text = await format_all_containers_status()
+        if callback.message:
+            await callback.message.edit_text(
+                summary_text,
+                parse_mode="HTML",
+                reply_markup=get_containers_inline_keyboard()
+            )
+    except Exception as e:
+        logger.error("Failed to refresh containers callback: %s", e)
+        try:
+            await callback.answer("Failed to refresh", show_alert=True)
+        except Exception:
+            pass

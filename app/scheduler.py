@@ -12,6 +12,7 @@ from app.services.orchestrator import PipelineOrchestrator
 from app.services.cleanup import cleanup_old_articles
 from app.services.battery_monitor import check_server_battery_job
 from app.services.disk_monitor import check_server_disk_job
+from app.services.container_monitor import check_containers_job
 
 logger = logging.getLogger("news_ai.scheduler")
 
@@ -73,8 +74,21 @@ def setup_scheduler(bot: Bot) -> AsyncIOScheduler:
         replace_existing=True,
     )
 
+    # Docker containers crash watchdog (monitors all homelab projects every 30 seconds)
+    container_interval = getattr(settings, "CONTAINER_CHECK_INTERVAL_SECONDS", 30)
+    scheduler.add_job(
+        check_containers_job,
+        trigger=IntervalTrigger(seconds=container_interval, timezone=tz),
+        next_run_time=datetime.now(tz),
+        kwargs={"bot": bot},
+        id="server_containers_monitor",
+        name="Server Containers Monitor",
+        replace_existing=True,
+    )
+
     logger.info(
-        "Scheduler configured: Morning at 07:45, Evening at 19:45, Cleanup at 03:00, Battery Watchdog (60s), Disk Watchdog (%dm).",
+        "Scheduler configured: Morning at 07:45, Evening at 19:45, Cleanup at 03:00, Battery (60s), Disk (%dm), Containers (%ds).",
         disk_interval,
+        container_interval,
     )
     return scheduler

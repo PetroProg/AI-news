@@ -29,6 +29,7 @@ async def start_bot():
         BotCommand(command="wake_pc", description="Wake up Windows PC (Wake-on-LAN)"),
         BotCommand(command="sleep_pc", description="Put Windows PC to sleep"),
         BotCommand(command="status", description="Show server, DB & AI worker status"),
+        BotCommand(command="containers", description="Show all homelab Docker containers status"),
     ]
     try:
         await bot.set_my_commands(commands)

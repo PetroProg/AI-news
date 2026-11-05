@@ -32,12 +32,15 @@ services:
     environment:
       - TZ=Europe/Zurich
       - POSTGRES_HOST=127.0.0.1
+    group_add:
+      - "983"
     depends_on:
       postgres:
         condition: service_healthy
     volumes:
       - .:/app
       - /home/petroprog/.ssh:/home/appuser/.ssh:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
 
   postgres:
     image: postgres:16-alpine

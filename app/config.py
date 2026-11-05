@@ -87,6 +87,11 @@ class Settings(BaseSettings):
     DISK_CHECK_INTERVAL_MINUTES: int = 10
     DISK_MONITOR_PATH: str = "/app"
 
+    # Container Crash Watchdog
+    DOCKER_SOCKET_PATH: str = "/var/run/docker.sock"
+    CONTAINER_CHECK_INTERVAL_SECONDS: int = 30
+    CONTAINER_COOLDOWN_MINUTES: int = 10
+
 
 @lru_cache
 def get_settings() -> Settings:
