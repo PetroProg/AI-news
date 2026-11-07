@@ -2752,6 +2752,35 @@ async def block_dns_domain(payload: Dict[str, Any]) -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/api/dns/unblock")
+async def unblock_dns_domain(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Разблокировка домена через удаление правила из AdGuard Home."""
+    domain = payload.get("domain", "").strip().lower()
+    if not domain:
+        raise HTTPException(status_code=400, detail="Invalid domain")
+
+    domain = domain.replace("http://", "").replace("https://", "").split("/")[0]
+    rule = f"||{domain}^"
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0, auth=ADGUARD_AUTH) as client:
+            filt_resp = await client.get(f"{ADGUARD_URL}/control/filtering/status")
+            if filt_resp.status_code == 200:
+                data = filt_resp.json()
+                current_rules = data.get("user_rules", [])
+                updated_rules = [
+                    r for r in current_rules
+                    if r.strip() not in (rule, f"||{domain}^", domain, f"@@||{domain}^|")
+                ]
+                await client.post(f"{ADGUARD_URL}/control/filtering/set_rules", json={"rules": updated_rules})
+                return {"success": True, "domain": domain}
+            else:
+                raise HTTPException(status_code=502, detail="Failed to fetch filtering status")
+    except Exception as e:
+        logger.error(f"Failed to unblock domain {domain}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/vpn/status")
 async def get_vpn_status() -> Dict[str, Any]:
     """Статус Tailscale Mesh VPN (локальный IP, статус пиров, пинг, шифрование)."""

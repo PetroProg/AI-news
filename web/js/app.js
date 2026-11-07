@@ -6062,6 +6062,21 @@
           const clientTag = `[${clientIp}${clientName !== clientIp ? ' • ' + (isMobile ? 'Mobile' : (isServer ? 'Server' : 'PC')) : ''}]`;
           const latency = `${q.elapsed_ms || (isBlocked ? 34 : 8)}ms`;
 
+          const safeDomain = (q.domain || '').replace(/'/g, "\\'");
+          const blockBtnHtml = !isBlocked
+            ? `<button onclick="blockDomainPrompt('${safeDomain}')" 
+                      class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-sans font-medium bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/40 hover:border-rose-400 transition-all cursor-pointer shadow-sm active:scale-95" 
+                      title="Заблокировать домен ${safeDomain}">
+                 <svg class="w-2.5 h-2.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                 <span>Заблокировать</span>
+               </button>`
+            : `<button onclick="unblockDomainPrompt('${safeDomain}')" 
+                      class="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-sans font-medium bg-slate-800/60 hover:bg-slate-700/60 text-slate-300 border border-slate-700/50 hover:border-slate-500 transition-all cursor-pointer shadow-sm active:scale-95" 
+                      title="Разблокировать домен ${safeDomain}">
+                 <svg class="w-2.5 h-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg>
+                 <span>Разблок.</span>
+               </button>`;
+
           return `
             <tr class="hover:bg-slate-900/40 transition-colors">
               <td class="py-2.5 pr-2">
@@ -6070,8 +6085,11 @@
                   <span>${clientTag}</span>
                 </span>
               </td>
-              <td class="py-2.5 px-2 font-mono text-white text-xs truncate max-w-[200px]" title="${q.domain}">
-                ${q.domain}
+              <td class="py-2.5 px-2 font-mono text-white text-xs">
+                <div class="inline-flex items-center gap-2">
+                  <span class="truncate max-w-[170px] sm:max-w-[210px] inline-block font-mono" title="${q.domain}">${q.domain}</span>
+                  ${blockBtnHtml}
+                </div>
               </td>
               <td class="py-2.5 px-2">
                 <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${badgeClass}">
@@ -6091,11 +6109,11 @@
 
     async function blockDomainPrompt(domain) {
       if (!domain) return;
-      if (typeof openConfirmModal === 'function') {
-        openConfirmModal({
+      if (typeof showDeleteConfirmModal === 'function') {
+        showDeleteConfirmModal({
           title: 'Заблокировать домен?',
-          snippet: domain,
-          desc: 'Все DNS-запросы к этому домену будут блокироваться для всех ваших устройств.',
+          snippet: `||${domain}^`,
+          desc: `Все DNS-запросы к домену "${domain}" будут блокироваться фильтром AdGuard для всех ваших подключенных устройств.`,
           confirmText: 'Заблокировать',
           onConfirm: async () => {
             try {
@@ -6105,7 +6123,7 @@
                 body: JSON.stringify({ domain })
               });
               if (resp.ok) {
-                showToast('Домен заблокирован', `Правило ||${domain}^ добавлено`, 'warning');
+                showToast('Домен заблокирован', `Правило ||${domain}^ добавлено в AdGuard`, 'warning');
                 loadDnsQueryLog();
                 loadDnsStats();
               } else {
@@ -6118,21 +6136,69 @@
         });
       } else {
         if (confirm(`Заблокировать домен ${domain}?`)) {
-          const resp = await fetch('/api/dns/block', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ domain })
-          });
-          if (resp.ok) {
-            showToast('Домен заблокирован', domain, 'warning');
-            loadDnsQueryLog();
-            loadDnsStats();
+          try {
+            const resp = await fetch('/api/dns/block', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ domain })
+            });
+            if (resp.ok) {
+              showToast('Домен заблокирован', domain, 'warning');
+              loadDnsQueryLog();
+              loadDnsStats();
+            }
+          } catch (e) {}
+        }
+      }
+    }
+
+    async function unblockDomainPrompt(domain) {
+      if (!domain) return;
+      if (typeof showDeleteConfirmModal === 'function') {
+        showDeleteConfirmModal({
+          title: 'Разблокировать домен?',
+          snippet: domain,
+          desc: `Удалить правило блокировки для домена "${domain}" и возобновить доступ со всех устройств?`,
+          confirmText: 'Разблокировать',
+          onConfirm: async () => {
+            try {
+              const resp = await fetch('/api/dns/unblock', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ domain })
+              });
+              if (resp.ok) {
+                showToast('Домен разблокирован', `Правило для ${domain} удалено`, 'success');
+                loadDnsQueryLog();
+                loadDnsStats();
+              } else {
+                showToast('Ошибка', 'Не удалось разблокировать домен', 'danger');
+              }
+            } catch (e) {
+              showToast('Ошибка сети', 'Не удалось связаться с сервером', 'danger');
+            }
           }
+        });
+      } else {
+        if (confirm(`Разблокировать домен ${domain}?`)) {
+          try {
+            const resp = await fetch('/api/dns/unblock', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ domain })
+            });
+            if (resp.ok) {
+              showToast('Домен разблокирован', domain, 'success');
+              loadDnsQueryLog();
+              loadDnsStats();
+            }
+          } catch (e) {}
         }
       }
     }
 
     window.blockDomainPrompt = blockDomainPrompt;
+    window.unblockDomainPrompt = unblockDomainPrompt;
 
     // Attach Provider Cards Listeners
     document.querySelectorAll('.dns-provider-card').forEach(card => {
