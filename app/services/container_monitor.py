@@ -22,7 +22,6 @@ KNOWN_PROJECTS = {
     "jellyfin-spotify": ("Jellyfin & Spotify", "🎵"),
     "films-list": ("Films List", "🎬"),
     "recipe-app": ("Recipe App", "🍳"),
-    "gym-tracker": ("Gym Tracker", "🏃"),
     "news-ai": ("AI News", "🤖"),
 }
 
@@ -45,8 +44,6 @@ def get_project_metadata(container_name: str, labels: Dict[str, str]) -> Tuple[s
         return "Films List", "🎬"
     if "recipe" in c_name:
         return "Recipe App", "🍳"
-    if "gym" in c_name:
-        return "Gym Tracker", "🏃"
     if c_name.startswith("news_ai_"):
         return "AI News", "🤖"
     if "glances" in c_name:
