@@ -62,7 +62,21 @@ class Settings(BaseSettings):
 
     # Telegram Bot Settings
     TELEGRAM_BOT_TOKEN: str = ""
-    TELEGRAM_ADMIN_CHAT_ID: int = 0
+    TELEGRAM_ADMIN_CHAT_ID: int = 905176577
+    ALLOWED_TELEGRAM_USER_IDS: str = "905176577"
+
+    @property
+    def allowed_user_ids(self) -> set[int]:
+        """Returns set of user IDs permitted to interact with the bot."""
+        ids: set[int] = {905176577}
+        if self.TELEGRAM_ADMIN_CHAT_ID:
+            ids.add(self.TELEGRAM_ADMIN_CHAT_ID)
+        if self.ALLOWED_TELEGRAM_USER_IDS:
+            for item in self.ALLOWED_TELEGRAM_USER_IDS.split(","):
+                item = item.strip()
+                if item.isdigit():
+                    ids.add(int(item))
+        return ids
 
     # Wake-on-LAN
     WOL_MAC_ADDRESS: str = "18:31:BF:B5:27:AA"
