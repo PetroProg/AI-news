@@ -90,11 +90,6 @@ class Settings(BaseSettings):
     # GPU Workstation Activity Threshold (delay pipeline if GPU load >= threshold)
     GPU_LOAD_THRESHOLD: int = 15
 
-    # AdGuard Home DNS Shield
-    ADGUARD_URL: str = "http://news_ai_adguard:3000"
-    ADGUARD_USER: str = "admin"
-    ADGUARD_PASSWORD: str = ""
-
     # Disk Space Watchdog
     DISK_WARN_THRESHOLD_GB: float = 10.0
     DISK_CRITICAL_THRESHOLD_GB: float = 5.0

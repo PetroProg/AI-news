@@ -24,6 +24,7 @@ KNOWN_PROJECTS = {
     "recipe-app": ("Recipe App", "🍳"),
     "news-ai": ("AI News", "🤖"),
     "server-monitor": ("Server Monitor", "🖥️"),
+    "vpn-controler": ("VPN Controler", "🛡️"),
 }
 
 
@@ -47,6 +48,8 @@ def get_project_metadata(container_name: str, labels: Dict[str, str]) -> Tuple[s
         return "Recipe App", "🍳"
     if "server-monitor" in c_name:
         return "Server Monitor", "🖥️"
+    if "vpn-controler" in c_name:
+        return "VPN Controler", "🛡️"
     if c_name.startswith("news_ai_"):
         return "AI News", "🤖"
 

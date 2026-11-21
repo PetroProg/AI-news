@@ -11,6 +11,9 @@ class TestServerHealthNoGlances(unittest.IsolatedAsyncioTestCase):
         title, _ = get_project_metadata("server-monitor", {"com.docker.compose.project": "server-monitor"})
         self.assertEqual(title, "Server Monitor")
 
+        v_title, _ = get_project_metadata("vpn-controler", {"com.docker.compose.project": "vpn-controler"})
+        self.assertEqual(v_title, "VPN Controler")
+
         g_title, _ = get_project_metadata("glances", {})
         self.assertEqual(g_title, "Standalone Service")
 

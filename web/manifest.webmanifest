@@ -2,7 +2,7 @@
   "id": "/",
   "name": "AI News — Умный дайджест новостей",
   "short_name": "AI News",
-  "description": "Персональный агрегатор и AI-аналитика новостей ИИ, IT, Формулы-1, Футбола, Киберспорта и мониторинг домашней сети",
+  "description": "Персональный агрегатор и AI-аналитика новостей ИИ, IT, Формулы-1, Футбола и Киберспорта",
   "lang": "ru",
   "dir": "ltr",
   "start_url": "/",
@@ -68,13 +68,6 @@
       "short_name": "Новости",
       "description": "Открыть свежий AI-дайджест новостей",
       "url": "/?tab=news",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
-    },
-    {
-      "name": "VPN & Сеть",
-      "short_name": "VPN",
-      "description": "Статус Tailscale и DNS AdGuard",
-      "url": "/?tab=vpn",
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
