@@ -537,7 +537,6 @@
 
       try { renderCategoryPills(); } catch (e) { console.error('Error rendering category pills:', e); }
       try { renderNews(); } catch (e) { console.error('Error rendering news:', e); }
-      try { renderDevices(); } catch (e) { console.error('Error rendering devices:', e); }
       try { if (typeof updateVpnUI === 'function') updateVpnUI(); } catch (e) { console.error('Error updating VPN UI:', e); }
       try { if (typeof renderDnsLog === 'function') renderDnsLog(); } catch (e) { console.error('Error rendering DNS log:', e); }
       try { if (typeof updateNetworkAnalytics === 'function') updateNetworkAnalytics(); } catch (e) { console.error('Error updating network analytics:', e); }
@@ -545,6 +544,9 @@
 
     // Tab Switching
     function switchTab(tabId) {
+      if (tabId === 'devices') {
+        tabId = 'news';
+      }
       state.currentTab = tabId;
 
       // Update Desktop & Mobile tab styles
@@ -583,12 +585,6 @@
       const delCategoryBtn = document.getElementById('delete-category-news-btn');
       if (delCategoryBtn) {
         delCategoryBtn.style.display = (tabId === 'news') ? 'inline-flex' : 'none';
-      }
-
-      if (tabId === 'devices') {
-        loadManagedDevices();
-        loadRouterStats();
-        loadServerHealth();
       }
 
       if (tabId === 'vpn') {
@@ -4465,7 +4461,6 @@
           services: [
             { id: 'ainews', online: true },
             { id: 'beszel', online: true },
-            { id: 'glances', online: true },
             { id: 'ollama', online: true },
             { id: 'rssbridge', online: true }
           ]
@@ -4549,15 +4544,6 @@
               url: `http://${currentHost}:8090`,
               online: true,
               hoverColor: 'sky'
-            },
-            {
-              id: 'glances',
-              name: 'Glances',
-              icon: '📊',
-              port: ':61208',
-              url: `http://${currentHost}:61208`,
-              online: true,
-              hoverColor: 'emerald'
             },
             {
               id: 'ollama',
@@ -5541,38 +5527,45 @@
     }
 
     // Save Device Modal
-    document.getElementById('save-device-settings').onclick = async () => {
-      if (!activeEditId) return;
-      const dev = state.devices.find(d => d.id === activeEditId);
-      if (!dev) return;
+    const saveDevBtn = document.getElementById('save-device-settings');
+    if (saveDevBtn) {
+      saveDevBtn.onclick = async () => {
+        if (!activeEditId) return;
+        const dev = state.devices.find(d => d.id === activeEditId);
+        if (!dev) return;
 
-      const newName = document.getElementById('modal-device-name').value;
-      dev.name = newName;
+        const nameInput = document.getElementById('modal-device-name');
+        const newName = nameInput ? nameInput.value : dev.name;
+        dev.name = newName;
 
-      // Update to backend API if device is from database
-      try {
-        await fetch(`/api/devices/${dev.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: newName
-          })
-        });
-      } catch (err) {
-        console.error("Failed to persist device change:", err);
-      }
+        // Update to backend API if device is from database
+        try {
+          await fetch(`/api/devices/${dev.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: newName
+            })
+          });
+        } catch (err) {
+          console.error("Failed to persist device change:", err);
+        }
 
-      const modal = document.getElementById('device-modal');
-      modal.style.display = 'none';
+        const modal = document.getElementById('device-modal');
+        if (modal) modal.style.display = 'none';
 
-      renderDevices();
-      showToast(t('toastSaved') || "Сохранено", dev.name, "success");
-    };
+        renderDevices();
+        showToast(t('toastSaved') || "Сохранено", dev.name, "success");
+      };
+    }
 
-    document.getElementById('close-device-modal').onclick = () => {
-      const modal = document.getElementById('device-modal');
-      modal.style.display = 'none';
-    };
+    const closeDevModalBtn = document.getElementById('close-device-modal');
+    if (closeDevModalBtn) {
+      closeDevModalBtn.onclick = () => {
+        const modal = document.getElementById('device-modal');
+        if (modal) modal.style.display = 'none';
+      };
+    }
 
     // Add Device Modal Handlers
     const openAddDevBtn = document.getElementById('open-add-device-modal-btn');
@@ -6271,12 +6264,6 @@
 
     // Background auto-refresh for VPN & DNS
     setInterval(() => {
-      if (state.currentTab === 'devices') {
-        loadServerHealth();
-      }
-    }, 4000);
-
-    setInterval(() => {
       if (state.currentTab === 'vpn') {
         loadVpnTraffic();
       }
@@ -6544,7 +6531,7 @@
       try {
         const params = new URLSearchParams(window.location.search);
         const requestedTab = params.get('tab');
-        if (requestedTab && ['news', 'devices', 'vpn'].includes(requestedTab)) {
+        if (requestedTab && ['news', 'vpn'].includes(requestedTab)) {
           setTimeout(() => switchTab(requestedTab), 50);
         }
         if (params.get('install') === '1' && !isStandalonePwa()) {
@@ -6568,8 +6555,6 @@
     try { initCategoryNewsSearch(); } catch (e) { console.error('Error during initCategoryNewsSearch:', e); }
     try { initPwaSupport(); } catch (e) { console.error('Error during initPwaSupport:', e); }
     try { loadLiveNews(); } catch (e) { console.error('Error during loadLiveNews:', e); }
-    try { loadManagedDevices(); } catch (e) { console.error('Error during loadManagedDevices:', e); }
-    try { loadRouterStats(); } catch (e) { console.error('Error during loadRouterStats:', e); }
   })();
 
 

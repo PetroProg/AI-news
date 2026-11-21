@@ -76,8 +76,10 @@ Modern information consumption across Telegram, RSS feeds, and technical portals
 - **Live Clock:** Real-time ticking clock in the top status bar with one-click toggling between UTC and CET.
 
 ### 🔋 5. Server & Hardware Health Watchdogs
+- **Beszel Hub Telemetry & Companion PWA:** Real-time CPU, RAM, SSD, core temperature, and Docker container metrics are collected via `news_ai_beszel` & `news_ai_beszel_agent` (legacy Glances has been removed). Dedicated mobile-first server & container UI lives in the standalone **`Server-Monitor`** PWA (`:8085` / `https://petroprog.tail703e6c.ts.net:8445`), linked directly from the navigation bar (`Сервер ↗`).
 - **Battery & AC Power Monitor:** Tracks laptop battery percentage and AC charging state via Linux sysfs (`/sys/class/power_supply/`), alerting via Telegram on power disconnect or low battery ($\le 20\%$).
 - **Disk Space Watchdog:** Checks root storage every 10 minutes, triggering Telegram warnings when free space drops below 10GB and critical alerts below 5GB.
+- **Container Crash Watchdog:** Monitors Docker containers every 30 seconds and alerts via Telegram on unexpected exits or OOM kills.
 - **Auto-Cleanup Service:** Runs nightly at 03:00 CET, purging articles older than 7 days while preserving compiled digest reports.
 - **Workstation Control (WoL & Sleep):** Burst IEEE 802.3 Magic Packet broadcast with ARP discovery for waking remote PCs, coupled with SSH sleep routines.
 
@@ -191,6 +193,7 @@ Articles marked as `REPORTED` are archived in PostgreSQL and never re-sent in fu
 | **Network & Mesh** | Secure Networking | Tailscale, WireGuard Mesh |
 | **Frontend** | Web UI & PWA | HTML5 Canvas, Tailwind CSS, Vanilla JS, Service Workers |
 | **Hardware Control** | Power & WOL | Wake-on-LAN (IEEE 802.3), Paramiko SSH, Linux sysfs |
+| **Telemetry** | Server & Containers | Beszel Hub + Agent (UI in companion `Server-Monitor` PWA) |
 | **Containers** | Infrastructure | Docker, Docker Compose v2 |
 
 ---
@@ -275,6 +278,12 @@ WOL_MAC_ADDRESS=18:31:BF:B5:27:AA
 WOL_BROADCAST_IP=192.168.178.255
 SSH_PC_HOST=192.168.178.39
 SSH_PC_USER=your_pc_username
+
+# Beszel Hub & Agent (Read-only Server & Container Telemetry)
+BESZEL_URL=http://172.18.0.1:8090
+BESZEL_EMAIL=admin@example.local
+BESZEL_PASSWORD=your_beszel_password
+BESZEL_AGENT_KEY=ssh-ed25519_your_agent_public_key
 ```
 
 ### Deployment with Docker Compose
@@ -292,14 +301,16 @@ docker compose ps
 ```
 
 Expected active services:
-- `news_ai_app`: FastAPI backend & dashboard (port `8000`)
+- `news_ai_app`: FastAPI backend & dashboard (port `8000`, Tailscale HTTPS `:8444`)
 - `news_ai_bot`: Telegram Bot, scheduler, and hardware watchdogs
 - `news_ai_postgres`: PostgreSQL 16 database (port `5432`)
 - `news_ai_ollama`: Ollama LLM worker (port `11434`)
 - `news_ai_rss_bridge`: RSS-Bridge for Instagram (port `3000`)
 - `news_ai_adguard`: AdGuard Home DNS shield (ports `53`, `3053`)
+- `news_ai_beszel` & `news_ai_beszel_agent`: Beszel Hub & host/container telemetry agent (port `8090` / `45876`)
+- Companion app (`../Server-Monitor`): Standalone mobile-first server & Docker monitor PWA (`8085`, Tailscale HTTPS `:8445`)
 
-Access the dashboard in your browser at `http://<server-ip>:8000` or securely over Tailscale.
+Access the dashboard in your browser at `https://petroprog.tail703e6c.ts.net:8444` (or `http://<server-ip>:8000`) over Tailscale.
 
 ---
 

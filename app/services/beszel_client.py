@@ -1,38 +1,39 @@
-import asyncio
 import logging
 import time
 from typing import Any, Dict, List, Optional
 import httpx
 
-logger = logging.getLogger("news_ai.beszel")
+from app.config import settings
 
-BESZEL_URL = "http://172.18.0.1:8090"
-ADMIN_EMAIL = "admin@petroprog.local"
-ADMIN_PASS = "Qwerty_1234"
+logger = logging.getLogger("news_ai.beszel")
 
 _token: Optional[str] = None
 _token_expires_at: float = 0
 _system_id: Optional[str] = None
 
 
-async def get_beszel_token(client: httpx.AsyncClient) -> Optional[str]:
-    """Authenticates to Beszel Hub using superuser credentials and caches token."""
+async def get_beszel_token(client: httpx.AsyncClient, force: bool = False) -> Optional[str]:
+    """Authenticates to Beszel Hub using credentials from settings and caches token."""
     global _token, _token_expires_at
-    if _token and time.time() < _token_expires_at:
+    if not force and _token and time.time() < _token_expires_at:
         return _token
+
+    if not settings.BESZEL_EMAIL or not settings.BESZEL_PASSWORD:
+        logger.debug("Beszel credentials are not configured in settings.")
+        return None
 
     try:
         resp = await client.post(
-            f"{BESZEL_URL}/api/collections/_superusers/auth-with-password",
-            json={"identity": ADMIN_EMAIL, "password": ADMIN_PASS},
+            f"{settings.BESZEL_URL.rstrip('/')}/api/collections/_superusers/auth-with-password",
+            json={"identity": settings.BESZEL_EMAIL, "password": settings.BESZEL_PASSWORD},
             timeout=2.0,
         )
         if resp.status_code == 200:
             data = resp.json()
             _token = data.get("token")
-            _token_expires_at = time.time() + 86400
+            _token_expires_at = time.time() + 43200
             return _token
-        logger.warning("Beszel auth failed: %s %s", resp.status_code, resp.text)
+        logger.warning("Beszel auth failed with status %s", resp.status_code)
     except Exception as e:
         logger.debug("Beszel hub connection error: %s", e)
     return None
@@ -45,6 +46,7 @@ async def get_server_beszel_metrics() -> Optional[Dict[str, Any]]:
     """
     global _system_id
     try:
+        base_url = settings.BESZEL_URL.rstrip("/")
         async with httpx.AsyncClient(timeout=2.5) as client:
             token = await get_beszel_token(client)
             if not token:
@@ -55,9 +57,18 @@ async def get_server_beszel_metrics() -> Optional[Dict[str, Any]]:
             # 1. Resolve system ID if not cached
             if not _system_id:
                 sys_resp = await client.get(
-                    f"{BESZEL_URL}/api/collections/systems/records",
+                    f"{base_url}/api/collections/systems/records",
                     headers=headers,
                 )
+                if sys_resp.status_code in (401, 403):
+                    token = await get_beszel_token(client, force=True)
+                    if not token:
+                        return None
+                    headers = {"Authorization": token}
+                    sys_resp = await client.get(
+                        f"{base_url}/api/collections/systems/records",
+                        headers=headers,
+                    )
                 if sys_resp.status_code == 200:
                     items = sys_resp.json().get("items", [])
                     for it in items:
@@ -72,7 +83,7 @@ async def get_server_beszel_metrics() -> Optional[Dict[str, Any]]:
 
             # 2. Get system details & live info
             sys_detail_resp = await client.get(
-                f"{BESZEL_URL}/api/collections/systems/records/{_system_id}",
+                f"{base_url}/api/collections/systems/records/{_system_id}",
                 headers=headers,
             )
             if sys_detail_resp.status_code != 200:
@@ -81,13 +92,13 @@ async def get_server_beszel_metrics() -> Optional[Dict[str, Any]]:
             sys_data = sys_detail_resp.json()
             info = sys_data.get("info") or {}
 
-            # 3. Get recent time-series stats (for sparklines)
+            # 3. Get recent time-series stats (for sparklines and real capacities)
             stats_resp = await client.get(
-                f"{BESZEL_URL}/api/collections/system_stats/records",
+                f"{base_url}/api/collections/system_stats/records",
                 params={
                     "filter": f"system='{_system_id}'",
                     "sort": "-created",
-                    "limit": 20,
+                    "perPage": 20,
                 },
                 headers=headers,
             )
@@ -110,9 +121,11 @@ async def get_server_beszel_metrics() -> Optional[Dict[str, Any]]:
                 if "dp" in st:
                     disk_sparkline.append(round(float(st["dp"]), 1))
 
-            cur_cpu = round(float(info.get("cpu", 0.0)), 1)
-            cur_ram_pct = round(float(info.get("mp", 0.0)), 1)
-            cur_disk_pct = round(float(info.get("dp", 0.0)), 1)
+            latest_st = (raw_records[0].get("stats") or {}) if raw_records else {}
+
+            cur_cpu = round(float(info.get("cpu", latest_st.get("cpu", 0.0))), 1)
+            cur_ram_pct = round(float(info.get("mp", latest_st.get("mp", 0.0))), 1)
+            cur_disk_pct = round(float(info.get("dp", latest_st.get("dp", 0.0))), 1)
 
             if not cpu_sparkline or cpu_sparkline[-1] != cur_cpu:
                 cpu_sparkline.append(cur_cpu)
@@ -122,20 +135,18 @@ async def get_server_beszel_metrics() -> Optional[Dict[str, Any]]:
                 disk_sparkline.append(cur_disk_pct)
 
             temps = []
-            if chrono_records:
-                latest_st = chrono_records[-1].get("stats") or {}
-                t_dict = latest_st.get("t") or {}
-                if isinstance(t_dict, dict):
-                    temps = [v for v in t_dict.values() if isinstance(v, (int, float))]
+            t_dict = latest_st.get("t") or {}
+            if isinstance(t_dict, dict):
+                temps = [v for v in t_dict.values() if isinstance(v, (int, float))]
             max_temp = int(max(temps)) if temps else None
 
-            total_ram_gb = 3.23
-            used_ram_gb = round(total_ram_gb * (cur_ram_pct / 100.0), 2)
+            total_ram_gb = round(float(latest_st.get("m", 0.0) or 3.23), 2)
+            used_ram_gb = round(float(latest_st.get("mu", 0.0) or (total_ram_gb * (cur_ram_pct / 100.0))), 2)
 
-            total_disk_gb = 97.9
-            used_disk_gb = round(total_disk_gb * (cur_disk_pct / 100.0), 1)
+            total_disk_gb = round(float(latest_st.get("d", 0.0) or 97.9), 1)
+            used_disk_gb = round(float(latest_st.get("du", 0.0) or (total_disk_gb * (cur_disk_pct / 100.0))), 1)
 
-            u_sec = info.get("u", 0)
+            u_sec = int(info.get("u", 0) or 0)
             days = u_sec // 86400
             hours = (u_sec % 86400) // 3600
             mins = (u_sec % 3600) // 60
@@ -144,13 +155,13 @@ async def get_server_beszel_metrics() -> Optional[Dict[str, Any]]:
             else:
                 uptime_str = f"{hours}:{mins:02d}"
 
-            la = info.get("la") or [0.0, 0.0, 0.0]
+            la = info.get("la") or latest_st.get("la") or [0.0, 0.0, 0.0]
             load_min1 = round(float(la[0]), 2) if len(la) > 0 else 0.0
 
             wf = info.get("wf") or {}
             wifi_dbm = None
             if isinstance(wf, dict):
-                for k, v in wf.items():
+                for v in wf.values():
                     if isinstance(v, (int, float)):
                         wifi_dbm = int(v)
                     elif isinstance(v, dict) and "r" in v:

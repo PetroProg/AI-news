@@ -23,6 +23,7 @@ KNOWN_PROJECTS = {
     "films-list": ("Films List", "🎬"),
     "recipe-app": ("Recipe App", "🍳"),
     "news-ai": ("AI News", "🤖"),
+    "server-monitor": ("Server Monitor", "🖥️"),
 }
 
 
@@ -44,10 +45,10 @@ def get_project_metadata(container_name: str, labels: Dict[str, str]) -> Tuple[s
         return "Films List", "🎬"
     if "recipe" in c_name:
         return "Recipe App", "🍳"
+    if "server-monitor" in c_name:
+        return "Server Monitor", "🖥️"
     if c_name.startswith("news_ai_"):
         return "AI News", "🤖"
-    if "glances" in c_name:
-        return "System Monitor", "📊"
 
     if compose_proj:
         return compose_proj.capitalize(), "📦"

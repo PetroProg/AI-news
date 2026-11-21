@@ -71,13 +71,6 @@
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
-      "name": "Мои устройства",
-      "short_name": "Устройства",
-      "description": "Мониторинг батареи и статуса устройств",
-      "url": "/?tab=devices",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
-    },
-    {
       "name": "VPN & Сеть",
       "short_name": "VPN",
       "description": "Статус Tailscale и DNS AdGuard",

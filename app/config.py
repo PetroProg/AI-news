@@ -106,6 +106,12 @@ class Settings(BaseSettings):
     CONTAINER_CHECK_INTERVAL_SECONDS: int = 30
     CONTAINER_COOLDOWN_MINUTES: int = 10
 
+    # Beszel Hub Telemetry
+    BESZEL_URL: str = "http://172.18.0.1:8090"
+    BESZEL_EMAIL: str = ""
+    BESZEL_PASSWORD: str = ""
+    BESZEL_AGENT_KEY: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:

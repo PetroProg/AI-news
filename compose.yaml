@@ -124,7 +124,7 @@ services:
       - /:/extra-filesystems/root:ro
     environment:
       PORT: 45876
-      KEY: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICbRVS+Gxhg1lG4yf9a+3r5wTQifXYksN0PJYowTIuop"
+      KEY: "${BESZEL_AGENT_KEY}"
 
 volumes:
   postgres_data:

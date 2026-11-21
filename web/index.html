@@ -95,10 +95,10 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z"/></svg>
             <span data-i18n="tabNews">Новости</span>
           </button>
-          <button type="button" class="nav-tab desktop-tab px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all text-slate-400 border border-transparent hover:text-white" data-tab="devices">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"/></svg>
-            <span data-i18n="tabDevices">Мои устройства</span>
-          </button>
+          <a href="https://petroprog.tail703e6c.ts.net:8445" target="_blank" rel="noopener noreferrer" class="desktop-tab px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-1.5 transition-all text-slate-400 border border-transparent hover:text-amber-300" title="Открыть Server Monitor (отдельное приложение)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="7" rx="2"/><rect x="2" y="14" width="20" height="7" rx="2"/><line x1="6" y1="6.5" x2="6.01" y2="6.5"/><line x1="6" y1="17.5" x2="6.01" y2="17.5"/></svg>
+            <span>Сервер ↗</span>
+          </a>
           <button type="button" class="nav-tab desktop-tab px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all text-slate-400 border border-transparent hover:text-white" data-tab="vpn">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
             <span data-i18n="tabVpn">VPN & Сеть</span>
@@ -867,114 +867,6 @@
     </section>
 
     <!-- ========================================== -->
-    <!-- TAB 2: DEVICES & NETWORK ANALYTICS         -->
-    <!-- ========================================== -->
-    <section id="tab-devices" class="tab-content space-y-6">
-
-      <!-- NETWORK ANALYTICS (Relocated from News) -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        
-        <!-- Card 1: Network Protection -->
-        <!-- Card 1: Network Protection & Server Uptime -->
-        <div class="glass-panel p-4 sm:p-5 rounded-3xl border border-slate-800">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Аптайм Сервера</span>
-            <div class="w-7 h-7 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
-            </div>
-          </div>
-          <div id="metric-protection" class="text-xl sm:text-2xl font-extrabold text-white font-heading">10д 22ч</div>
-          <div id="metric-protection-sub" class="text-[11px] text-emerald-400 mt-1 flex items-center gap-1 font-medium truncate">
-            petroprog • Ubuntu Server
-          </div>
-        </div>
-
-        <!-- Card 2: LAN & Mesh Connected Devices -->
-        <div class="glass-panel p-4 sm:p-5 rounded-3xl border border-slate-800">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Активные Пиры</span>
-            <div class="w-7 h-7 rounded-xl bg-sky-500/15 text-sky-400 flex items-center justify-center shrink-0">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><line x1="12" y1="3" x2="12" y2="12"/><line x1="12" y1="12" x2="18" y2="6"/></svg>
-            </div>
-          </div>
-          <div id="metric-attacks" class="text-xl sm:text-2xl font-extrabold text-white font-heading">3 в сети</div>
-          <div id="metric-attacks-sub" class="text-[11px] text-sky-400 mt-1 flex items-center gap-1 font-medium truncate">
-            LAN + Tailscale Mesh
-          </div>
-        </div>
-
-        <!-- Card 3: Network Traffic & Speed -->
-        <div class="glass-panel p-4 sm:p-5 rounded-3xl border border-slate-800">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Трафик Сервера</span>
-            <div class="w-7 h-7 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
-            </div>
-          </div>
-          <div id="metric-speed" class="text-xl sm:text-2xl font-extrabold text-white font-heading">↓ 5.1 GB</div>
-          <div id="metric-speed-sub" class="text-[11px] text-emerald-400 mt-1 flex items-center gap-1 font-medium truncate">
-            ↑ 0.7 GB (wlp2s0)
-          </div>
-        </div>
-
-        <!-- Card 4: Remote Gateway Access -->
-        <div class="glass-panel p-4 sm:p-5 rounded-3xl border border-slate-800">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Шлюз Сети</span>
-            <div class="w-7 h-7 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center shrink-0">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-.778.099-1.533.284-2.253"/></svg>
-            </div>
-          </div>
-          <div id="metric-remote" class="text-xl sm:text-2xl font-extrabold text-white font-heading">FRITZ!Box</div>
-          <div id="metric-remote-sub" class="text-[11px] text-indigo-300 mt-1 flex items-center gap-1 font-medium truncate">
-            192.168.178.1 • 7 ms
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Devices Header & Overview -->
-      <div class="glass-panel rounded-3xl p-5 sm:p-6 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 class="text-xl font-bold text-white font-heading" data-i18n="devicesOverviewTitle">Appareils connectés</h2>
-          <div class="flex items-center gap-4 mt-1 text-xs text-slate-400">
-            <div><span data-i18n="statTotal">Total :</span> <strong id="stat-total-devices" class="text-white font-bold ml-1">9</strong></div>
-            <span>•</span>
-            <div><span data-i18n="statActive">Actifs :</span> <strong id="stat-active-devices" class="text-emerald-400 font-bold ml-1">9</strong></div>
-            <span>•</span>
-            <div><span data-i18n="statPaused">En pause :</span> <strong id="stat-paused-devices" class="text-rose-400 font-bold ml-1">0</strong></div>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-2.5 w-full sm:w-auto">
-          <button type="button" id="open-add-device-modal-btn" class="flex-1 sm:flex-initial px-4 py-3 rounded-2xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 font-semibold text-xs flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-emerald-950/40">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-            <span>Добавить устройство</span>
-          </button>
-          <button type="button" id="scan-network-btn" class="flex-1 sm:flex-initial px-5 py-3 rounded-2xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-lg shadow-sky-600/30 transition-all">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><line x1="12" y1="3" x2="12" y2="12"/><line x1="12" y1="12" x2="18" y2="6"/></svg>
-            <span data-i18n="scanNetworkBtn">Обновить статус</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Search Bar -->
-      <div class="space-y-3">
-        <div class="relative">
-          <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
-          <input type="text" id="device-search" data-i18n-ph="searchPlaceholder" placeholder="Rechercher par nom, IP..." class="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-800 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-all">
-        </div>
-      </div>
-
-      <!-- Devices Cards Grid -->
-      <div id="devices-container" class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <!-- Injected dynamically by JavaScript -->
-      </div>
-
-    </section>
-
-    <!-- ========================================== -->
-    <!-- TAB 3: VPN & DNS SECURITY                  -->
     <!-- ========================================== -->
     <!-- TAB 3: VPN & NET-SEC OPS DASHBOARD         -->
     <!-- ========================================== -->
@@ -1414,10 +1306,10 @@
       <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z"/></svg>
       <span class="text-[11px]" data-i18n="tabNews">Новости</span>
     </button>
-    <button type="button" class="nav-tab mobile-tab flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-xl text-slate-400 font-medium" data-tab="devices">
-      <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"/></svg>
-      <span class="text-[11px]" data-i18n="tabDevices">Устройства</span>
-    </button>
+    <a href="https://petroprog.tail703e6c.ts.net:8445" target="_blank" rel="noopener noreferrer" class="mobile-tab flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-xl text-slate-400 hover:text-amber-300 font-medium">
+      <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="7" rx="2"/><rect x="2" y="14" width="20" height="7" rx="2"/><line x1="6" y1="6.5" x2="6.01" y2="6.5"/><line x1="6" y1="17.5" x2="6.01" y2="17.5"/></svg>
+      <span class="text-[11px]">Сервер ↗</span>
+    </a>
     <button type="button" class="nav-tab mobile-tab flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-xl text-slate-400 font-medium" data-tab="vpn">
       <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
       <span class="text-[11px]" data-i18n="tabVpn">VPN & Сеть</span>
@@ -1427,210 +1319,6 @@
   <!-- ========================================== -->
   <!-- MODALS                                     -->
   <!-- ========================================== -->
-
-  <!-- Device Inspector Modal -->
-  <div id="device-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md items-center justify-center p-4" style="display: none;">
-    <div class="glass-panel rounded-3xl max-w-md w-full p-6 border border-slate-700 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-      <button type="button" id="close-device-modal" class="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-white transition-all">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-      </button>
-
-      <h3 class="text-xl font-bold text-white font-heading mb-1" data-i18n="modalDeviceTitle">Управление устройством</h3>
-      <p class="text-xs text-slate-400 mb-5" data-i18n="modalDeviceDesc">Сетевые параметры и информация об устройстве.</p>
-
-      <div class="space-y-3.5 text-xs">
-        <div>
-          <label class="block font-semibold text-slate-300 mb-1" data-i18n="deviceNameLabel">Имя устройства :</label>
-          <input type="text" id="modal-device-name" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-sky-500">
-        </div>
-
-        <div class="grid grid-cols-2 gap-2 p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px]">
-          <div>
-            <span class="text-slate-500 block">IP :</span>
-            <span id="modal-device-ip" class="font-mono text-slate-200">192.168.1.102</span>
-          </div>
-          <div>
-            <span class="text-slate-500 block">MAC :</span>
-            <span id="modal-device-mac" class="font-mono text-slate-200">F4:D4:88:51:7A:1C</span>
-          </div>
-          <div>
-            <span class="text-slate-500 block">Производитель :</span>
-            <span id="modal-device-vendor" class="text-slate-200">Apple</span>
-          </div>
-          <div>
-            <span class="text-slate-500 block">Подключение :</span>
-            <span id="modal-device-connection" class="text-slate-200">Wi-Fi 6</span>
-          </div>
-        </div>
-
-      </div>
-
-      <div class="mt-5 flex justify-end">
-        <button type="button" id="save-device-settings" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow-lg shadow-sky-600/30 transition-all" data-i18n="saveBtn">
-          Сохранить
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Add Device Modal -->
-  <div id="add-device-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md items-center justify-center p-4" style="display: none;">
-    <div class="glass-panel rounded-3xl max-w-md w-full p-6 border border-emerald-500/40 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-      <button type="button" id="close-add-device-modal" class="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-white transition-all">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-      </button>
-
-      <div class="flex items-center gap-2.5 mb-2">
-        <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-        </div>
-        <h3 class="text-xl font-bold text-white font-heading">Добавить устройство</h3>
-      </div>
-      <p class="text-xs text-slate-400 mb-4">Внесите параметры нового компьютера, телефона или сетевого хранилища (NAS).</p>
-
-      <form id="add-device-form" class="space-y-3.5 text-xs">
-        <div>
-          <label class="block font-semibold text-slate-300 mb-1">Имя устройства *</label>
-          <input type="text" id="add-dev-name" required placeholder="Например: Рабочий ThinkPad или Synology NAS" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-semibold text-slate-300 mb-1">Категория</label>
-            <select id="add-dev-category" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
-              <option value="computers">Компьютеры / Ноутбуки</option>
-              <option value="mobile">Смартфоны / Планшеты</option>
-              <option value="media">Медиа / ТВ / NAS</option>
-              <option value="iot">Умный дом</option>
-            </select>
-          </div>
-          <div>
-            <label class="block font-semibold text-slate-300 mb-1">Иконка</label>
-            <select id="add-dev-icon" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
-              <option value="laptop">💻 Ноутбук / ПК</option>
-              <option value="smartphone">📱 Смартфон</option>
-              <option value="server">🖥️ Сервер</option>
-              <option value="nas">🗄️ Хранилище (NAS)</option>
-              <option value="tv">📺 ТВ / Экран</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-semibold text-slate-300 mb-1">Локальный IP (Wi-Fi/LAN)</label>
-            <input type="text" id="add-dev-ip" placeholder="192.168.178.xxx" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono focus:outline-none focus:border-emerald-500">
-          </div>
-          <div>
-            <label class="block font-semibold text-slate-300 mb-1">Tailscale IP (если есть)</label>
-            <input type="text" id="add-dev-ts-ip" placeholder="100.x.y.z" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono focus:outline-none focus:border-emerald-500">
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-semibold text-slate-300 mb-1">MAC-адрес (опционально)</label>
-            <input type="text" id="add-dev-mac" placeholder="AA:BB:CC:DD:EE:FF" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono focus:outline-none focus:border-emerald-500">
-          </div>
-          <div>
-            <label class="block font-semibold text-slate-300 mb-1">Бренд / Производитель</label>
-            <input type="text" id="add-dev-vendor" placeholder="Apple, Lenovo, Synology..." class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
-          </div>
-        </div>
-
-        <div>
-          <label class="block font-semibold text-slate-300 mb-1">Расположение / Назначение</label>
-          <input type="text" id="add-dev-location" placeholder="Кабинет, мобильный, учеба..." class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
-        </div>
-
-        <div class="mt-5 flex justify-end gap-2 pt-2">
-          <button type="button" id="cancel-add-device-btn" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-all">
-            Отмена
-          </button>
-          <button type="submit" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition-all">
-            Сохранить устройство
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Radar Scan Modal -->
-  <div id="radar-scan-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md items-center justify-center p-4" style="display: none;">
-    <div class="glass-panel rounded-3xl max-w-sm w-full p-6 text-center border border-sky-500/40 shadow-2xl relative">
-      <button type="button" id="close-radar-modal" class="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-white transition-all">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-      </button>
-
-      <!-- Radar Animation -->
-      <div class="relative w-36 h-36 mx-auto my-4 flex items-center justify-center">
-        <div class="absolute inset-0 rounded-full border border-sky-500/20"></div>
-        <div class="absolute inset-4 rounded-full border border-sky-500/30"></div>
-        <div class="absolute inset-8 rounded-full border border-sky-500/50"></div>
-        <div class="absolute inset-0 rounded-full border-2 border-sky-400 pulse-ring"></div>
-        <div class="radar-sweep absolute inset-0 rounded-full bg-gradient-to-tr from-sky-500/40 via-transparent to-transparent pointer-events-none"></div>
-        <div class="w-3 h-3 rounded-full bg-sky-400 shadow-lg shadow-sky-400"></div>
-      </div>
-
-      <h4 class="text-base font-bold text-white font-heading" data-i18n="radarTitle">Radar du routeur</h4>
-      <p id="radar-status-text" class="text-xs text-sky-300 mt-1 font-mono" data-i18n="radarScanning">Recherche des nouveaux appareils Wi-Fi...</p>
-
-      <div id="radar-found-box" class="mt-4 p-3.5 rounded-2xl bg-emerald-950/30 border border-emerald-500/40 text-left" style="display: none;">
-        <div class="flex items-center gap-2.5 mb-1.5">
-          <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 010 8.49m-8.48-.01a6 6 0 010-8.49m11.31-2.82a10 10 0 010 14.14m-14.14 0a10 10 0 010-14.14"/></svg>
-          </div>
-          <div>
-            <h5 class="text-xs font-bold text-white">Capteur Aqara Zigbee</h5>
-            <span class="text-[10px] text-emerald-400" data-i18n="radarFoundTitle">Nouvel appareil détecté !</span>
-          </div>
-        </div>
-        <button type="button" id="add-discovered-device-btn" class="w-full mt-2 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition-all" data-i18n="radarAddBtn">
-          Autoriser et ajouter à la maison
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Nokia Battery History Modal -->
-  <div id="battery-history-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md items-center justify-center p-4" style="display: none;">
-    <div class="glass-panel rounded-3xl max-w-md w-full p-6 border border-emerald-500/40 shadow-2xl relative">
-      <button type="button" id="close-battery-history-modal" class="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-white transition-all">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-      </button>
-
-      <div class="flex items-center gap-2.5 mb-2">
-        <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
-        </div>
-        <div>
-          <h3 class="text-base font-bold text-white font-heading">Nokia 6.1 • История батареи</h3>
-          <p class="text-[11px] text-slate-400">График разряда и зарядки за 24 часа</p>
-        </div>
-      </div>
-
-      <div id="battery-history-stats" class="my-3 p-3 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between text-xs">
-        <div>
-          <span class="text-slate-400 text-[10px] block">Текущий заряд:</span>
-          <span id="battery-modal-current" class="text-emerald-400 font-bold font-mono text-sm">--%</span>
-        </div>
-        <div>
-          <span class="text-slate-400 text-[10px] block">Точек замера:</span>
-          <span id="battery-modal-points-count" class="text-white font-bold font-mono">0</span>
-        </div>
-        <div>
-          <span class="text-slate-400 text-[10px] block">Интервал:</span>
-          <span class="text-sky-300 font-mono font-bold" title="С 08:00 до 20:00 — каждые 30 мин, с 20:00 до 08:00 — спящий режим">30 мин</span>
-        </div>
-      </div>
-
-      <div class="space-y-1.5 max-h-60 overflow-y-auto pr-1 scrollbar-thin font-mono text-xs" id="battery-history-list">
-        <div class="text-slate-500 text-center py-4 text-[11px]">Загрузка истории...</div>
-      </div>
-    </div>
-  </div>
-
-  
 
   <!-- Custom Delete Confirmation Modal -->
   <div id="delete-confirm-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md transition-opacity duration-200">
@@ -1706,6 +1394,6 @@
   <!-- STANDALONE JAVASCRIPT (ZERO DEPENDENCIES) -->
   <!-- ========================================== -->
 
-  <script src="js/app.js?v=2026_10_23_pwa_v1"></script>
+  <script src="js/app.js?v=2026_11_21_v2"></script>
 </body>
 </html>

@@ -7,7 +7,7 @@
  * 4. Медиа ('/media/'): Cache-First с ограничением размера кэша.
  */
 
-const CACHE_VERSION = 'v1.0.0';
+const CACHE_VERSION = 'v1.1.0';
 const SHELL_CACHE = `ai-news-shell-${CACHE_VERSION}`;
 const API_CACHE = `ai-news-api-${CACHE_VERSION}`;
 const MEDIA_CACHE = `ai-news-media-${CACHE_VERSION}`;
