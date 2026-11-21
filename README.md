@@ -76,7 +76,7 @@ Modern information consumption across Telegram, RSS feeds, and technical portals
 - **Live Clock:** Real-time ticking clock in the top status bar with one-click toggling between UTC and CET.
 
 ### 🔋 5. Server & Hardware Health Watchdogs
-- **Beszel Hub Telemetry & Companion PWA:** Real-time CPU, RAM, SSD, core temperature, and Docker container metrics are collected via `news_ai_beszel` & `news_ai_beszel_agent` (legacy Glances has been removed). Dedicated mobile-first server & container UI lives in the standalone **`Server-Monitor`** PWA (`:8085` / `https://petroprog.tail703e6c.ts.net:8445`), linked directly from the navigation bar (`Сервер ↗`).
+- **Beszel Hub Telemetry & Companion PWA:** Real-time CPU, RAM, SSD, core temperature, and Docker container metrics are collected via `news_ai_beszel` & `news_ai_beszel_agent` (legacy Glances has been removed). Dedicated mobile-first server & container UI lives in the standalone **`Server-Monitor`** PWA (`:8085` / `https://petroprog.tail703e6c.ts.net:8445`).
 - **Battery & AC Power Monitor:** Tracks laptop battery percentage and AC charging state via Linux sysfs (`/sys/class/power_supply/`), alerting via Telegram on power disconnect or low battery ($\le 20\%$).
 - **Disk Space Watchdog:** Checks root storage every 10 minutes, triggering Telegram warnings when free space drops below 10GB and critical alerts below 5GB.
 - **Container Crash Watchdog:** Monitors Docker containers every 30 seconds and alerts via Telegram on unexpected exits or OOM kills.
