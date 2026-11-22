@@ -14,6 +14,8 @@ except ImportError:
     CurlAsyncSession = None
 from bs4 import BeautifulSoup
 from fastapi import FastAPI, Depends, HTTPException, Request
+from pydantic import BaseModel, Field
+from app.config import settings
 from app.services.cleanup import delete_single_article, cleanup_old_articles
 from app.processing.deduplicator import ContentDeduplicator
 from app.processing.cleaner import ContentCleaner
@@ -24,7 +26,7 @@ from sqlalchemy import case, func, select, or_, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.database.models import Article, ArticleStatus, Category, Source, Summary
+from app.database.models import Article, ArticleStatus, Category, Source, SourceType, Summary
 from app.database.session import get_db_session
 
 app = FastAPI(title="News AI Dashboard API", version="0.1.0")
@@ -1338,8 +1340,11 @@ async def get_news_feed(
 
 @app.get("/api/stats")
 async def get_stats(session: AsyncSession = Depends(get_db_session)) -> Dict[str, Any]:
-    """Общая статистика системы для дашборда."""
+    """Общая статистика системы и статус AI-движка для дашборда и страницы настроек."""
     total_sources = await session.scalar(select(func.count(Source.id)))
+    active_sources = await session.scalar(
+        select(func.count(Source.id)).where(Source.is_active.is_(True))
+    )
     total_articles = await session.scalar(select(func.count(Article.id)))
     summarized_articles = await session.scalar(
         select(func.count(Article.id)).where(Article.status.in_([ArticleStatus.SUMMARIZED, ArticleStatus.REPORTED]))
@@ -1347,10 +1352,167 @@ async def get_stats(session: AsyncSession = Depends(get_db_session)) -> Dict[str
 
     return {
         "sources_count": total_sources or 0,
+        "active_sources_count": active_sources or 0,
         "articles_count": total_articles or 0,
         "summarized_count": summarized_articles or 0,
+        "ai_provider": settings.AI_PROVIDER,
+        "gemini_model": settings.GEMINI_MODEL,
+        "ollama_model": settings.OLLAMA_MODEL,
         "status": "online",
     }
+
+
+class SourceCreateRequest(BaseModel):
+    """Schema for creating a new news source."""
+    name: str = Field(..., min_length=2, max_length=255)
+    source_type: str = Field(default="rss", pattern="^(rss|telegram|web|custom)$")
+    url: str = Field(..., min_length=3, max_length=1000)
+    description: Optional[str] = Field(default=None, max_length=500)
+    fetch_interval_minutes: int = Field(default=60, ge=5, le=1440)
+    is_active: bool = True
+
+
+class SourceUpdateRequest(BaseModel):
+    """Schema for partially updating an existing news source."""
+    name: Optional[str] = Field(default=None, min_length=2, max_length=255)
+    is_active: Optional[bool] = None
+    fetch_interval_minutes: Optional[int] = Field(default=None, ge=5, le=1440)
+    description: Optional[str] = Field(default=None, max_length=500)
+
+
+def _normalize_source_url(raw_url: str, source_type: str) -> str:
+    """Validate and normalize source URL (including Telegram @channel handles)."""
+    cleaned = (raw_url or "").strip()
+    if not cleaned or any(ch.isspace() for ch in cleaned):
+        raise HTTPException(status_code=400, detail="Некорректный URL источника")
+
+    lower = cleaned.lower()
+    if lower.startswith(("javascript:", "data:", "file:", "vbscript:")):
+        raise HTTPException(status_code=400, detail="Недопустимая схема URL")
+
+    if source_type == SourceType.TELEGRAM.value:
+        if cleaned.startswith("@"):
+            handle = cleaned[1:].strip("/")
+            if not handle or not re.match(r"^[A-Za-z0-9_]{3,64}$", handle):
+                raise HTTPException(status_code=400, detail="Некорректный Telegram @username")
+            return f"https://t.me/{handle}"
+        if lower.startswith("t.me/"):
+            return f"https://{cleaned}"
+
+    if not lower.startswith(("http://", "https://")):
+        raise HTTPException(status_code=400, detail="URL должен начинаться с http://, https:// или @username для Telegram")
+
+    return cleaned
+
+
+def _serialize_source(source: Source, articles_count: int = 0) -> Dict[str, Any]:
+    """Convert Source ORM model into JSON-safe dict."""
+    s_type = source.source_type.value if hasattr(source.source_type, "value") else str(source.source_type)
+    return {
+        "id": source.id,
+        "name": source.name,
+        "source_type": s_type,
+        "url": source.url,
+        "description": source.description,
+        "is_active": bool(source.is_active),
+        "fetch_interval_minutes": int(source.fetch_interval_minutes or 60),
+        "last_fetched_at": source.last_fetched_at.isoformat() if source.last_fetched_at else None,
+        "articles_count": int(articles_count or 0),
+    }
+
+
+@app.get("/api/sources")
+async def list_sources(session: AsyncSession = Depends(get_db_session)) -> Dict[str, Any]:
+    """Получить список всех источников новостей с количеством собранных статей."""
+    stmt = (
+        select(Source, func.count(Article.id).label("articles_count"))
+        .outerjoin(Article, Article.source_id == Source.id)
+        .group_by(Source.id)
+        .order_by(Source.is_active.desc(), Source.name.asc())
+    )
+    res = await session.execute(stmt)
+    rows = res.all()
+    return {
+        "sources": [_serialize_source(src, count) for src, count in rows]
+    }
+
+
+@app.post("/api/sources", status_code=201)
+async def create_source(
+    payload: SourceCreateRequest,
+    session: AsyncSession = Depends(get_db_session),
+) -> Dict[str, Any]:
+    """Добавить новый источник новостей (RSS / Telegram / Web)."""
+    cleaned_name = payload.name.strip()
+    if len(cleaned_name) < 2:
+        raise HTTPException(status_code=400, detail="Название источника слишком короткое")
+
+    normalized_url = _normalize_source_url(payload.url, payload.source_type)
+
+    existing = await session.scalar(select(Source).where(Source.url == normalized_url))
+    if existing is not None:
+        raise HTTPException(status_code=409, detail="Источник с таким URL уже существует")
+
+    new_source = Source(
+        name=cleaned_name,
+        source_type=SourceType(payload.source_type).value,
+        url=normalized_url,
+        description=payload.description.strip() if payload.description else None,
+        fetch_interval_minutes=payload.fetch_interval_minutes,
+        is_active=payload.is_active,
+    )
+    session.add(new_source)
+    await session.commit()
+    await session.refresh(new_source)
+
+    return {"success": True, "source": _serialize_source(new_source, 0)}
+
+
+@app.patch("/api/sources/{source_id}")
+async def update_source(
+    source_id: int,
+    payload: SourceUpdateRequest,
+    session: AsyncSession = Depends(get_db_session),
+) -> Dict[str, Any]:
+    """Обновить параметры источника (активность, интервал опроса, название, описание)."""
+    source = await session.scalar(select(Source).where(Source.id == source_id))
+    if source is None:
+        raise HTTPException(status_code=404, detail="Источник не найден")
+
+    if payload.name is not None:
+        cleaned_name = payload.name.strip()
+        if len(cleaned_name) < 2:
+            raise HTTPException(status_code=400, detail="Название источника слишком короткое")
+        source.name = cleaned_name
+    if payload.is_active is not None:
+        source.is_active = payload.is_active
+    if payload.fetch_interval_minutes is not None:
+        source.fetch_interval_minutes = payload.fetch_interval_minutes
+    if payload.description is not None:
+        source.description = payload.description.strip() or None
+
+    await session.commit()
+    await session.refresh(source)
+
+    articles_count = await session.scalar(
+        select(func.count(Article.id)).where(Article.source_id == source.id)
+    )
+    return {"success": True, "source": _serialize_source(source, articles_count or 0)}
+
+
+@app.delete("/api/sources/{source_id}")
+async def delete_source(
+    source_id: int,
+    session: AsyncSession = Depends(get_db_session),
+) -> Dict[str, Any]:
+    """Удалить источник новостей и связанные с ним статьи."""
+    source = await session.scalar(select(Source).where(Source.id == source_id))
+    if source is None:
+        raise HTTPException(status_code=404, detail="Источник не найден")
+
+    await session.delete(source)
+    await session.commit()
+    return {"success": True, "deleted_id": source_id}
 
 @app.delete("/api/news/{article_id}")
 async def delete_news_article(

@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>AI News - Агрегатор и аналитика новостей ИИ & IT</title>
-  <meta name="description" content="Персональный агрегатор и AI-аналитика новостей ИИ, IT, Формулы-1, Футбола и Киберспорта">
-  <meta name="theme-color" content="#0f172a">
-  <meta name="background-color" content="#030712">
+  <title>AI News — Персональный новостной портал</title>
+  <meta name="description" content="Персональный мобильный агрегатор и AI-аналитика новостей">
+  <meta name="theme-color" content="#090d18">
+  <meta name="background-color" content="#090d18">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -19,8 +19,8 @@
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
-  
-  <!-- Tailwind CSS via CDN with Fallback Styles -->
+
+  <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     if (window.tailwind) {
@@ -37,906 +37,184 @@
     }
   </script>
 
-  <link rel="stylesheet" href="css/style.css?v=2026_09_26_rev7">
-  <style>
-    #category-pills-container {
-      scrollbar-width: thin;
-      scrollbar-color: rgba(148, 163, 184, 0.25) transparent;
-      -webkit-overflow-scrolling: touch;
-    }
-    #category-pills-container::-webkit-scrollbar {
-      height: 4px;
-    }
-    #category-pills-container::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    #category-pills-container::-webkit-scrollbar-thumb {
-      background: rgba(148, 163, 184, 0.25);
-      border-radius: 9999px;
-    }
-    #category-pills-container::-webkit-scrollbar-thumb:hover {
-      background: rgba(56, 189, 248, 0.6);
-    }
-  </style>
+  <link rel="stylesheet" href="/css/style.css?v=2026_11_22_v3">
 </head>
-<body class="antialiased selection:bg-sky-500 selection:text-white">
+<body class="antialiased selection:bg-sky-500 selection:text-white overflow-x-hidden">
 
   <!-- ========================================== -->
-  <!-- TOP APP BAR / HEADER (EXPANDED & SPACIOUS) -->
+  <!-- STICKY TOP APP BAR                         -->
   <!-- ========================================== -->
   <header class="sticky top-0 z-30 glass-panel border-b border-slate-800/80 bg-slate-950/92 backdrop-blur-xl">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-3.5 space-y-2.5 sm:space-y-0">
-      
-      <!-- Main Row: Logo, Desktop Navigation, Language List & Demo Controls -->
-      <div class="flex items-center justify-between">
-        
-        <!-- Brand / Logo -->
-        <div class="flex items-center gap-3">
-          <div class="relative flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-sky-500 via-indigo-500 to-teal-400 p-[1px] shadow-lg shadow-sky-500/20 shrink-0">
-            <div class="w-full h-full bg-slate-950 rounded-2xl flex items-center justify-center">
-              <svg class="w-6 h-6 text-sky-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z"/>
-              </svg>
-            </div>
-            <span class="absolute -top-1 -right-1 flex h-3 w-3">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-            </span>
+    <div class="max-w-7xl mx-auto px-3.5 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-2">
+
+      <!-- Brand Logo (tap -> Home Portal) -->
+      <button id="brand-home-link" type="button" class="flex items-center gap-2.5 text-left group">
+        <div class="relative flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-500 via-indigo-500 to-teal-400 p-[1px] shadow-lg shadow-sky-500/20 shrink-0">
+          <div class="w-full h-full bg-slate-950 rounded-2xl flex items-center justify-center">
+            <svg class="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
+            </svg>
           </div>
-          <div class="flex items-center gap-2">
-            <span class="text-xl sm:text-2xl font-black text-white tracking-tight font-heading">AI<span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-indigo-400">News</span></span>
-            <span id="app-connection-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-sky-500/15 text-sky-300 border border-sky-500/30">Live</span>
-          </div>
+          <span class="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+          </span>
         </div>
-
-        <!-- Desktop Navigation Tabs (Visible on Computer >= 768px) -->
-        <nav class="desktop-nav items-center p-1.5 rounded-2xl bg-slate-900/90 border border-slate-800">
-          <button type="button" class="nav-tab desktop-tab px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all bg-sky-500/20 text-sky-400 border border-sky-500/40 shadow-sm" data-tab="news">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z"/></svg>
-            <span data-i18n="tabNews">Новости</span>
-          </button>
-        </nav>
-
-        <!-- Right Side: PWA Install & News Category Controls -->
         <div class="flex items-center gap-2">
-          <button id="pwa-install-btn"
-                  type="button"
-                  onclick="triggerPwaInstall()"
-                  class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-gradient-to-r from-sky-500/20 to-indigo-500/20 hover:from-sky-500/35 hover:to-indigo-500/35 text-sky-300 border border-sky-500/40 hover:border-sky-400 flex items-center gap-1.5 shadow-sm shadow-sky-500/10 cursor-pointer group"
-                  title="Установить AI News как приложение (PWA)">
-            <svg class="w-3.5 h-3.5 text-sky-400 group-hover:translate-y-0.5 transition-transform" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
-            </svg>
-            <span id="pwa-install-btn-text" class="hidden sm:inline">Скачать приложение</span>
-            <span class="sm:hidden">Установить</span>
-          </button>
-
-          <button id="delete-category-news-btn" 
-                  type="button" 
-                  onclick="deleteCurrentCategoryNews()" 
-                  class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 hover:border-rose-500/50 flex items-center gap-1.5 shadow-sm group" 
-                  title="Удалить все новости текущей категории из базы данных">
-            <svg class="w-3.5 h-3.5 text-rose-400 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/>
-            </svg>
-            <span id="delete-category-btn-text" class="hidden sm:inline">Очистить категорию</span>
-            <span class="sm:hidden">Очистить</span>
-          </button>
+          <span class="text-lg sm:text-xl font-black text-white tracking-tight font-heading">AI<span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-indigo-400">News</span></span>
+          <span id="app-connection-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">Live</span>
         </div>
+      </button>
 
+      <!-- Desktop Navigation (>= 768px) -->
+      <nav class="desktop-nav items-center gap-1 p-1 rounded-2xl bg-slate-900/90 border border-slate-800">
+        <button type="button" data-nav="home" class="desktop-nav-btn">
+          <span>🏠</span><span>Витрина</span>
+        </button>
+        <button type="button" data-nav="categories" class="desktop-nav-btn">
+          <span>🗂️</span><span>Категории</span>
+        </button>
+        <button type="button" data-nav="digest" class="desktop-nav-btn">
+          <span>🔥</span><span>Дайджест</span>
+        </button>
+        <button type="button" data-nav="settings" class="desktop-nav-btn">
+          <span>⚙️</span><span>Настройки</span>
+        </button>
+      </nav>
+
+      <!-- Right Action: PWA Install -->
+      <div class="flex items-center gap-2">
+        <button id="pwa-install-btn" type="button"
+          class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-gradient-to-r from-sky-500/20 to-indigo-500/20 hover:from-sky-500/35 hover:to-indigo-500/35 text-sky-300 border border-sky-500/40 flex items-center gap-1.5"
+          title="Установить AI News на устройство">
+          <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
+          </svg>
+          <span class="hidden sm:inline">Приложение</span>
+          <span class="sm:hidden">PWA</span>
+        </button>
       </div>
     </div>
   </header>
 
   <!-- ========================================== -->
-  <!-- MAIN CONTAINER                             -->
+  <!-- DYNAMIC PAGE VIEWPORT                      -->
   <!-- ========================================== -->
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-5 sm:pt-8 space-y-6">
-
-    <!-- ========================================== -->
-    <!-- TAB 1: NEWS & AI DIGEST                    -->
-    <!-- ========================================== -->
-    <section id="tab-news" class="tab-content active space-y-5">
-      
-      <!-- Categories Filter Pills Bar with Left/Right Scroll Controls -->
-      <div class="relative flex items-center group w-full my-1">
-        <!-- Left Scroll Button -->
-        <button id="category-scroll-left-btn" type="button" onclick="scrollCategoryPills(-260)" class="absolute left-0 z-20 w-8 h-8 rounded-full bg-slate-900/95 hover:bg-sky-500 text-slate-300 hover:text-white border border-slate-700/80 shadow-xl shadow-black/60 backdrop-blur-md flex items-center justify-center transition-all duration-200 opacity-0 pointer-events-none cursor-pointer focus:outline-none hover:scale-110 active:scale-95" title="Прокрутить влево" aria-label="Прокрутить влево">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-        </button>
-
-        <!-- Pills Container (clean horizontal scroll with edge breathing room) -->
-        <div id="category-pills-container" class="flex items-center gap-2 overflow-x-auto py-1 px-8 scroll-smooth w-full select-none cursor-grab active:cursor-grabbing scrollbar-none">
-          <button type="button" class="news-cat-pill px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 bg-sky-500 text-white" onclick="setDynamicCategory('Украина')">🇺🇦 Украина</button>
-        </div>
-
-        <!-- Right Scroll Button -->
-        <button id="category-scroll-right-btn" type="button" onclick="scrollCategoryPills(260)" class="absolute right-0 z-20 w-8 h-8 rounded-full bg-slate-900/95 hover:bg-sky-500 text-slate-300 hover:text-white border border-slate-700/80 shadow-xl shadow-black/60 backdrop-blur-md flex items-center justify-center transition-all duration-200 opacity-0 pointer-events-none cursor-pointer focus:outline-none hover:scale-110 active:scale-95" title="Прокрутить вправо" aria-label="Прокрутить вправо">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-        </button>
-      </div>
-
-      <!-- ======================================================= -->
-      <!-- CATEGORY NEWS LIVE SEARCH BAR                           -->
-      <!-- ======================================================= -->
-      <div id="category-news-search-container" class="relative w-full my-1.5">
-        <div class="relative flex items-center w-full rounded-2xl bg-slate-900/70 hover:bg-slate-900/90 focus-within:bg-slate-900/95 border border-slate-700/70 focus-within:border-sky-500/80 shadow-md shadow-black/30 backdrop-blur-md transition-all duration-200">
-          <!-- Search Icon -->
-          <div class="absolute left-3.5 sm:left-4 flex items-center pointer-events-none text-sky-400/80">
-            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-            </svg>
-          </div>
-
-          <!-- Input Field -->
-          <input 
-            id="category-news-search-input" 
-            type="text" 
-            autocomplete="off"
-            spellcheck="false"
-            placeholder="Поиск новостей в этой категории..." 
-            class="w-full pl-10 sm:pl-12 pr-28 sm:pr-36 py-2.5 sm:py-3 bg-transparent text-xs sm:text-sm text-slate-100 placeholder-slate-400 font-medium focus:outline-none focus:ring-0"
-          />
-
-          <!-- Right side controls: Clear button + Counter Badge -->
-          <div class="absolute right-2.5 sm:right-3 flex items-center gap-2">
-            <!-- Clear Button (hidden by default) -->
-            <button 
-              id="category-news-search-clear-btn" 
-              type="button" 
-              onclick="clearCategoryNewsSearch()" 
-              class="hidden p-1 sm:p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors focus:outline-none cursor-pointer"
-              title="Очистить поиск"
-              aria-label="Очистить поиск"
-            >
-              <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-              </svg>
-            </button>
-
-            <!-- Results Counter Badge -->
-            <span 
-              id="category-news-search-count-badge" 
-              class="inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-slate-800/80 text-slate-400 border border-slate-700/50"
-            >
-              0 новостей
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <!-- ======================================================= -->
-      <!-- DEDICATED LANGUAGE SELECTION MENU BAR                  -->
-      <!-- ======================================================= -->
-      <div id="language-selection-bar" style="display: none;" class="glass-panel p-3.5 sm:p-4 rounded-2xl border border-sky-500/20 bg-slate-900/70 flex-col md:flex-row md:items-center justify-between gap-3 shadow-lg">
-        <div class="flex items-center gap-3 flex-wrap">
-          <div class="flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-sky-400 animate-pulse"></span>
-            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-              <span>💻</span>
-              <span>Язык программирования:</span>
-            </span>
-          </div>
-
-          <!-- Dropdown Select Menu -->
-          <div class="relative">
-            <select id="language-select-dropdown" onchange="filterByLanguage(this.value)" class="bg-slate-950 text-sky-300 font-bold text-xs py-2 pl-3.5 pr-8 rounded-xl border border-sky-500/30 hover:border-sky-400 focus:border-sky-400 focus:outline-none focus:ring-1 focus:ring-sky-400 cursor-pointer appearance-none transition-all shadow-inner">
-              <option value="all">🌐 Все языки программирования</option>
-              <option value="python">🐍 Python (AI, ML, FastAPI)</option>
-              <option value="rust">🦀 Rust (Systems, Safe Memory)</option>
-              <option value="go">🐹 Go / Golang (Cloud, K8s)</option>
-              <option value="c++">⚡ C++ (High Perf, GameDev)</option>
-              <option value="typescript">🔷 TS / JS (Frontend & Node)</option>
-              <option value="mojo">🔥 Mojo (AI Acceleration)</option>
-              <option value="zig">⚡ Zig (Next-Gen C)</option>
-              <option value="java">☕ Java (Enterprise & FinTech)</option>
-              <option value="c#">🎯 C# / .NET (Unity, Cloud)</option>
-              <option value="c ">⚙️ C (Kernel & Embedded)</option>
-              <option value="php">🐘 PHP (Laravel, Web)</option>
-              <option value="kotlin">🍏 Kotlin / Swift (Mobile)</option>
-            </select>
-            <div class="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none text-sky-400">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-            </div>
-          </div>
-        </div>
-
-        <!-- Quick Sub-Filter Chips -->
-        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none flex-wrap">
-          <button type="button" onclick="filterByLanguage('all')" class="lang-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-bold bg-sky-500 text-white border border-sky-400 transition-all shadow-md" data-lang="all">Все</button>
-          <button type="button" onclick="filterByLanguage('python')" class="lang-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all" data-lang="python">🐍 Python</button>
-          <button type="button" onclick="filterByLanguage('rust')" class="lang-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all" data-lang="rust">🦀 Rust</button>
-          <button type="button" onclick="filterByLanguage('go')" class="lang-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all" data-lang="go">🐹 Go</button>
-          <button type="button" onclick="filterByLanguage('c++')" class="lang-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all" data-lang="c++">⚡ C++</button>
-          <button type="button" onclick="filterByLanguage('typescript')" class="lang-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all" data-lang="typescript">🔷 TS/JS</button>
-          <button type="button" onclick="filterByLanguage('mojo')" class="lang-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all" data-lang="mojo">🔥 Mojo</button>
-          <button type="button" onclick="filterByLanguage('zig')" class="lang-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all" data-lang="zig">⚡ Zig</button>
-        </div>
-      </div>
-
-      <!-- ======================================================= -->
-      <!-- MAIN RESPONSIVE LAYOUT: NEWS (CENTER) + ASIDE SIDEBAR   -->
-      <!-- ======================================================= -->
-      <div id="news-layout-wrapper" class="flex flex-col lg:grid lg:grid-cols-12 gap-6 items-start">
-        
-        <!-- Center Main Column (News Feed) -->
-        <div id="news-main-column" class="order-1 lg:order-1 lg:col-span-12 space-y-6 w-full">
-          <!-- Ukraine 24h AI Attack & Security Digest Banner (Shown only on Ukraine category) -->
-          <div id="ukraine-ai-digest-banner" style="display: none;" class="w-full">
-            <!-- Dynamically populated by renderUkraineDigestBanner() -->
-          </div>
-
-          <!-- F1 Latest Grand Prix Top 10 Results Banner (Shown only on F1 category) -->
-          <div id="f1-latest-race-banner" style="display: none;" class="w-full">
-            <!-- Dynamically populated by renderF1Top10Banner() -->
-          </div>
-
-          <div id="news-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            <!-- Injected dynamically by JavaScript -->
-          </div>
-        </div>
-
-
-        <!-- Aside Sidebar: Programming Analytics & Deep Dive (Shown ONLY on IT category) -->
-        <aside id="programming-analytics-aside" style="display: none;" class="order-1 lg:order-2 lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto pr-1 w-full aside-collapsible">
-          
-          <!-- ASIDE NAVIGATION SWITCHER TABS -->
-          <div class="glass-panel p-1.5 rounded-2xl border border-slate-800 bg-slate-950/90 flex items-center gap-1.5 shadow-lg sticky top-0 z-20 backdrop-blur-md">
-            <button type="button" id="aside-tab-top10" onclick="switchAsideTab('top10')" class="flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all bg-sky-500 text-white shadow-md flex items-center justify-center gap-1.5">
-              <span>🌐</span> <span>Топ-10 Рейтинг</span>
-            </button>
-            <button type="button" id="aside-tab-deepdive" onclick="switchAsideTab('deepdive')" class="flex-1 py-1.5 px-3 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-900/80 transition-all flex items-center justify-center gap-1.5">
-              <span>🚀</span> <span>Восходящие звёзды</span>
-            </button>
-          </div>
-
-          <!-- ASIDE BLOCK 1: TOP 10 LANGUAGES LEADERBOARD -->
-          <div id="aside-block-top10" class="glass-panel p-5 rounded-3xl border border-sky-500/25 bg-gradient-to-b from-slate-900/90 via-slate-950/90 to-slate-900/80 shadow-2xl relative overflow-hidden">
-            <div class="absolute -right-8 -top-8 w-32 h-32 bg-sky-500/10 rounded-full blur-2xl pointer-events-none"></div>
-
-            <div class="flex items-center justify-between border-b border-slate-800/80 pb-3 mb-3 relative z-10">
-              <div>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-sky-500/20 text-sky-300 border border-sky-500/30 flex items-center gap-1 w-fit mb-1">
-                  <span>🌐</span> <span>Мировой Рейтинг</span>
-                </span>
-                <h3 class="text-sm font-black text-white font-heading">
-                  Топ-10 языков программирования
-                </h3>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-[10px] font-mono text-slate-400 bg-slate-900/80 px-2 py-1 rounded-lg border border-slate-800">TIOBE / Octo</span>
-                <button type="button" onclick="toggleMobileAside('programming-analytics-aside')" class="lg:hidden px-2 py-1 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 text-xs font-semibold flex items-center gap-1 transition-all" title="Свернуть / Развернуть">
-                  <span class="aside-toggle-text text-[10px]">Свернуть</span>
-                  <svg class="w-3.5 h-3.5 aside-collapse-arrow transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
-                </button>
-              </div>
-            </div>
-            
-            <div class="aside-collapsible-body space-y-3">
-              <p class="text-[11px] text-slate-400 mb-1 leading-relaxed">
-                Популярность и назначение. <span class="text-sky-400 font-semibold">Кликните по языку</span> для быстрой фильтрации новостей:
-              </p>
-
-              <div class="space-y-2 max-h-[300px] sm:max-h-[380px] lg:max-h-[520px] overflow-y-auto pr-1 scrollbar-thin">
-              
-              <!-- 1. Python -->
-              <div onclick="filterByLanguage('python')" class="aside-lang-card p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-amber-500/50 cursor-pointer transition-all hover:bg-slate-900/60 group" data-lang="python">
-                <div class="flex items-center justify-between mb-1.5">
-                  <span class="text-xs font-bold text-white group-hover:text-amber-300 flex items-center gap-1.5">
-                    <span>🐍</span> <span>Python</span>
-                  </span>
-                  <span class="text-[11px] font-mono font-bold text-amber-400">#1 • 25.4%</span>
-                </div>
-                <div class="w-full bg-slate-800/80 h-1.5 rounded-full overflow-hidden mb-1.5">
-                  <div class="bg-amber-400 h-full rounded-full" style="width: 100%"></div>
-                </div>
-                <p class="text-[11px] text-slate-300 leading-snug">
-                  <strong class="text-white">Для чего:</strong> ИИ / ML (PyTorch), Data Science, FastAPI бэкенд, скрипты автоматизации.
-                </p>
-              </div>
-
-              <!-- 2. JS / TS -->
-              <div onclick="filterByLanguage('typescript')" class="aside-lang-card p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-blue-500/50 cursor-pointer transition-all hover:bg-slate-900/60 group" data-lang="typescript">
-                <div class="flex items-center justify-between mb-1.5">
-                  <span class="text-xs font-bold text-white group-hover:text-blue-300 flex items-center gap-1.5">
-                    <span>🔷</span> <span>JS / TypeScript</span>
-                  </span>
-                  <span class="text-[11px] font-mono font-bold text-blue-400">#2 • 19.8%</span>
-                </div>
-                <div class="w-full bg-slate-800/80 h-1.5 rounded-full overflow-hidden mb-1.5">
-                  <div class="bg-blue-400 h-full rounded-full" style="width: 78%"></div>
-                </div>
-                <p class="text-[11px] text-slate-300 leading-snug">
-                  <strong class="text-white">Для чего:</strong> Веб-фронтенд (React, Vue, Next.js), Фуллстек Node.js, Кроссплатформенные приложения.
-                </p>
-              </div>
-
-              <!-- 3. Java -->
-              <div onclick="filterByLanguage('java')" class="aside-lang-card p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-red-500/50 cursor-pointer transition-all hover:bg-slate-900/60 group" data-lang="java">
-                <div class="flex items-center justify-between mb-1.5">
-                  <span class="text-xs font-bold text-white group-hover:text-red-300 flex items-center gap-1.5">
-                    <span>☕</span> <span>Java</span>
-                  </span>
-                  <span class="text-[11px] font-mono font-bold text-red-400">#3 • 10.2%</span>
-                </div>
-                <div class="w-full bg-slate-800/80 h-1.5 rounded-full overflow-hidden mb-1.5">
-                  <div class="bg-red-400 h-full rounded-full" style="width: 40%"></div>
-                </div>
-                <p class="text-[11px] text-slate-300 leading-snug">
-                  <strong class="text-white">Для чего:</strong> Enterprise-бэкенд (Spring Boot), Банковские процессинги, Финтех.
-                </p>
-              </div>
-
-              <!-- 4. C# / .NET -->
-              <div onclick="filterByLanguage('c#')" class="aside-lang-card p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-purple-500/50 cursor-pointer transition-all hover:bg-slate-900/60 group" data-lang="c#">
-                <div class="flex items-center justify-between mb-1.5">
-                  <span class="text-xs font-bold text-white group-hover:text-purple-300 flex items-center gap-1.5">
-                    <span>🎯</span> <span>C# / .NET</span>
-                  </span>
-                  <span class="text-[11px] font-mono font-bold text-purple-400">#4 • 7.6%</span>
-                </div>
-                <div class="w-full bg-slate-800/80 h-1.5 rounded-full overflow-hidden mb-1.5">
-                  <div class="bg-purple-400 h-full rounded-full" style="width: 30%"></div>
-                </div>
-                <p class="text-[11px] text-slate-300 leading-snug">
-                  <strong class="text-white">Для чего:</strong> Игры (Unity), Корпоративные платформы Microsoft, Cloud-сервисы.
-                </p>
-              </div>
-
-              <!-- 5. C++ -->
-              <div onclick="filterByLanguage('c++')" class="aside-lang-card p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-sky-500/50 cursor-pointer transition-all hover:bg-slate-900/60 group" data-lang="c++">
-                <div class="flex items-center justify-between mb-1.5">
-                  <span class="text-xs font-bold text-white group-hover:text-sky-300 flex items-center gap-1.5">
-                    <span>⚡</span> <span>C++</span>
-                  </span>
-                  <span class="text-[11px] font-mono font-bold text-sky-400">#5 • 7.1%</span>
-                </div>
-                <div class="w-full bg-slate-800/80 h-1.5 rounded-full overflow-hidden mb-1.5">
-                  <div class="bg-sky-400 h-full rounded-full" style="width: 28%"></div>
-                </div>
-                <p class="text-[11px] text-slate-300 leading-snug">
-                  <strong class="text-white">Для чего:</strong> Unreal Engine, AAA-игры, High-Frequency Trading (HFT), Embedded.
-                </p>
-              </div>
-
-              <!-- 6. Go (Golang) -->
-              <div onclick="filterByLanguage('go')" class="aside-lang-card p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-cyan-500/50 cursor-pointer transition-all hover:bg-slate-900/60 group" data-lang="go">
-                <div class="flex items-center justify-between mb-1.5">
-                  <span class="text-xs font-bold text-white group-hover:text-cyan-300 flex items-center gap-1.5">
-                    <span>🐹</span> <span>Go</span>
-                  </span>
-                  <span class="text-[11px] font-mono font-bold text-cyan-400">#6 • 6.5%</span>
-                </div>
-                <div class="w-full bg-slate-800/80 h-1.5 rounded-full overflow-hidden mb-1.5">
-                  <div class="bg-cyan-400 h-full rounded-full" style="width: 25%"></div>
-                </div>
-                <p class="text-[11px] text-slate-300 leading-snug">
-                  <strong class="text-white">Для чего:</strong> Облачная инфраструктура (K8s, Docker), Микросервисы, Сетевые демоны.
-                </p>
-              </div>
-
-              <!-- 7. C -->
-              <div onclick="filterByLanguage('c ')" class="aside-lang-card p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-slate-500/50 cursor-pointer transition-all hover:bg-slate-900/60 group" data-lang="c ">
-                <div class="flex items-center justify-between mb-1.5">
-                  <span class="text-xs font-bold text-white group-hover:text-slate-200 flex items-center gap-1.5">
-                    <span>⚙️</span> <span>C</span>
-                  </span>
-                  <span class="text-[11px] font-mono font-bold text-slate-400">#7 • 5.2%</span>
-                </div>
-                <div class="w-full bg-slate-800/80 h-1.5 rounded-full overflow-hidden mb-1.5">
-                  <div class="bg-slate-400 h-full rounded-full" style="width: 20%"></div>
-                </div>
-                <p class="text-[11px] text-slate-300 leading-snug">
-                  <strong class="text-white">Для чего:</strong> Ядро ОС (Linux), Низкоуровневые драйверы, Микроконтроллеры (IoT).
-                </p>
-              </div>
-
-              <!-- 8. Rust -->
-              <div onclick="filterByLanguage('rust')" class="aside-lang-card p-3 rounded-2xl bg-slate-950/60 border border-orange-500/40 hover:border-orange-400 cursor-pointer transition-all hover:bg-slate-900/60 group shadow-lg shadow-orange-500/5" data-lang="rust">
-                <div class="flex items-center justify-between mb-1.5">
-                  <span class="text-xs font-bold text-white group-hover:text-orange-300 flex items-center gap-1.5">
-                    <span>🦀</span> <span>Rust</span>
-                  </span>
-                  <span class="text-[11px] font-mono font-bold text-orange-400">#8 • 4.8% 🔥</span>
-                </div>
-                <div class="w-full bg-slate-800/80 h-1.5 rounded-full overflow-hidden mb-1.5">
-                  <div class="bg-orange-500 h-full rounded-full" style="width: 19%"></div>
-                </div>
-                <p class="text-[11px] text-slate-300 leading-snug">
-                  <strong class="text-white">Для чего:</strong> Безопасность памяти без GC, Системный софт, Ядро Linux, WebAssembly.
-                </p>
-              </div>
-
-              <!-- 9. PHP -->
-              <div onclick="filterByLanguage('php')" class="aside-lang-card p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-indigo-500/50 cursor-pointer transition-all hover:bg-slate-900/60 group" data-lang="php">
-                <div class="flex items-center justify-between mb-1.5">
-                  <span class="text-xs font-bold text-white group-hover:text-indigo-300 flex items-center gap-1.5">
-                    <span>🐘</span> <span>PHP</span>
-                  </span>
-                  <span class="text-[11px] font-mono font-bold text-indigo-400">#9 • 4.1%</span>
-                </div>
-                <div class="w-full bg-slate-800/80 h-1.5 rounded-full overflow-hidden mb-1.5">
-                  <div class="bg-indigo-400 h-full rounded-full" style="width: 16%"></div>
-                </div>
-                <p class="text-[11px] text-slate-300 leading-snug">
-                  <strong class="text-white">Для чего:</strong> Веб-сайты, CMS (WordPress), Современные фреймворки (Laravel, Symfony).
-                </p>
-              </div>
-
-              <!-- 10. Kotlin / Swift -->
-              <div onclick="filterByLanguage('kotlin')" class="aside-lang-card p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-emerald-500/50 cursor-pointer transition-all hover:bg-slate-900/60 group" data-lang="kotlin">
-                <div class="flex items-center justify-between mb-1.5">
-                  <span class="text-xs font-bold text-white group-hover:text-emerald-300 flex items-center gap-1.5">
-                    <span>🍏</span> <span>Kotlin / Swift</span>
-                  </span>
-                  <span class="text-[11px] font-mono font-bold text-emerald-400">#10 • 3.8%</span>
-                </div>
-                <div class="w-full bg-slate-800/80 h-1.5 rounded-full overflow-hidden mb-1.5">
-                  <div class="bg-emerald-400 h-full rounded-full" style="width: 15%"></div>
-                </div>
-                <p class="text-[11px] text-slate-300 leading-snug">
-                  <strong class="text-white">Для чего:</strong> Нативная мобильная разработка: Android (Google) и iOS/macOS (Apple).
-                </p>
-              </div>
-
-            </div>
-            </div>
-          </div>
-
-          <!-- ASIDE BLOCK 2: DEEP DIVE (RISING STARS) -->
-          <div id="aside-block-deepdive" style="display: none;" class="glass-panel p-5 rounded-3xl border border-slate-800/90 bg-slate-900/60 shadow-2xl space-y-3.5">
-            <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
-              <div>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center gap-1 w-fit mb-1">
-                  <span>🚀</span> <span>Deep Dive</span>
-                </span>
-                <h3 class="text-sm font-black text-white font-heading">
-                  Восходящие звёзды индустрии
-                </h3>
-              </div>
-              <span class="text-[10px] font-mono text-slate-500">Next-Gen</span>
-            </div>
-
-            <p class="text-[11px] text-slate-400 leading-relaxed">
-              Технологические прорывы языков, вытесняющих устаревшие решения:
-            </p>
-
-            <div class="space-y-3">
-              
-              <!-- Rust -->
-              <div class="p-3.5 rounded-2xl bg-slate-950/70 border border-orange-500/30 space-y-2">
-                <div class="flex items-center justify-between">
-                  <span class="text-xs font-bold text-orange-400 flex items-center gap-1.5">
-                    <span>🦀</span> <span>Rust</span>
-                  </span>
-                  <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-orange-500/20 text-orange-300 border border-orange-500/30">
-                    Системный стандарт
-                  </span>
-                </div>
-                <p class="text-[11px] text-slate-300 leading-snug">
-                  <strong class="text-white">Прорыв:</strong> Управление памятью без GC через <em>Ownership & Borrowing</em>. Без гонок данных и утечек.
-                </p>
-                <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-[10px] text-slate-300 space-y-1">
-                  <div><strong class="text-amber-300">📊 Бенчмарки:</strong> Скорость C/C++, в 3-5 раз меньше RAM, чем Go и Java.</div>
-                  <div><strong class="text-sky-300">🏢 Внедрение:</strong> Ядро Windows 11, Linux 6.x, Cloudflare Pingora.</div>
-                </div>
-              </div>
-
-              <!-- Mojo -->
-              <div class="p-3.5 rounded-2xl bg-slate-950/70 border border-rose-500/30 space-y-2">
-                <div class="flex items-center justify-between">
-                  <span class="text-xs font-bold text-rose-400 flex items-center gap-1.5">
-                    <span>🔥</span> <span>Mojo</span>
-                  </span>
-                  <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                    AI Acceleration
-                  </span>
-                </div>
-                <p class="text-[11px] text-slate-300 leading-snug">
-                  <strong class="text-white">Прорыв:</strong> От автора LLVM/Swift. Синтаксис Python с мощью C++/CUDA через MLIR под тензорные ядра GPU/TPU.
-                </p>
-                <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-[10px] text-slate-300 space-y-1">
-                  <div><strong class="text-rose-300">📊 Скорость:</strong> До 68,000x быстрее стандартного Python в операциях с матрицами.</div>
-                  <div><strong class="text-amber-300">🎯 Для чего:</strong> Тюнинг моделей, разработка кастомных ядер для нейросетей.</div>
-                </div>
-              </div>
-
-              <!-- Go -->
-              <div class="p-3.5 rounded-2xl bg-slate-950/70 border border-cyan-500/30 space-y-2">
-                <div class="flex items-center justify-between">
-                  <span class="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
-                    <span>🐹</span> <span>Go (Golang)</span>
-                  </span>
-                  <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                    Cloud Native
-                  </span>
-                </div>
-                <p class="text-[11px] text-slate-300 leading-snug">
-                  <strong class="text-white">Прорыв:</strong> Горутины CSP (~2 КБ памяти против 1-2 МБ у потоков ОС) для сотен тысяч одновременных соединений.
-                </p>
-                <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-[10px] text-slate-300 space-y-1">
-                  <div><strong class="text-cyan-300">📊 Простота:</strong> Всего 25 ключевых слов, 1 бинарник без .so зависимостей.</div>
-                  <div><strong class="text-emerald-300">🏢 Доминирование:</strong> K8s, Docker, Terraform, Prometheus.</div>
-                </div>
-              </div>
-
-              <!-- Zig -->
-              <div class="p-3.5 rounded-2xl bg-slate-950/70 border border-amber-500/30 space-y-2">
-                <div class="flex items-center justify-between">
-                  <span class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
-                    <span>⚡</span> <span>Zig</span>
-                  </span>
-                  <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                    Next-Gen C
-                  </span>
-                </div>
-                <p class="text-[11px] text-slate-300 leading-snug">
-                  <strong class="text-white">Прорыв:</strong> 0 скрытого потока управления (нет макросов, нет скрытого выделения памяти). Мощный <code>comptime</code>.
-                </p>
-                <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-[10px] text-slate-300 space-y-1">
-                  <div><strong class="text-amber-300">🛠 Инструмент:</strong> Встроенный компилятор C/C++, кросс-компиляция любой ОС одной командой.</div>
-                  <div><strong class="text-sky-300">🎯 Применение:</strong> TigerBeetle DB, рантайм Bun, GameDev, микроконтроллеры.</div>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-
-        </aside>
-
-        <!-- Aside Sidebar: Esports & HLTV Ranking (Shown ONLY on Gaming category) -->
-        <aside id="esports-hltv-aside" style="display: none;" class="order-1 lg:order-2 lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto pr-1 w-full aside-collapsible">
-          <div class="glass-panel p-5 rounded-3xl border border-amber-500/25 bg-gradient-to-b from-slate-900/90 via-slate-950/90 to-slate-900/80 shadow-2xl relative overflow-hidden">
-            <div class="absolute -right-8 -top-8 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
-
-            <div class="flex items-center justify-between border-b border-slate-800/80 pb-3 mb-3 relative z-10">
-              <div>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1.5 w-fit mb-1">
-                  <span>🏆</span> <span>HLTV Valve Ranking</span>
-                </span>
-                <h3 class="text-sm font-black text-white font-heading">
-                  Топ-20 команд CS2
-                </h3>
-              </div>
-              <div class="flex items-center gap-1.5">
-                <span id="hltv-updated-date" class="text-[10px] font-mono text-slate-400 bg-slate-900/80 px-2 py-1 rounded-lg border border-slate-800">Обновляется...</span>
-                <button id="hltv-refresh-btn" type="button" onclick="loadHLTVRanking(true)" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 transition-colors border border-slate-700" title="Обновить с HLTV">
-                  <svg id="hltv-refresh-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
-                </button>
-                <button type="button" onclick="toggleMobileAside('esports-hltv-aside')" class="lg:hidden px-2 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center gap-1 transition-all" title="Свернуть / Развернуть">
-                  <span class="aside-toggle-text text-[10px]">Свернуть</span>
-                  <svg class="w-3.5 h-3.5 aside-collapse-arrow transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
-                </button>
-              </div>
-            </div>
-
-            <div class="aside-collapsible-body space-y-3">
-              <p class="text-[11px] text-slate-400 mb-2 leading-relaxed">
-                Кликните по команде для фильтрации новостей:
-              </p>
-
-              <!-- Priority Quick Filter Chips -->
-              <div class="mb-3 p-2.5 rounded-2xl bg-slate-950/70 border border-amber-500/20 space-y-1.5">
-                <div class="flex items-center justify-between">
-                  <span class="text-[10px] font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1">
-                    <span>⭐</span> <span>Приоритетные темы:</span>
-                  </span>
-                  <button type="button" onclick="filterEsportsByTag('all')" class="text-[10px] text-slate-400 hover:text-white underline">Все новости</button>
-                </div>
-                <div class="flex flex-wrap gap-1.5">
-                  <button type="button" onclick="filterEsportsByTag('s1mple')" class="esports-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30">s1mple</button>
-                  <button type="button" onclick="filterEsportsByTag('navi')" class="esports-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30">NaVi</button>
-                  <button type="button" onclick="filterEsportsByTag('bcgame')" class="esports-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30">BC.Game</button>
-                  <button type="button" onclick="filterEsportsByTag('fut')" class="esports-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30">FUT</button>
-                </div>
-              </div>
-
-              <!-- Dynamic Teams List -->
-              <div id="esports-teams-list" class="space-y-1.5 max-h-[300px] sm:max-h-[380px] lg:max-h-[520px] overflow-y-auto pr-1 scrollbar-thin">
-                <div class="text-xs text-slate-400 p-4 text-center">Загрузка рейтинга HLTV...</div>
-              </div>
-
-              <!-- Official HLTV link bar -->
-              <div class="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
-                <span class="text-slate-400 flex items-center gap-1.5">
-                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span>Официальный источник:</span>
-                </span>
-                <a href="https://www.hltv.org/valve-ranking/teams/2026/september/20" target="_blank" rel="noopener noreferrer" class="hltv-official-link font-bold text-amber-400 hover:text-amber-300 inline-flex items-center gap-1 hover:underline transition-colors" title="Перейти к рейтингу Valve на официальном сайте HLTV">
-                  <span>Valve Ranking на HLTV.org</span>
-                  <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
-                </a>
-              </div>
-            </div>
-
-          </div>
-        </aside>
-
-
-
-
-
-        <!-- Aside Sidebar: Formula 1 (2026 Races & Drivers Standings) -->
-        <aside id="f1-results-aside" style="display: none;" class="order-1 lg:order-2 lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto pr-1 w-full aside-collapsible">
-          <div class="glass-panel p-5 rounded-3xl border border-red-500/25 bg-gradient-to-b from-slate-900/95 via-slate-950/95 to-slate-900/90 shadow-2xl relative overflow-hidden space-y-4">
-            <div class="absolute -right-8 -top-8 w-32 h-32 bg-red-600/10 rounded-full blur-2xl pointer-events-none"></div>
-            <div class="absolute -left-8 -bottom-8 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
-
-            <!-- Header with Title & Mobile Toggle -->
-            <div class="flex items-center justify-between border-b border-slate-800/80 pb-3 relative z-10">
-              <div>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-500/20 text-red-400 border border-red-500/30 flex items-center gap-1.5 w-fit mb-1">
-                  <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                  <span>Formula 1 • Сезон 2026</span>
-                </span>
-                <h3 class="text-sm font-black text-white font-heading flex items-center gap-1.5">
-                  <span>🏁 Результаты & Зачет</span>
-                </h3>
-              </div>
-              <div class="flex items-center gap-1.5">
-                <span id="f1-updated-date" class="text-[10px] font-mono text-slate-400 bg-slate-900/80 px-2 py-1 rounded-lg border border-slate-800">2026</span>
-                <button id="f1-refresh-btn" type="button" onclick="loadF1Results(true)" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-red-400 hover:text-red-300 transition-colors border border-slate-700" title="Обновить результаты с Formula1.com">
-                  <svg id="f1-refresh-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
-                </button>
-                <button type="button" onclick="toggleMobileAside('f1-results-aside')" class="lg:hidden px-2 py-1 rounded-lg bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-300 text-xs font-semibold flex items-center gap-1 transition-all" title="Свернуть / Развернуть">
-                  <span class="aside-toggle-text text-[10px]">Свернуть</span>
-                  <svg class="w-3.5 h-3.5 aside-collapse-arrow transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
-                </button>
-              </div>
-            </div>
-
-            <div class="aside-collapsible-body space-y-3.5">
-              
-              <!-- Quick Sub-Filter Tags (Red Bull, Verstappen, Leclerc, Hamilton, Champion) -->
-              <div class="p-2.5 rounded-2xl bg-slate-950/70 border border-red-500/20 space-y-1.5">
-                <div class="flex items-center justify-between">
-                  <span class="text-[10px] font-bold uppercase tracking-wider text-red-400 flex items-center gap-1">
-                    <span>⭐</span> <span>Отбор новостей:</span>
-                  </span>
-                  <button type="button" onclick="filterF1ByTag('all')" class="text-[10px] text-slate-400 hover:text-white underline">Все F1</button>
-                </div>
-                <div class="flex flex-wrap gap-1.5">
-                  <button type="button" onclick="filterF1ByTag('red bull')" class="f1-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30" data-f1-tag="red bull">🐂 Red Bull</button>
-                  <button type="button" onclick="filterF1ByTag('verstappen')" class="f1-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30" data-f1-tag="verstappen">🦁 Verstappen</button>
-                  <button type="button" onclick="filterF1ByTag('leclerc')" class="f1-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30" data-f1-tag="leclerc">🐎 Charles Leclerc</button>
-                  <button type="button" onclick="filterF1ByTag('hamilton')" class="f1-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30" data-f1-tag="hamilton">⚡ Hamilton</button>
-                  <button type="button" onclick="filterF1ByTag('champion')" class="f1-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30" data-f1-tag="champion">🏆 Champion</button>
-                </div>
-              </div>
-
-              <!-- Switcher Tabs: Drivers Standings vs Grand Prix Races -->
-              <div class="glass-panel p-1 rounded-2xl border border-slate-800 bg-slate-950/90 flex items-center gap-1 shadow-md">
-                <button type="button" id="f1-tab-drivers" onclick="switchF1Tab('drivers')" class="flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all bg-red-600 text-white shadow-md flex items-center justify-center gap-1.5">
-                  <span>🏎️</span> <span>Пилоты</span>
-                </button>
-                <button type="button" id="f1-tab-races" onclick="switchF1Tab('races')" class="flex-1 py-1.5 px-3 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1.5">
-                  <span>🏁</span> <span>Гран-при</span>
-                </button>
-              </div>
-
-              <!-- Content Tab 1: DRIVERS STANDINGS (Default view) -->
-              <div id="f1-block-drivers" class="space-y-1.5 max-h-[360px] sm:max-h-[440px] lg:max-h-[520px] overflow-y-auto pr-1 scrollbar-thin">
-                <div class="text-xs text-slate-400 p-4 text-center">Загрузка зачета пилотов...</div>
-              </div>
-
-              <!-- Content Tab 2: RACES RESULTS -->
-              <div id="f1-block-races" style="display: none;" class="space-y-1.5 max-h-[360px] sm:max-h-[440px] lg:max-h-[520px] overflow-y-auto pr-1 scrollbar-thin">
-                <div class="text-xs text-slate-400 p-4 text-center">Загрузка результатов гонок...</div>
-              </div>
-
-              <!-- Official Links Bar -->
-              <div class="pt-2.5 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
-                <span class="text-slate-400 flex items-center gap-1.5">
-                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span>Formula1.com:</span>
-                </span>
-                <div class="flex items-center gap-2">
-                  <a href="https://www.formula1.com/en/results/2026/races" target="_blank" rel="noopener noreferrer" class="font-bold text-red-400 hover:text-red-300 inline-flex items-center gap-0.5 hover:underline transition-colors" title="Открыть Races 2026">
-                    <span>Races ↗</span>
-                  </a>
-                  <span class="text-slate-600">•</span>
-                  <a href="https://www.formula1.com/en/results/2026/drivers" target="_blank" rel="noopener noreferrer" class="font-bold text-red-400 hover:text-red-300 inline-flex items-center gap-0.5 hover:underline transition-colors" title="Открыть Drivers 2026">
-                    <span>Drivers ↗</span>
-                  </a>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </aside>
-
-        <!-- Aside Sidebar: Football (Terrikon Tournaments & Results) -->
-        <aside id="football-results-aside" style="display: none;" class="order-1 lg:order-2 lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto pr-1 w-full aside-collapsible">
-          <div class="glass-panel p-5 rounded-3xl border border-emerald-500/25 bg-gradient-to-b from-slate-900/95 via-slate-950/95 to-slate-900/90 shadow-2xl relative overflow-hidden space-y-4">
-            <div class="absolute -right-8 -top-8 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
-            <div class="absolute -left-8 -bottom-8 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
-
-            <!-- Header with Title & Mobile Toggle -->
-            <div class="flex items-center justify-between border-b border-slate-800/80 pb-3 relative z-10">
-              <div>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 w-fit mb-1">
-                  <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <span>Футбол • Terrikon Live</span>
-                </span>
-                <h3 class="text-sm font-black text-white font-heading flex items-center gap-1.5">
-                  <span id="football-header-title">⚽ Результаты & Таблицы</span>
-                </h3>
-              </div>
-              <div class="flex items-center gap-1.5">
-                <span id="football-updated-date" class="text-[10px] font-mono text-slate-400 bg-slate-900/80 px-2 py-1 rounded-lg border border-slate-800">Live</span>
-                <button id="football-refresh-btn" type="button" onclick="loadFootballResults(true)" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 hover:text-emerald-300 transition-colors border border-slate-700" title="Обновить результаты с Terrikon.com">
-                  <svg id="football-refresh-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
-                </button>
-                <button type="button" onclick="toggleMobileAside('football-results-aside')" class="lg:hidden px-2 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-1 transition-all" title="Свернуть / Развернуть">
-                  <span class="aside-toggle-text text-[10px]">Свернуть</span>
-                  <svg class="w-3.5 h-3.5 aside-collapse-arrow transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
-                </button>
-              </div>
-            </div>
-
-            <div class="aside-collapsible-body space-y-3.5">
-              
-              <!-- Quick Sub-Filter Tags (Месси, Барселона, Испания, Интер Майами) -->
-              <div class="p-2.5 rounded-2xl bg-slate-950/70 border border-emerald-500/20 space-y-1.5">
-                <div class="flex items-center justify-between">
-                  <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1">
-                    <span>⭐</span> <span>Приоритетные новости:</span>
-                  </span>
-                  <button type="button" onclick="filterFootballByTag('all')" class="text-[10px] text-slate-400 hover:text-white underline">Все новости</button>
-                </div>
-                <div class="flex flex-wrap gap-1.5">
-                  <button type="button" onclick="filterFootballByTag('месси')" class="football-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30" data-football-tag="месси">🐐 Месси</button>
-                  <button type="button" onclick="filterFootballByTag('барселона')" class="football-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30" data-football-tag="барселона">🔵🔴 Барселона</button>
-                  <button type="button" onclick="filterFootballByTag('испания')" class="football-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30" data-football-tag="испания">🇪🇸 Испания</button>
-                  <button type="button" onclick="filterFootballByTag('интер майами')" class="football-chip px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30" data-football-tag="интер майами">🦩 Интер Майами</button>
-                </div>
-              </div>
-
-              <!-- Switcher Tabs: 4 Tournaments -->
-              <div class="glass-panel p-1 rounded-2xl border border-slate-800 bg-slate-950/90 grid grid-cols-4 gap-1 shadow-md">
-                <button type="button" id="football-tourn-laliga" onclick="switchFootballTournament('laliga')" class="py-1.5 px-2 rounded-xl text-[11px] font-bold transition-all bg-emerald-600 text-white shadow-md flex items-center justify-center gap-1" title="Ла Лига">
-                  <span>🇪🇸</span> <span class="truncate">Ла Лига</span>
-                </button>
-                <button type="button" id="football-tourn-cl" onclick="switchFootballTournament('cl')" class="py-1.5 px-2 rounded-xl text-[11px] font-semibold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1" title="Лига Чемпионов">
-                  <span>⭐</span> <span class="truncate">ЛЧ</span>
-                </button>
-                <button type="button" id="football-tourn-el" onclick="switchFootballTournament('el')" class="py-1.5 px-2 rounded-xl text-[11px] font-semibold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1" title="Лига Европы">
-                  <span>🏆</span> <span class="truncate">ЛЕ</span>
-                </button>
-                <button type="button" id="football-tourn-nations" onclick="switchFootballTournament('nations')" class="py-1.5 px-2 rounded-xl text-[11px] font-semibold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1" title="Лига Наций">
-                  <span>🌍</span> <span class="truncate">Л. Наций</span>
-                </button>
-              </div>
-
-              <!-- Nations League Tier Filter (Shown ONLY on Nations League) -->
-              <div id="nations-tier-filter-bar" style="display: none;" class="p-1 rounded-xl bg-slate-950/80 border border-emerald-500/20 grid grid-cols-5 gap-1 text-[10px]">
-                <button type="button" id="nations-tier-all" onclick="filterNationsTier('all')" class="py-1 px-1.5 rounded-lg font-bold bg-emerald-600 text-white text-center">Все</button>
-                <button type="button" id="nations-tier-A" onclick="filterNationsTier('A')" class="py-1 px-1.5 rounded-lg text-slate-400 hover:text-white text-center">Лига A</button>
-                <button type="button" id="nations-tier-B" onclick="filterNationsTier('B')" class="py-1 px-1.5 rounded-lg text-slate-400 hover:text-white text-center">Лига B</button>
-                <button type="button" id="nations-tier-C" onclick="filterNationsTier('C')" class="py-1 px-1.5 rounded-lg text-slate-400 hover:text-white text-center">Лига C</button>
-                <button type="button" id="nations-tier-D" onclick="filterNationsTier('D')" class="py-1 px-1.5 rounded-lg text-slate-400 hover:text-white text-center">Лига D</button>
-              </div>
-
-              <!-- View Switcher (Table vs Matches) -->
-              <div class="flex items-center justify-between text-xs px-1">
-                <div class="flex items-center gap-1">
-                  <button type="button" id="football-subtab-standings" onclick="switchFootballView('standings')" class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-800 text-emerald-400 border border-slate-700">Таблица</button>
-                  <button type="button" id="football-subtab-matches" onclick="switchFootballView('matches')" class="px-2.5 py-1 rounded-lg text-[10px] font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60">Матчи</button>
-                </div>
-                <span id="football-tournament-badge" class="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">Ла Лига</span>
-              </div>
-
-              <!-- Content Block: Standings -->
-              <div id="football-block-standings" class="space-y-1.5 max-h-[360px] sm:max-h-[440px] lg:max-h-[520px] overflow-y-auto pr-1 scrollbar-thin">
-                <div class="text-xs text-slate-400 p-4 text-center">Загрузка турнирной таблицы...</div>
-              </div>
-
-              <!-- Content Block: Matches -->
-              <div id="football-block-matches" style="display: none;" class="space-y-1.5 max-h-[360px] sm:max-h-[440px] lg:max-h-[520px] overflow-y-auto pr-1 scrollbar-thin">
-                <div class="text-xs text-slate-400 p-4 text-center">Загрузка результатов матчей...</div>
-              </div>
-
-              <!-- Official Links Bar -->
-              <div class="pt-2.5 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
-                <span class="text-slate-400 flex items-center gap-1.5">
-                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span>Источник:</span>
-                </span>
-                <div class="flex items-center gap-2">
-                  <a id="football-source-link" href="https://terrikon.com/football/spain/championship/" target="_blank" rel="noopener noreferrer" class="font-bold text-emerald-400 hover:text-emerald-300 inline-flex items-center gap-0.5 hover:underline transition-colors" title="Открыть Terrikon">
-                    <span>Terrikon.com ↗</span>
-                  </a>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </aside>
-      </div>
-
-    </section>
-
+  <main id="app-viewport" class="max-w-7xl mx-auto px-3 sm:px-6 pt-4 sm:pt-6">
+    <!-- Rendered dynamically by router & view modules -->
   </main>
 
   <!-- ========================================== -->
-  <!-- MODALS                                     -->
+  <!-- MOBILE BOTTOM NAVIGATION BAR (< 768px)     -->
   <!-- ========================================== -->
+  <nav class="mobile-nav mobile-bottom-bar px-2 py-1.5 items-center justify-around gap-1" aria-label="Мобильная навигация">
+    <button type="button" data-nav="home" class="mobile-nav-btn">
+      <span class="text-lg leading-none">🏠</span>
+      <span class="text-[10px] mt-0.5">Витрина</span>
+    </button>
+    <button type="button" data-nav="categories" class="mobile-nav-btn">
+      <span class="text-lg leading-none">🗂️</span>
+      <span class="text-[10px] mt-0.5">Категории</span>
+    </button>
+    <button type="button" data-nav="digest" class="mobile-nav-btn">
+      <span class="text-lg leading-none">🔥</span>
+      <span class="text-[10px] mt-0.5">Дайджест</span>
+    </button>
+    <button type="button" data-nav="settings" class="mobile-nav-btn">
+      <span class="text-lg leading-none">⚙️</span>
+      <span class="text-[10px] mt-0.5">Настройки</span>
+    </button>
+  </nav>
 
-  <!-- Custom Delete Confirmation Modal -->
-  <div id="delete-confirm-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md transition-opacity duration-200">
-    <div class="glass-panel rounded-3xl max-w-md w-full p-6 border border-rose-500/30 shadow-2xl shadow-rose-950/50 relative text-center transform transition-transform duration-200">
-      <div class="w-14 h-14 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-rose-500/20">
-        <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+  <!-- ========================================== -->
+  <!-- MOBILE CATEGORY BOTTOM-SHEET DRAWER        -->
+  <!-- ========================================== -->
+  <div id="category-sheet-modal" class="fixed inset-0 z-50 hidden items-end sm:items-center justify-center bg-slate-950/80 backdrop-blur-md transition-opacity duration-200 opacity-0">
+    <div class="glass-panel w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl border border-slate-700/80 p-4 sm:p-5 max-h-[85vh] flex flex-col gap-3.5 shadow-2xl" onclick="event.stopPropagation()">
+      <div class="w-10 h-1 bg-slate-700 rounded-full mx-auto sm:hidden"></div>
+      <div class="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
+        <div>
+          <h3 class="text-base font-black text-white font-heading">🗂️ Выберите категорию</h3>
+          <p class="text-[11px] text-slate-400">Быстрый переход к отдельной странице</p>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button id="category-sheet-settings-btn" type="button" class="px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-bold text-sky-300">⚙️</button>
+          <button id="category-sheet-close-btn" type="button" class="px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-bold text-slate-300">✕</button>
+        </div>
       </div>
+      <div id="category-sheet-content" class="overflow-y-auto space-y-4 pr-1 pb-2"></div>
+    </div>
+  </div>
 
-      <h3 id="delete-modal-title" class="text-lg font-bold text-white mb-2 font-heading">Удалить новость?</h3>
-      
-      <div id="delete-modal-snippet" class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 text-xs text-slate-300 leading-relaxed mb-4 text-left font-medium line-clamp-3"></div>
-      
-      <p id="delete-modal-desc" class="text-xs text-slate-400 mb-6">Запись будет навсегда стерта из базы данных.</p>
-
+  <!-- ========================================== -->
+  <!-- DELETE CONFIRMATION MODAL                  -->
+  <!-- ========================================== -->
+  <div id="delete-confirm-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+    <div class="glass-panel rounded-3xl max-w-md w-full p-6 border border-rose-500/30 shadow-2xl text-center">
+      <div class="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center mx-auto mb-3">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+      </div>
+      <h3 id="delete-modal-title" class="text-lg font-bold text-white mb-2 font-heading">Удалить?</h3>
+      <div id="delete-modal-snippet" class="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 text-xs text-slate-300 mb-3 text-left line-clamp-3"></div>
+      <p id="delete-modal-desc" class="text-xs text-slate-400 mb-5">Запись будет навсегда стерта из базы данных.</p>
       <div class="flex items-center gap-3">
-        <button type="button" id="delete-modal-cancel" class="flex-1 py-2.5 px-4 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold text-xs transition-all border border-slate-700 cursor-pointer">
-          Отмена
-        </button>
-        <button type="button" id="delete-modal-confirm" class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold text-xs shadow-lg shadow-rose-900/40 border border-rose-500/40 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
-          <span>Удалить</span>
-        </button>
+        <button type="button" id="delete-modal-cancel" class="flex-1 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs border border-slate-700">Отмена</button>
+        <button type="button" id="delete-modal-confirm" class="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs border border-rose-500/40"><span>Удалить</span></button>
       </div>
     </div>
   </div>
 
-  <!-- Image & Video Zoom / Lightbox Modal -->
-  <div id="image-zoom-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/92 backdrop-blur-xl p-3 sm:p-6 transition-all duration-300 opacity-0 select-none" onclick="closeImageZoom(event)">
+  <!-- ========================================== -->
+  <!-- MEDIA ZOOM LIGHTBOX MODAL                  -->
+  <!-- ========================================== -->
+  <div id="image-zoom-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/92 backdrop-blur-xl p-3 sm:p-6 transition-all duration-200 opacity-0 select-none">
     <div class="relative max-w-6xl w-full max-h-[94vh] flex flex-col items-center justify-center" onclick="event.stopPropagation()">
-      <!-- Top controls bar -->
-      <div class="w-full flex items-center justify-between mb-3 px-2">
+      <div class="w-full flex items-center justify-between mb-3 px-1">
         <div class="flex items-center gap-2">
           <span id="zoom-type-badge" class="px-2.5 py-1 rounded-xl bg-sky-500/20 text-sky-300 border border-sky-500/30 text-xs font-semibold flex items-center gap-1.5">
-            <svg id="zoom-type-icon-img" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>
+            <svg id="zoom-type-icon-img" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5z"/></svg>
             <svg id="zoom-type-icon-video" class="w-3.5 h-3.5 hidden fill-current text-rose-400" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-            <span id="zoom-type-text">Просмотр изображения</span>
+            <span id="zoom-type-text">Просмотр фото</span>
           </span>
           <span id="zoom-scale-indicator" class="text-xs text-slate-400 font-mono hidden sm:inline-block">100%</span>
         </div>
         <div class="flex items-center gap-2">
-          <button type="button" id="zoom-toggle-scale-btn" onclick="toggleZoomScale()" class="px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 border border-slate-700 transition-colors cursor-pointer" title="Переключить масштаб">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6"/></svg>
+          <button type="button" id="zoom-toggle-scale-btn" class="px-3 py-1.5 rounded-xl bg-slate-800/90 text-slate-300 text-xs font-semibold border border-slate-700">
             <span id="zoom-toggle-label">Увеличить</span>
           </button>
-          <a id="zoom-open-original-btn" href="#" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 border border-slate-700 transition-colors cursor-pointer" title="Открыть оригинал">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
-            <span class="hidden sm:inline">Оригинал</span>
-          </a>
-          <button type="button" onclick="closeImageZoom()" class="p-1.5 px-2.5 rounded-xl bg-slate-800/90 hover:bg-rose-600/90 text-slate-300 hover:text-white border border-slate-700 hover:border-rose-500 transition-all flex items-center gap-1 text-xs font-semibold cursor-pointer" title="Закрыть (Esc)">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-            <span class="hidden sm:inline">Закрыть</span>
-          </button>
+          <a id="zoom-open-original-btn" href="#" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-xl bg-slate-800/90 text-slate-300 text-xs font-semibold border border-slate-700">Оригинал</a>
+          <button type="button" id="zoom-close-btn" class="px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-rose-600 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold">✕</button>
         </div>
       </div>
-
-      <!-- Main Media Viewport -->
-      <div id="zoom-viewport" class="relative w-full max-h-[76vh] overflow-auto rounded-2xl border border-white/10 bg-slate-950/80 shadow-2xl flex items-center justify-center p-2 cursor-pointer" onclick="toggleZoomScale()">
-        <img id="zoom-modal-img" src="" alt="" class="max-h-[72vh] max-w-full object-contain rounded-lg transition-transform duration-200 cursor-pointer" />
-        <video id="zoom-modal-video" src="" controls playsinline preload="auto" class="max-h-[74vh] max-w-full rounded-lg shadow-2xl hidden" onclick="event.stopPropagation()"></video>
+      <div id="zoom-viewport" class="relative w-full max-h-[76vh] overflow-auto rounded-2xl border border-white/10 bg-slate-950/80 shadow-2xl flex items-center justify-center p-2 cursor-pointer">
+        <img id="zoom-modal-img" src="" alt="" class="max-h-[72vh] max-w-full object-contain rounded-lg" />
+        <video id="zoom-modal-video" src="" controls playsinline preload="auto" class="max-h-[74vh] max-w-full rounded-lg hidden"></video>
       </div>
-
-      <!-- Caption bar -->
-      <div id="zoom-modal-caption" class="mt-3 text-center text-xs sm:text-sm text-slate-300 font-medium px-4 line-clamp-2 max-w-4xl text-ellipsis"></div>
+      <div id="zoom-modal-caption" class="mt-3 text-center text-xs sm:text-sm text-slate-300 font-medium px-4 line-clamp-2 max-w-4xl"></div>
     </div>
   </div>
 
-  
+  <!-- ========================================== -->
+  <!-- PWA INSTALL GUIDE MODAL                    -->
+  <!-- ========================================== -->
+  <div id="pwa-install-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md transition-opacity duration-200 opacity-0">
+    <div class="glass-panel rounded-3xl max-w-md w-full p-5 sm:p-6 border border-sky-500/30 shadow-2xl space-y-4" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-black text-white font-heading">📲 Установить AI News</h3>
+        <button id="pwa-modal-close-btn" type="button" class="p-1.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 text-xs">✕</button>
+      </div>
+      <div id="pwa-modal-body" class="text-xs text-slate-300 space-y-3"></div>
+      <a id="pwa-open-https-btn" href="https://petroprog.tail703e6c.ts.net:8444" target="_blank" rel="noopener noreferrer"
+        class="hidden w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold text-center block">
+        Открыть по HTTPS и установить ↗
+      </a>
+    </div>
+  </div>
 
-  <!-- Toast Notification Container -->
+  <!-- Toast Container -->
   <div id="toast-container"></div>
 
-  <!-- ========================================== -->
-  <!-- STANDALONE JAVASCRIPT (ZERO DEPENDENCIES) -->
-  <!-- ========================================== -->
-
-  <script src="js/app.js?v=2026_11_21_v2"></script>
+  <!-- Modular ES Modules Entry Point -->
+  <script type="module" src="/js/main.js?v=2026_11_22_v3"></script>
 </body>
 </html>

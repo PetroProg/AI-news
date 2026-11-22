@@ -7,7 +7,7 @@
  * 4. Медиа ('/media/'): Cache-First с ограничением размера кэша.
  */
 
-const CACHE_VERSION = 'v1.1.1';
+const CACHE_VERSION = 'v2.0.0';
 const SHELL_CACHE = `ai-news-shell-${CACHE_VERSION}`;
 const API_CACHE = `ai-news-api-${CACHE_VERSION}`;
 const MEDIA_CACHE = `ai-news-media-${CACHE_VERSION}`;
@@ -15,6 +15,8 @@ const MEDIA_CACHE = `ai-news-media-${CACHE_VERSION}`;
 const PRECACHE_URLS = [
   '/',
   '/manifest.webmanifest',
+  '/css/style.css?v=2026_11_22_v3',
+  '/js/main.js?v=2026_11_22_v3',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/icons/icon-maskable-192.png',
