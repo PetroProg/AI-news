@@ -13,7 +13,6 @@ import {
   mountFootballWidget,
   mountItWidget,
   mountUkraineWidget,
-  renderQuizWidget,
 } from '../widgets/category-widgets.js';
 
 export function renderCategoryView(container, slug) {
@@ -256,9 +255,5 @@ function mountCategoryWidget(cat, widgetHost, pageContainer) {
         renderCategoryView(pageContainer, 'it');
       },
     });
-  } else if (cat.slug === 'ai') {
-    renderQuizWidget(widgetHost, 'ai');
-  } else if (cat.slug === 'devops') {
-    renderQuizWidget(widgetHost, 'linux');
   }
 }

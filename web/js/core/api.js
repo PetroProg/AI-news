@@ -94,9 +94,3 @@ export function fetchFootballResults(tournament = 'laliga', force = false) {
 export function fetchHltvRanking(force = false) {
   return requestJson(`/api/hltv/ranking${force ? '?force=true' : ''}`);
 }
-
-export function fetchNextQuiz(category = 'ai', exclude = '') {
-  const qs = new URLSearchParams({ category });
-  if (exclude) qs.set('exclude', exclude);
-  return requestJson(`/api/quiz/next?${qs.toString()}`);
-}

@@ -2,7 +2,7 @@
  * Lightweight hash-based router supporting:
  * - #/                   (Home Portal Overview)
  * - #/category/:slug     (Dedicated Category Page)
- * - #/digest             (Top Digest & Tech Quizzes)
+ * - #/digest             (Top Digest of the Day)
  * - #/settings           (Settings Control Center - section 'categories')
  * - #/settings/:section  (Settings sub-section: 'categories' | 'ai-filters' | 'sources' | 'system')
  */

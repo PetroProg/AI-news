@@ -84,8 +84,8 @@ export const CATEGORIES = [
     activeChipClass: 'bg-purple-500 text-white border-purple-400 shadow-md shadow-purple-500/25',
     chipClass: 'bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border-purple-500/30',
     defaultMinScore: 5.1,
-    hasWidget: true,
-    widgetLabel: 'AI Квиз',
+    hasWidget: false,
+    widgetLabel: '',
     searchPlaceholder: 'Поиск в «AI & Нейросети» (LLM, OpenAI, Gemini, Claude, Ollama)...',
     tags: [
       { id: 'all', label: 'Все' },
@@ -109,7 +109,7 @@ export const CATEGORIES = [
     chipClass: 'bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
     defaultMinScore: 7.0,
     hasWidget: true,
-    widgetLabel: 'Языки & Квиз',
+    widgetLabel: 'Рейтинг языков',
     searchPlaceholder: 'Поиск в «IT» (языки, фреймворки, архитектура)...',
     tags: [
       { id: 'all', label: 'Все языки' },
@@ -163,8 +163,8 @@ export const CATEGORIES = [
     activeChipClass: 'bg-amber-500 text-slate-950 border-amber-400 shadow-md shadow-amber-500/25',
     chipClass: 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30',
     defaultMinScore: 5.1,
-    hasWidget: true,
-    widgetLabel: 'Linux Квиз',
+    hasWidget: false,
+    widgetLabel: '',
     searchPlaceholder: 'Поиск в «DevOps & Linux» (ядро, Docker, K8s, серверы)...',
     tags: [
       { id: 'all', label: 'Все' },

@@ -202,8 +202,8 @@ function renderCategoriesSection(host) {
 
       <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-950/75 border border-slate-800">
         <div>
-          <div class="text-xs font-bold text-white">Виджеты аналитики и квизы</div>
-          <div class="text-[11px] text-slate-400">Таблицы Футбола, F1, рейтинг HLTV, сводка ПВО и AI-квизы</div>
+          <div class="text-xs font-bold text-white">Виджеты аналитики и таблиц</div>
+          <div class="text-[11px] text-slate-400">Таблицы Футбола, F1, рейтинг HLTV, языки IT и сводка ПВО</div>
         </div>
         <button type="button" id="pref-toggle-widgets" role="switch" aria-checked="${s.showAnalyticsWidgets}"
           class="w-12 h-7 rounded-full p-1 transition-colors flex items-center ${s.showAnalyticsWidgets ? 'bg-sky-500 justify-end' : 'bg-slate-700 justify-start'}">

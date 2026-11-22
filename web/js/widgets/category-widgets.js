@@ -1,11 +1,10 @@
 /**
- * Specialized live analytics & quiz widgets for categories:
+ * Specialized live analytics widgets for categories:
  * - ukraine: 24h AI Security & Attack Digest
  * - f1: Latest GP Top-10, Drivers Standings & 2026 Races Calendar
  * - football: Terrikon Live 4 Tournaments + Standings & Matches
  * - cs2: HLTV Valve Top-20 Ranking (clickable team filter)
- * - it: TIOBE Top-10 Languages (clickable filter) + Rising Stars Deep Dive + IT Quiz
- * - ai / devops: Interactive AI / Linux Quizzes
+ * - it: TIOBE Top-10 Languages (clickable filter)
  */
 
 import { cleanText, escapeHtml, sanitizeUrl } from '../config/categories.js';
@@ -13,246 +12,9 @@ import {
   fetchF1Results,
   fetchFootballResults,
   fetchHltvRanking,
-  fetchNextQuiz,
   fetchUkraineSummary,
 } from '../core/api.js';
 import { appState } from '../core/state.js';
-
-// ==========================================
-// QUIZ BANKS (Fallback + Session Pools)
-// ==========================================
-const QUIZ_BANKS = {
-  ai: [
-    {
-      question: 'В чем разница между Temperature и Top-P при генерации текста в LLM?',
-      options: [
-        'Temperature масштабирует логиты всех токенов, а Top-P отсекает кумулятивный хвост вероятностей',
-        'Temperature задает длину ответа, а Top-P отвечает за грамматику',
-        'Temperature работает только для изображений, Top-P — для текста',
-        'Оба параметра выполняют идентичное округление вероятностей',
-      ],
-      correct: 0,
-      explanation: 'Temperature делит логиты на T, изменяя форму распределения. Top-P (nucleus sampling) берет минимальный набор токенов с суммой вероятностей >= P.',
-    },
-    {
-      question: 'Какой формат квантования GGUF дает лучший баланс скорость/качество для 7B-14B моделей в Ollama?',
-      options: [
-        'Q4_K_M (или Q5_K_M)',
-        'FP16 без квантования',
-        'Q1_0',
-        'INT8 классический',
-      ],
-      correct: 0,
-      explanation: 'Метод k-quants (Q4_K_M) точнее квантует критические слои внимания, сохраняя почти 99% качества FP16 при сильном сжатии VRAM.',
-    },
-    {
-      question: 'Что дает технология LoRA (Low-Rank Adaptation)?',
-      options: [
-        'Замораживает основные веса и обучает две малые матрицы A и B, снижая VRAM на 70-80%',
-        'Увеличивает контекстное окно в 10 раз без переобучения',
-        'Переводит модель на любой язык без датасета',
-        'Удаляет слои внимания для ускорения',
-      ],
-      correct: 0,
-      explanation: 'LoRA аппроксимирует обновление весов через низкоранговое произведение B*A, обучая менее 1% параметров.',
-    },
-  ],
-  linux: [
-    {
-      question: 'Какой командой найти и завершить процесс, слушающий TCP-порт 8080?',
-      options: [
-        'fuser -k 8080/tcp (или kill $(lsof -t -i:8080))',
-        'netstat --kill 8080',
-        'systemctl kill port 8080',
-        'iptables -D INPUT 8080',
-      ],
-      correct: 0,
-      explanation: 'fuser -k отправляет SIGKILL процессам, удерживающим указанный порт.',
-    },
-    {
-      question: 'Под в Kubernetes в CrashLoopBackOff. Как посмотреть логи предыдущего упавшего контейнера?',
-      options: [
-        'kubectl logs <pod-name> --previous',
-        'kubectl describe pod <pod-name> --logs',
-        'kubectl get events --crash',
-        'journalctl -u k8s-pod --last',
-      ],
-      correct: 0,
-      explanation: 'Флаг --previous (-p) извлекает логи контейнера до его последнего падения/рестарта.',
-    },
-    {
-      question: 'Какая команда проверяет синтаксис Nginx без перезапуска сервера?',
-      options: [
-        'nginx -t',
-        'systemctl check nginx',
-        'nginx --verify-config',
-        'cat /etc/nginx/nginx.conf | test',
-      ],
-      correct: 0,
-      explanation: 'nginx -t тестирует всю конфигурацию и выводит [ok] либо номер строки с ошибкой.',
-    },
-  ],
-  it: [
-    {
-      lang: 'Python',
-      code: 'def add_item(val, lst=[]):\n    lst.append(val)\n    return lst\n\nprint(add_item(1))\nprint(add_item(2))',
-      question: 'Что напечатает данный код при выполнении?',
-      options: ['[1] затем [1, 2]', '[1] затем [2]', '[1] затем [1]', 'TypeError'],
-      correct: 0,
-      explanation: 'Значение по умолчанию lst=[] создается один раз при определении функции и сохраняет состояние между вызовами.',
-    },
-    {
-      lang: 'Rust',
-      code: 'let s1 = String::from("hello");\nlet s2 = s1;\nprintln!("{}", s1);',
-      question: 'Что произойдет при компиляции данного кода?',
-      options: [
-        'Ошибка компиляции: use of moved value `s1`',
-        'Напечатает hello',
-        'Напечатает пустую строку',
-        'Паника в рантайме',
-      ],
-      correct: 0,
-      explanation: 'При присваивании let s2 = s1 владение (ownership) перемещается в s2, так как String не реализует Copy.',
-    },
-    {
-      lang: 'Go',
-      code: 's := []int{1, 2, 3}\nfor _, v := range s {\n    go func() { println(v) }()\n}',
-      question: 'До Go 1.22 что чаще всего выведет эта программа?',
-      options: [
-        '3 3 3 (значение последней итерации для всех горутин)',
-        '1 2 3 строго по порядку',
-        '3 2 1',
-        'Ошибка компиляции',
-      ],
-      correct: 0,
-      explanation: 'До Go 1.22 переменная цикла v захватывалась по ссылке, и к моменту запуска горутин цикл уже завершался.',
-    },
-  ],
-};
-
-const quizState = {
-  ai: { idx: 0, score: Number(localStorage.getItem('ai_quiz_score') || 0), current: null, answered: false },
-  linux: { idx: 0, score: Number(localStorage.getItem('linux_quiz_score') || 0), current: null, answered: false },
-  it: { idx: 0, score: Number(localStorage.getItem('it_quiz_score') || 0), current: null, answered: false },
-};
-
-function shuffleQuizQuestion(q) {
-  const items = q.options.map((text, idx) => ({ text, isCorrect: idx === q.correct }));
-  for (let i = items.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [items[i], items[j]] = [items[j], items[i]];
-  }
-  return { ...q, shuffledOptions: items };
-}
-
-export function renderQuizWidget(container, category = 'ai') {
-  if (!container) return;
-  const key = QUIZ_BANKS[category] ? category : 'ai';
-  const st = quizState[key];
-  if (!st.current) {
-    const bank = QUIZ_BANKS[key];
-    st.current = shuffleQuizQuestion(bank[st.idx % bank.length]);
-    st.answered = false;
-  }
-
-  const q = st.current;
-  const titleMap = { ai: '🤖 AI & LLM Тренажёр', linux: '🐧 Linux / DevOps Тренажёр', it: '💻 Code & Языки Тренажёр' };
-
-  container.innerHTML = `
-    <div class="glass-panel p-4 sm:p-5 rounded-3xl border border-purple-500/25 bg-slate-900/80 space-y-3.5">
-      <div class="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
-        <div>
-          <h3 class="text-sm font-black text-white font-heading">${titleMap[key]}</h3>
-          <p class="text-[11px] text-slate-400">Интерактивная проверка знаний</p>
-        </div>
-        <span class="px-2.5 py-1 rounded-xl text-xs font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
-          Счёт: ${st.score}
-        </span>
-      </div>
-
-      ${q.lang ? `<span class="inline-block px-2 py-0.5 rounded-lg text-[10px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">${escapeHtml(q.lang)}</span>` : ''}
-      ${q.code ? `<pre class="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-[11px] text-sky-200 font-mono overflow-x-auto leading-relaxed">${escapeHtml(q.code)}</pre>` : ''}
-
-      <p class="text-xs sm:text-sm font-bold text-white leading-snug">${escapeHtml(q.question)}</p>
-
-      <div class="space-y-2" id="quiz-options-${key}">
-        ${q.shuffledOptions.map((opt, idx) => `
-          <button type="button" data-q-idx="${idx}"
-            class="quiz-opt-btn w-full text-left p-3 rounded-2xl border border-slate-800 bg-slate-950/70 hover:bg-slate-900 hover:border-sky-500/40 text-xs text-slate-200 transition-all">
-            ${escapeHtml(opt.text)}
-          </button>
-        `).join('')}
-      </div>
-
-      <div id="quiz-feedback-${key}" class="hidden p-3 rounded-2xl text-xs leading-relaxed"></div>
-
-      <button type="button" id="quiz-next-${key}"
-        class="w-full py-2.5 px-4 rounded-2xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/35 text-xs font-bold transition-all">
-        Следующий вопрос →
-      </button>
-    </div>
-  `;
-
-  const optBtns = container.querySelectorAll('.quiz-opt-btn');
-  const feedbackEl = container.querySelector(`#quiz-feedback-${key}`);
-
-  optBtns.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      if (st.answered) return;
-      st.answered = true;
-      const chosenIdx = Number(btn.getAttribute('data-q-idx'));
-      const chosen = q.shuffledOptions[chosenIdx];
-
-      optBtns.forEach((b, bIdx) => {
-        b.disabled = true;
-        const isCorrect = q.shuffledOptions[bIdx].isCorrect;
-        if (isCorrect) {
-          b.className = 'quiz-opt-btn w-full text-left p-3 rounded-2xl border border-emerald-500 bg-emerald-500/20 text-emerald-200 text-xs font-bold';
-        } else if (bIdx === chosenIdx) {
-          b.className = 'quiz-opt-btn w-full text-left p-3 rounded-2xl border border-rose-500 bg-rose-500/20 text-rose-200 text-xs';
-        } else {
-          b.className = 'quiz-opt-btn w-full text-left p-3 rounded-2xl border border-slate-800 bg-slate-950/40 text-slate-500 text-xs';
-        }
-      });
-
-      if (chosen && chosen.isCorrect) {
-        st.score += 1;
-        localStorage.setItem(`${key}_quiz_score`, String(st.score));
-      }
-      if (feedbackEl) {
-        feedbackEl.classList.remove('hidden');
-        feedbackEl.className = chosen && chosen.isCorrect
-          ? 'p-3 rounded-2xl text-xs leading-relaxed bg-emerald-500/15 border border-emerald-500/35 text-emerald-200'
-          : 'p-3 rounded-2xl text-xs leading-relaxed bg-amber-500/15 border border-amber-500/35 text-amber-200';
-        feedbackEl.innerHTML = `<strong>${chosen && chosen.isCorrect ? '✅ Верно!' : '💡 Разбор:'}</strong> ${escapeHtml(q.explanation || '')}`;
-      }
-    });
-  });
-
-  const nextBtn = container.querySelector(`#quiz-next-${key}`);
-  if (nextBtn) {
-    nextBtn.addEventListener('click', async () => {
-      nextBtn.disabled = true;
-      nextBtn.textContent = 'Загрузка вопроса...';
-      try {
-        const remote = await fetchNextQuiz(key === 'linux' ? 'devops' : key, q.question);
-        if (remote && remote.question && Array.isArray(remote.options)) {
-          st.current = shuffleQuizQuestion(remote);
-          st.answered = false;
-          renderQuizWidget(container, key);
-          return;
-        }
-      } catch (e) {
-        // Fallback to local bank
-      }
-      st.idx += 1;
-      const bank = QUIZ_BANKS[key];
-      st.current = shuffleQuizQuestion(bank[st.idx % bank.length]);
-      st.answered = false;
-      renderQuizWidget(container, key);
-    });
-  }
-}
 
 // ==========================================
 // 1. UKRAINE 24H AI DIGEST WIDGET
@@ -663,7 +425,7 @@ export async function mountCs2Widget(container, { force = false, selectedTeam = 
 }
 
 // ==========================================
-// 5. IT TOP-10 LANGUAGES & QUIZ WIDGET
+// 5. IT TOP-10 LANGUAGES WIDGET
 // ==========================================
 const IT_LANGUAGES_LEADERBOARD = [
   { id: 'python', icon: '🐍', name: 'Python', share: '25.4%', pct: 100, use: 'ИИ / ML (PyTorch), FastAPI бэкенд, автоматизация.' },
@@ -681,35 +443,32 @@ export function mountItWidget(container, { activeLang = 'all', onSelectLang = nu
   if (!container) return;
 
   container.innerHTML = `
-    <div class="space-y-4">
-      <div class="glass-panel p-4 sm:p-5 rounded-3xl border border-cyan-500/25 bg-slate-900/90 space-y-3">
-        <div class="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
-          <div>
-            <span class="text-[10px] font-bold uppercase tracking-wider text-cyan-400">TIOBE / Octoverse</span>
-            <h3 class="text-sm font-black text-white font-heading">💻 Рейтинг языков</h3>
-          </div>
-          <button type="button" data-it-lang="all" class="it-lang-card text-[11px] font-bold text-cyan-300 hover:underline">Сбросить</button>
+    <div class="glass-panel p-4 sm:p-5 rounded-3xl border border-cyan-500/25 bg-slate-900/90 space-y-3">
+      <div class="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-cyan-400">TIOBE / Octoverse</span>
+          <h3 class="text-sm font-black text-white font-heading">💻 Рейтинг языков</h3>
         </div>
-        <div class="space-y-2 max-h-[380px] overflow-y-auto pr-1">
-          ${IT_LANGUAGES_LEADERBOARD.map((lang, idx) => {
-            const isSelected = activeLang === lang.id;
-            return `
-              <button type="button" data-it-lang="${lang.id}"
-                class="it-lang-card w-full text-left p-2.5 rounded-2xl border transition-all ${isSelected ? 'bg-cyan-500/20 border-cyan-400' : 'bg-slate-950/65 border-slate-800/80 hover:border-cyan-500/40'}">
-                <div class="flex items-center justify-between mb-1">
-                  <span class="text-xs font-bold text-white">${lang.icon} ${lang.name}</span>
-                  <span class="text-[11px] font-mono font-bold text-cyan-300">#${idx + 1} • ${lang.share}</span>
-                </div>
-                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-1">
-                  <div class="bg-cyan-400 h-full rounded-full" style="width: ${lang.pct}%"></div>
-                </div>
-                <p class="text-[11px] text-slate-400 leading-snug">${lang.use}</p>
-              </button>
-            `;
-          }).join('')}
-        </div>
+        <button type="button" data-it-lang="all" class="it-lang-card text-[11px] font-bold text-cyan-300 hover:underline">Сбросить</button>
       </div>
-      <div id="it-quiz-slot"></div>
+      <div class="space-y-2 max-h-[460px] overflow-y-auto pr-1">
+        ${IT_LANGUAGES_LEADERBOARD.map((lang, idx) => {
+          const isSelected = activeLang === lang.id;
+          return `
+            <button type="button" data-it-lang="${lang.id}"
+              class="it-lang-card w-full text-left p-2.5 rounded-2xl border transition-all ${isSelected ? 'bg-cyan-500/20 border-cyan-400' : 'bg-slate-950/65 border-slate-800/80 hover:border-cyan-500/40'}">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-bold text-white">${lang.icon} ${lang.name}</span>
+                <span class="text-[11px] font-mono font-bold text-cyan-300">#${idx + 1} • ${lang.share}</span>
+              </div>
+              <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-1">
+                <div class="bg-cyan-400 h-full rounded-full" style="width: ${lang.pct}%"></div>
+              </div>
+              <p class="text-[11px] text-slate-400 leading-snug">${lang.use}</p>
+            </button>
+          `;
+        }).join('')}
+      </div>
     </div>
   `;
 
@@ -719,6 +478,4 @@ export function mountItWidget(container, { activeLang = 'all', onSelectLang = nu
       if (typeof onSelectLang === 'function') onSelectLang(langId);
     });
   });
-
-  renderQuizWidget(container.querySelector('#it-quiz-slot'), 'it');
 }

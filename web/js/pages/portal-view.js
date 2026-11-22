@@ -14,7 +14,6 @@ import {
   getOrderedCategories,
   saveSettings,
 } from '../core/state.js';
-import { renderQuizWidget } from '../widgets/category-widgets.js';
 
 export function renderHomePortalView(container, { onRefreshNews } = {}) {
   if (!container) return;
@@ -244,7 +243,6 @@ export function renderDigestView(container) {
   const isCompact = appState.settings.cardDensity === 'compact';
   const digestThreshold = Number(appState.settings.minScores.digest ?? 7.5);
   const items = getDigestArticles('');
-  const showQuiz = appState.settings.showAnalyticsWidgets;
 
   container.innerHTML = `
     <div class="space-y-5">
@@ -259,21 +257,7 @@ export function renderDigestView(container) {
         </div>
       </section>
 
-      <div class="flex flex-col lg:grid lg:grid-cols-12 gap-5 items-start">
-        <div class="${showQuiz ? 'lg:col-span-8' : 'lg:col-span-12'} w-full space-y-4">
-          <div id="digest-cards-grid" class="${isCompact ? 'grid grid-cols-1 gap-2.5' : 'grid grid-cols-1 md:grid-cols-2 gap-4'}"></div>
-        </div>
-        ${showQuiz ? `
-          <aside class="lg:col-span-4 w-full space-y-3 lg:sticky lg:top-20">
-            <div class="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-slate-950 border border-slate-800">
-              <button type="button" data-quiz-tab="ai" class="digest-quiz-tab py-1.5 rounded-xl text-xs font-bold bg-purple-600 text-white">🤖 AI</button>
-              <button type="button" data-quiz-tab="it" class="digest-quiz-tab py-1.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white">💻 IT</button>
-              <button type="button" data-quiz-tab="linux" class="digest-quiz-tab py-1.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white">🐧 Linux</button>
-            </div>
-            <div id="digest-quiz-host"></div>
-          </aside>
-        ` : ''}
-      </div>
+      <div id="digest-cards-grid" class="${isCompact ? 'grid grid-cols-1 md:grid-cols-2 gap-2.5' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'}"></div>
     </div>
   `;
 
@@ -298,21 +282,5 @@ export function renderDigestView(container) {
         );
       });
     }
-  }
-
-  if (showQuiz) {
-    const quizHost = container.querySelector('#digest-quiz-host');
-    renderQuizWidget(quizHost, 'ai');
-    container.querySelectorAll('.digest-quiz-tab').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const qCat = btn.getAttribute('data-quiz-tab');
-        container.querySelectorAll('.digest-quiz-tab').forEach((b) => {
-          b.className = b === btn
-            ? 'digest-quiz-tab py-1.5 rounded-xl text-xs font-bold bg-purple-600 text-white'
-            : 'digest-quiz-tab py-1.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white';
-        });
-        renderQuizWidget(quizHost, qCat);
-      });
-    });
   }
 }
